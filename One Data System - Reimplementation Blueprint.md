@@ -2,11 +2,21 @@
 
 เอกสารวิเคราะห์ระบบเพื่อการสร้างใหม่แบบ Clean-Room
 
+- เวอร์ชันเอกสาร: 1.2 — Target Product & Focused MVP Revision
+- แก้ไขล่าสุด: 10 สิงหาคม 2569 (2026)
 - วันที่สำรวจ: 10 สิงหาคม 2569 (2026)
 - ขอบเขตที่สำรวจ: หน่วยงาน รพ.สต. 1 แห่ง และสังกัดระดับองค์การบริหารส่วนจังหวัดที่เชื่อมกัน
 - บัญชีที่ใช้สำรวจ: บัญชีผู้ดูแลระบบซึ่งมองเห็นทั้งขอบเขต “หน่วยงาน” และ “สังกัด”
 - วิธีสำรวจ: ใช้งานหน้าจอตามปกติใน Chrome, เปิดดูฟอร์มโดยไม่บันทึก, อ่านทรัพยากรเครือข่ายที่หน้าเว็บเรียกตามปกติ
 - ข้อจำกัดความปลอดภัย: ไม่สร้าง/แก้ไข/อนุมัติ/ลบข้อมูล, ไม่ส่งคำขอ, ไม่ทดลองสิทธิ์ด้วยบัญชีบทบาทอื่น, ไม่ตรวจ cookie/token/local storage และไม่นำข้อมูลส่วนบุคคลมาใส่ในเอกสาร
+
+## Revision History
+
+| Version | วันที่       | การเปลี่ยนแปลง                                                                                                               |
+| ------- | ------------ | ---------------------------------------------------------------------------------------------------------------------------- |
+| 1.0     | 10 ส.ค. 2569 | Clean-room discovery, screen/API inventory และ reimplementation blueprint ฉบับแรก                                            |
+| 1.1     | 10 ส.ค. 2569 | เพิ่มข้อมูลเป้าหมาย: อบจ.ยะลา, รพ.สต. 38 แห่ง และบุคลากร 267 คน                                                              |
+| 1.2     | 10 ส.ค. 2569 | ปรับลำดับพัฒนาเป็น People/Organization Core → Leave → ฉ.10/11 → Excel/Report และเพิ่ม Calculation Run/Snapshot/Pilot rollout |
 
 ## วิธีอ่านระดับความมั่นใจ
 
@@ -14,13 +24,35 @@
 - **[INFERRED]** อนุมานจากโครงสร้าง UI ชื่อรายงาน ความสัมพันธ์ระหว่างหน้าจอ หรือรูปแบบธุรกิจที่สอดคล้องกัน แต่ยังไม่ได้ยืนยันด้วยการทำรายการจริง
 - **[UNKNOWN]** หลักฐานไม่พอ ต้องยืนยันกับเจ้าของระบบ ผู้ใช้ปลายทาง หรือการทดสอบในสภาพแวดล้อมที่ได้รับอนุญาต
 
+### แหล่งที่มาของข้อกำหนด
+
+- **[OBSERVED]** พบจาก One Data System ตามวิธีสำรวจด้านบน; ใช้คู่กับระดับความมั่นใจเดิม `CONFIRMED/INFERRED/UNKNOWN`.
+- **[OWNER-CONFIRMED]** เจ้าของโครงการยืนยันให้ใช้เป็นบริบทหรือข้อกำหนดของระบบใหม่.
+- **[PROPOSED]** ข้อเสนอด้านผลิตภัณฑ์ สถาปัตยกรรม หรือกระบวนการพัฒนา; ต้องผ่านการอนุมัติก่อนถือเป็น requirement.
+- **[OPEN]** Decision item ที่ยังต้องมีเจ้าของคำตอบ หลักฐาน และสถานะอนุมัติ.
+
 > เอกสารนี้สกัด “ความต้องการทางธุรกิจ” จากระบบอ้างอิง ไม่ใช่คำสั่งให้คัดลอกหน้าจอ โค้ด เทคโนโลยี หรือข้อจำกัดของระบบเดิมแบบ 1:1
+
+## Target Product Baseline
+
+| รายการ                 | Baseline สำหรับระบบใหม่                                                              | สถานะ                               |
+| ---------------------- | ------------------------------------------------------------------------------------ | ----------------------------------- |
+| สังกัดระดับบน          | องค์การบริหารส่วนจังหวัดยะลา 1 แห่ง                                                  | [OWNER-CONFIRMED]                   |
+| หน่วยงานปฏิบัติการ     | รพ.สต. 38 แห่ง                                                                       | [OWNER-CONFIRMED]                   |
+| บุคลากร                | 267 คน ณ วันที่ 10 สิงหาคม 2569 และมีแนวโน้มเพิ่ม                                    | [OWNER-CONFIRMED]                   |
+| กลุ่มเป้าหมาย          | เจ้าหน้าที่ทุกคนของ รพ.สต. ที่สังกัด อบจ.ยะลา                                        | [OWNER-CONFIRMED]                   |
+| โครงสร้างรุ่นแรก       | `อบจ.ยะลา → รพ.สต. → บุคลากร`                                                        | [OWNER-CONFIRMED]                   |
+| First production scope | People/Organization Core, ระบบลา, การคำนวณ ฉ.10/11 และ Excel/Report                  | [OWNER-CONFIRMED + PROPOSED DESIGN] |
+| การขยายระบบ            | เพิ่ม รพ.สต./บุคลากรและต่อโมดูลอื่นแบบ incremental                                   | [OWNER-CONFIRMED]                   |
+| Clinical/patient data  | ยังไม่ยืนยันว่าอยู่ในขอบเขต; baseline นี้ถือเฉพาะงานบริหารหลังบ้านจนกว่าจะมีคำตัดสิน | [OPEN]                              |
+
+> ตัวเลข 247 คนที่ปรากฏในบทสนทนาวางแผนก่อนหน้าเป็นข้อมูลเดิม; เอกสารฉบับนี้ใช้ 267 คนเป็น baseline ล่าสุด **[OWNER-CONFIRMED]**
 
 ---
 
 ## 1. Executive Summary
 
-One Data System เป็นระบบบริหารงานหลังบ้านสำหรับหน่วยบริการสุขภาพขนาดเล็กถึงกลางภายใต้สังกัดเดียวกัน เช่น รพ.สต. และหน่วยงานกำกับระดับองค์การบริหารส่วนจังหวัด ระบบรวมข้อมูลบุคลากร เวร การลา/ไปราชการ เอกสารราชการ วัสดุ ครุภัณฑ์ ยานพาหนะ และการเงินไว้ในพื้นที่ทำงานเดียว **[CONFIRMED]**
+One Data System ที่สำรวจเป็นระบบบริหารงานหลังบ้านสำหรับหน่วยบริการสุขภาพขนาดเล็กถึงกลางภายใต้สังกัดเดียวกัน โดยรวมข้อมูลบุคลากร เวร การลา/ไปราชการ เอกสารราชการ วัสดุ ครุภัณฑ์ ยานพาหนะ และการเงินไว้ในพื้นที่ทำงานเดียว **[OBSERVED: CONFIRMED]** ระบบใหม่มีเป้าหมายเริ่มต้นชัดเจนที่ อบจ.ยะลา 1 แห่ง รพ.สต. 38 แห่ง และบุคลากร 267 คน **[OWNER-CONFIRMED]**
 
 ผู้ใช้หลักที่อนุมานได้มี 4 กลุ่มทางธุรกิจ:
 
@@ -34,6 +66,9 @@ One Data System เป็นระบบบริหารงานหลัง�
 ข้อสรุปสำหรับการสร้างใหม่:
 
 - ออกแบบเป็นแพลตฟอร์ม multi-organization ที่มีสองขอบเขตชัดเจน: `affiliation` และ `tenant/unit` **[CONFIRMED]**
+- ให้ `affiliation = อบจ.ยะลา` และ `tenant/unit = รพ.สต.` ในรุ่นแรก แต่ไม่ hard-code จำนวน 38 แห่งหรือสังกัดเดียวใน schema **[OWNER-CONFIRMED + PROPOSED]**
+- สร้าง People/Organization Core ให้ถูกต้องก่อน โดยแยกบุคคล โปรไฟล์ บัญชี การสังกัด และประวัติการจ้างออกจากกัน **[PROPOSED]**
+- ใช้ระบบลาและการคำนวณ ฉ.10/11 เป็น first production modules และสร้าง Excel/เอกสารจาก calculation run ที่ versioned/locked **[OWNER-CONFIRMED + PROPOSED]**
 - แยก “สิทธิ์เข้าใช้ระบบ” ออกจาก “ตำแหน่ง/หน้าที่/ผู้ลงนามในเอกสาร” ตั้งแต่ต้น
 - ใช้ข้อมูลหลักร่วมกันและสร้างเอกสารจากข้อมูลที่มีโครงสร้าง แทนการกรอกซ้ำ
 - กำหนด workflow, state transition, audit trail และกติกาล็อกข้อมูลให้เป็นข้อกำหนดส่วนกลาง
@@ -81,11 +116,23 @@ flowchart LR
 | หน่วยงาน (`tenant/unit`) | ปฏิบัติงานประจำวันและเก็บรายการธุรกรรม                     | บุคลากร, เวร, ลา, สต็อก, ทรัพย์สิน, รถ, แผน/ผลการเงิน            | อยู่ใต้สังกัดหนึ่งแห่งในตัวอย่าง **[CONFIRMED]**               |
 | บุคคล (`employee/user`)  | เป็นทั้งข้อมูลบุคลากร ผู้ใช้ ผู้ขอ ผู้อนุมัติ หรือผู้ลงนาม | โปรไฟล์ การจ้าง ใบอนุญาต บทบาทการเข้าถึง                         | บุคคลเดียวอาจได้รับสิทธิ์ทั้งหน่วยงานและสังกัด **[CONFIRMED]** |
 
+Target deployment รุ่นแรก **[OWNER-CONFIRMED]**:
+
+```text
+องค์การบริหารส่วนจังหวัดยะลา (1 affiliation)
+└── รพ.สต. 38 แห่ง (38 tenants)
+    └── บุคลากรรวม 267 คน ณ 10 ส.ค. 2569
+```
+
+ข้อมูลนี้ยืนยัน topology เชิงธุรกิจของรุ่นแรก แต่ไม่ยืนยันว่าบุคลากรหนึ่งคนมี membership พร้อมกันหลาย รพ.สต. ได้หรือไม่ หรือเจ้าหน้าที่กองสาธารณสุขของ อบจ. ต้องอยู่ในทะเบียนบุคลากรชุดเดียวกัน **[OPEN]**
+
 ### 2.3 ขอบเขตที่ไม่ควรสมมติ
 
-- ระบบอาจรองรับหลายสังกัดหรือสังกัดซ้อนชั้น แต่ตัวอย่างยืนยันได้เพียงหนึ่งสังกัดกับหนึ่งหน่วยงานที่มองเห็น **[UNKNOWN]**
+- รุ่นแรกยืนยันหนึ่งสังกัด (อบจ.ยะลา) กับ รพ.สต. 38 แห่ง **[OWNER-CONFIRMED]**; การรองรับหลาย อบจ. หรือสังกัดซ้อนชั้นเป็น future capability ที่ยัง **[OPEN]** และ schema ไม่ควรปิดทางไว้.
+- การย้าย รพ.สต., ช่วยราชการ, รักษาการ หรือมีหลาย membership พร้อมกันยัง **[OPEN]**; ห้ามออกแบบเป็น `employees.tenant_id` ที่แก้ทับประวัติ.
 - มีข้อความว่าข้อมูลพื้นฐานบางอย่างเปลี่ยนได้โดย “ผู้ดูแลระบบสูงสุด” แต่บัญชีที่สำรวจเห็น role ใน UI เพียง “เจ้าหน้าที่/ผู้ดูแล” **[CONFIRMED ข้อความ; โครงสร้าง role ขั้นสูง UNKNOWN]**
 - ไม่ทราบว่าระบบเชื่อม HR, บัญชี, e-Saraban, SSO ภาครัฐ หรือระบบคลังภายนอกอยู่แล้วหรือไม่ **[UNKNOWN]**
+- ไม่ควรสมมติว่าข้อมูลผู้ป่วย/เวชระเบียน/HDC อยู่ในขอบเขตของรุ่นแรกจนกว่าเจ้าของโครงการจะยืนยัน **[OPEN]**
 
 ---
 
@@ -583,6 +630,21 @@ flowchart LR
 - ผู้ร่วมเดินทาง ผู้มีสิทธิ์รถ ผู้ลงนาม และผู้อนุมัติต้องอยู่ในองค์กร/สิทธิ์ที่ถูกต้อง ณ effective date.
 - ไฟล์โลโก้ ลายเซ็น และภาพทรัพย์สินต้องตรวจ MIME จริง สแกน malware จำกัดขนาด และใช้ signed URL.
 
+### 8.4 Target-product decisions สำหรับ People, Leave และ ฉ.10/11
+
+| ID     | Decision/guardrail                                                                                                                                      | Status                                   |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
+| TP-001 | `Person` ต้องแยกจาก `EmployeeProfile`, `UserIdentity`, `Membership` และ `EmploymentHistory`; ห้ามผูกบุคคลกับ รพ.สต. ด้วย foreign key เดียวที่แก้ทับอดีต | PROPOSED — required foundation           |
+| TP-002 | เมื่อย้ายหน่วยงาน ให้ปิด membership เดิมและเปิด membership ใหม่โดยรักษาประวัติ                                                                          | PROPOSED — edge cases OPEN               |
+| TP-003 | ใบลาที่ผ่านสถานะตาม rule เป็น source of truth สำหรับ input การคำนวณ ฉ.10/11; หลีกเลี่ยงการคัดลอกยอดวันลาแบบ mutable                                     | PROPOSED — qualifying statuses OPEN      |
+| TP-004 | การคำนวณต้องอ้าง `CalculationRuleVersion` ที่มี effective date และผู้อนุมัติ                                                                            | PROPOSED — สูตรจริง OPEN                 |
+| TP-005 | แต่ละรอบต้องเก็บ input/person/membership/employment/leave snapshot หรือ immutable source references พร้อม hash                                          | PROPOSED                                 |
+| TP-006 | เมื่อรอบยืนยัน/ล็อกแล้ว ผลและไฟล์รายงานต้องไม่เปลี่ยนตามข้อมูลปัจจุบัน                                                                                  | OWNER-CONFIRMED INTENT + PROPOSED DESIGN |
+| TP-007 | การแก้หลังล็อกใช้ `Revision`/`Adjustment` พร้อมเหตุผลและ audit ไม่แก้ผลเดิมเงียบ ๆ                                                                      | PROPOSED                                 |
+| TP-008 | Excel/PDF เป็น artifact ของ calculation/report run ที่ระบุ template version/checksum และสร้างซ้ำได้ตรงเดิม                                              | PROPOSED                                 |
+
+ชื่อทางการ สูตร คุณสมบัติผู้มีสิทธิ์ การหักจากการลา cutoff และ approval ของ ฉ.10/11 ยัง **[OPEN]**; ตารางนี้เป็น architectural guardrail ไม่ใช่สูตรการเบิกที่อนุมัติแล้ว.
+
 ---
 
 ## 9. Conceptual Data Model
@@ -603,6 +665,12 @@ flowchart LR
 - `Holiday`
 - `LeaveType`, `LeavePolicy`, `LeaveBalance`, `LeaveRequest`, `LeaveApproval`
 - `OfficialDutyRequest`, `OfficialDutyCompanion`, `OfficialDutyApproval`
+
+**Allowance Calculation — First Production Domain**
+
+- `AllowanceScheme` (ฉ.10/ฉ.11), `AllowancePeriod`, `CalculationRuleVersion`
+- `CalculationRun`, `CalculationInputSnapshot`, `AllowanceResult`
+- `CalculationReview`, `CalculationAdjustment`, `CalculationRunReport`
 
 **Inventory**
 
@@ -661,6 +729,18 @@ erDiagram
     PERSON ||--o{ OFFICIAL_DUTY_REQUEST : requests
     OFFICIAL_DUTY_REQUEST ||--o{ OFFICIAL_DUTY_COMPANION : includes
 
+    TENANT ||--o{ ALLOWANCE_PERIOD : owns
+    ALLOWANCE_SCHEME ||--o{ CALCULATION_RULE_VERSION : versions
+    ALLOWANCE_PERIOD ||--o{ CALCULATION_RUN : executes
+    CALCULATION_RULE_VERSION ||--o{ CALCULATION_RUN : governs
+    CALCULATION_RUN ||--|{ CALCULATION_INPUT_SNAPSHOT : freezes
+    CALCULATION_RUN ||--|{ ALLOWANCE_RESULT : produces
+    PERSON ||--o{ ALLOWANCE_RESULT : receives
+    TENANT_MEMBERSHIP ||--o{ CALCULATION_INPUT_SNAPSHOT : snapshots
+    LEAVE_REQUEST ||--o{ CALCULATION_INPUT_SNAPSHOT : contributes
+    CALCULATION_RUN ||--o{ CALCULATION_ADJUSTMENT : revised_by
+    CALCULATION_RUN ||--o{ REPORT_RUN : renders
+
     TENANT ||--o{ SUPPLY_ITEM : owns
     VENDOR ||--o{ STOCK_RECEIPT : supplies
     STOCK_RECEIPT ||--|{ STOCK_RECEIPT_LINE : contains
@@ -700,10 +780,12 @@ erDiagram
 - `Employee` aggregate เก็บ profile + memberships; ประวัติการจ้างและใบอนุญาตเป็น child ที่มี effective dates.
 - `SchedulePeriod` aggregate ต่อ tenant/month ลดการชนกันของการแก้แต่ละ cellด้วย optimistic versioning.
 - `LeaveRequest`, `OfficialDutyRequest`, `VehicleRequest`, `EmployeeTransfer` เป็น workflow aggregate แยกกัน มี state transition log.
+- `CalculationRun` เป็น aggregate แยกจาก Leave: อ่าน approved/source-qualified leave และ effective-dated People data เพื่อสร้าง snapshot/results; หลัง `LOCKED` เป็น immutable และแก้ผ่าน adjustment/revision เท่านั้น.
 - `SupplyItem` ไม่เก็บยอดเป็นแหล่งความจริงเพียงฟิลด์เดียว; source of truth คือ `StockMovement`, ส่วน `StockBalance` เป็น projection.
 - `Asset` เป็น supertype; vehicle อ้าง `asset_id` แบบ optional แต่ควรกำหนดนโยบายให้ยานพาหนะที่เป็นกรรมสิทธิ์ต้องเชื่อม.
 - `FinancialPlan` แยกตาม tenant/fiscal year/revision type/version และ immutable เมื่อ locked.
 - `ReportRun` เก็บ parameters, data version/hash, signer snapshot และตำแหน่งไฟล์ เพื่อพิมพ์ซ้ำได้ตรงเดิม.
+- `CalculationRunReport` เชื่อม calculation run กับ report artifact; การดาวน์โหลด Excel รอบเก่าต้องอ้าง artifact/snapshot เดิม ไม่ query live data ใหม่.
 
 ---
 
@@ -904,6 +986,15 @@ UI ยืนยันเส้นตรง 5 ปีจากราคาทุ�
 - รายงานขนาดใหญ่ควรสร้างผ่าน background job พร้อมสถานะ/หมดอายุไฟล์ ไม่บล็อก request.
 - รองรับภาษาไทย ฟอนต์ฝังใน PDF ปี พ.ศ. และรูปแบบเลขราชการ โดยเก็บวันที่ภายในเป็น ISO/Gregorian.
 
+### 11.5 First-production reporting — Leave และ ฉ.10/11
+
+- Excel/PDF ทุกไฟล์ต้องอ้าง `calculation_run_id`, rule version, source cutoff, template version และ artifact checksum **[PROPOSED]**.
+- ผลระดับบุคคลต้องอธิบายได้ว่า eligible amount, deduction และ final amountมาจาก input/rule ใด โดยจำกัดการเปิดเผย PII ตาม permission.
+- เมื่อ run `LOCKED` แล้ว การแก้ People/Employment/Leave ภายหลังต้องไม่เปลี่ยนผลเดิม; ใช้ adjustment/revision ที่เชื่อมกลับ original result.
+- การ regenerate อาจใช้ template version เดิมเพื่อได้ artifact เดิม หรือสร้าง artifact version ใหม่จาก results เดิมตาม policy ที่อนุมัติ; ห้าม query live source เพื่อคำนวณย้อนหลังใหม่โดยปริยาย.
+- ต้องมี reconciliation summary ต่อ รพ.สต. และรวม อบจ.ยะลา โดยผลรวมต้อง trace ลงถึงรายบุคคลภายใต้สิทธิ์.
+- รูปแบบ ฉ.10/11 อย่างเป็นทางการ สูตร คอลัมน์ ผู้ลงนาม และปลายทางการส่งยัง **[OPEN]** และต้องใช้ approved golden workbook ก่อน coding report.
+
 ---
 
 ## 12. Import / Export
@@ -935,12 +1026,13 @@ UI ยืนยันเส้นตรง 5 ปีจากราคาทุ�
 7. commit เป็น batch transaction หรือ partial success ตาม policy.
 8. สร้าง audit, error file และ rollback/compensating batch.
 
-ลำดับข้อมูลที่ควรรองรับ: หน่วยงาน/ข้อมูลหลัก → บุคลากร → วัสดุ/ร้านค้า/ยอดยกมา → ครุภัณฑ์/รถ → แผนการเงินและยอดจริงย้อนหลัง. การ import PII และยอดการเงินต้องใช้ permission เฉพาะและ encryption.
+ลำดับ first migration: อบจ.ยะลา/รพ.สต. 38 แห่ง → บุคลากร 267 คน → membership/ตำแหน่ง/กลุ่มงาน/ประเภทการจ้าง → ประวัติการจ้าง/ใบอนุญาตที่จำเป็น → leave opening balances/history ตาม cutoff **[OWNER-CONFIRMED BASELINE + PROPOSED]**. ข้อมูล module อื่นย้ายตาม release ภายหลัง. การ import PII และยอดการเงินต้องใช้ permission เฉพาะและ encryption.
 
 ### 12.3 Export ที่แนะนำ
 
 - PDF สำหรับเอกสารทางการพร้อม immutable report run.
 - XLSX สำหรับรายงานเชิงตาราง โดยแยกชีต `Metadata`, `Data Dictionary`, `Data`.
+- XLSX ฉ.10/11 ต้องสร้างจาก locked `CalculationRun` และเก็บเป็น immutable `ReportArtifact`; ห้าม export โดยคำนวณใหม่จาก live data โดยปริยาย.
 - CSV UTF-8 BOM สำหรับ migration/analytics ที่ไม่ต้องรักษารูปแบบ.
 - ZIP evidence package สำหรับ audit ที่รวม manifest/hash ไม่รวมข้อมูลเกิน scope.
 - Scheduled export หรือ API access ควรใช้ service account, scoped token และ rate limit.
@@ -1031,6 +1123,8 @@ result, policy_decision, export_metadata
 - อ่าน/ส่งออกข้อมูลอ่อนไหวจำนวนมาก
 - create/update/void/delete บุคลากร สต็อก ทรัพย์สิน รถ และการเงิน
 - approve/reject/cancel ลา รถ ย้ายบุคลากร
+- calculate/recalculate/review/confirm/lock ฉ.10/11 รวม rule version, cutoff, source hash และผลรวม
+- create/approve adjustment โดยอ้าง original allowance result และเหตุผล
 - เปิด/ปิด/ล็อก/ปลดล็อกวงรอบแผน
 - เปลี่ยนผู้ลงนาม/ลายเซ็น/เลขหนังสือ/template
 - generate/download report
@@ -1078,12 +1172,13 @@ Audit ต้องแยก storage/permission จากข้อมูลธุ
 ### 14.4 Security test plan ก่อน go-live
 
 - RBAC/ABAC matrix test ทุก endpoint และทุก state.
-- tenant isolation/IDOR test ด้วยอย่างน้อย 2 สังกัดและ 3 หน่วยงาน.
+- tenant isolation/IDOR test ด้วยอย่างน้อย 2 สังกัดสังเคราะห์และ 3 หน่วยงาน แม้ production รุ่นแรกมีหนึ่ง อบจ.; ใช้เป็น defense-in-depth test ไม่ใช่ production topology.
 - workflow tampering: approve เอง, ข้าม pending, แก้หลัง locked, stock ติดลบ, mileage ย้อน.
 - upload test: MIME spoof, polyglot, oversized image, SVG/script, malware.
 - export abuse/bulk scrape และ search enumeration.
 - session fixation/refresh reuse/logout revocation/CSRF/CORS.
 - report injection, formula injection ใน Excel และ PII leakage ใน filename/metadata.
+- calculation tampering: เปลี่ยน rule/input หลังคำนวณ, lock ซ้ำ, แก้ผล locked, adjustment ไม่มีสิทธิ์ และ replay command.
 
 ---
 
@@ -1177,6 +1272,7 @@ flowchart TB
       IAM[Identity & Access]
       ORG[Organization & People]
       WORK[Schedule / Leave / Duty]
+      ALLOW[ฉ.10/11 Allowance Calculation]
       INV[Inventory]
       ASSET[Assets & Vehicles]
       FIN[Finance Planning & Actuals]
@@ -1203,6 +1299,7 @@ flowchart TB
     BFF --> IAM
     BFF --> ORG
     BFF --> WORK
+    BFF --> ALLOW
     BFF --> INV
     BFF --> ASSET
     BFF --> FIN
@@ -1221,25 +1318,28 @@ flowchart TB
 
 ### 16.3 Module boundaries
 
-| Module                | Owns                                                         | May read via API/projection                    | Must not mutate directly             |
-| --------------------- | ------------------------------------------------------------ | ---------------------------------------------- | ------------------------------------ |
-| Identity & Access     | identities, memberships, roles, permissions, sessions        | person display projection                      | HR profile/history                   |
-| Organization & People | affiliation, tenant, employee profile, job history, position | access grants                                  | session/credential                   |
-| Workforce             | shift, schedule, holiday, leave, official duty               | employee/workgroup, signer                     | employee master                      |
-| Inventory             | supply master, receipt, issue, movement, vendor, annual plan | workgroup/actor                                | finance actual without command/event |
-| Assets & Vehicles     | asset lifecycle, vehicle workflow                            | employee/tenant, finance categories            | inventory/employee master            |
-| Finance               | cycles, plan revisions, revenue/expense taxonomy, actuals    | organization, personnel/asset plan projections | stock ledger/asset register          |
-| Documents & Reports   | templates, report runs, snapshots                            | read models from all modules                   | source transactions                  |
-| Governance            | audit, outbox, notification, approval tasks                  | actor/resource metadata                        | domain state except through command  |
+| Module                | Owns                                                                                       | May read via API/projection                            | Must not mutate directly             |
+| --------------------- | ------------------------------------------------------------------------------------------ | ------------------------------------------------------ | ------------------------------------ |
+| Identity & Access     | identities, memberships, roles, permissions, sessions                                      | person display projection                              | HR profile/history                   |
+| Organization & People | affiliation, tenant, employee profile, job history, position                               | access grants                                          | session/credential                   |
+| Workforce             | shift, schedule, holiday, leave, official duty                                             | employee/workgroup, signer                             | employee master                      |
+| Allowance Calculation | ฉ.10/11 schemes, rule versions, periods, calculation runs, snapshots, results, adjustments | effective People data, approved leave, report renderer | People/Leave source records          |
+| Inventory             | supply master, receipt, issue, movement, vendor, annual plan                               | workgroup/actor                                        | finance actual without command/event |
+| Assets & Vehicles     | asset lifecycle, vehicle workflow                                                          | employee/tenant, finance categories                    | inventory/employee master            |
+| Finance               | cycles, plan revisions, revenue/expense taxonomy, actuals                                  | organization, personnel/asset plan projections         | stock ledger/asset register          |
+| Documents & Reports   | templates, report runs, snapshots                                                          | read models from all modules                           | source transactions                  |
+| Governance            | audit, outbox, notification, approval tasks                                                | actor/resource metadata                                | domain state except through command  |
 
 ### 16.4 Deployment evolution
 
-**MVP:** modular monolith + single relational database แยก schema per module + object storage + worker process. ใช้ transaction ภายในโมดูลและ outbox ข้ามโมดูล.
+**First production release:** modular monolith + single relational database แยก schema/module boundary + object storage + report worker. เปิดใช้เฉพาะ Platform, People/Organization, Leave, Allowance Calculation และ Reports ก่อน แล้วต่อ module อื่นเข้าภายหลัง. ใช้ transaction ภายในโมดูลและ outbox ข้ามโมดูล **[PROPOSED]**.
 
 **Scale-out triggers:** แยก Report/Import worker ก่อนเพราะ workload หนัก; แยก Notification/Integration ต่อมา; แยก transactional domain เฉพาะเมื่อ team ownership, scaling หรือ regulatory isolation ชัดเจน. ห้ามเริ่ม microservices เพียงเพราะมีหลายเมนู.
 
 ### 16.5 Multi-tenancy strategy
 
+- Capacity baseline คือ อบจ.ยะลา 1 แห่ง, รพ.สต. 38 แห่ง และบุคลากร 267 คน **[OWNER-CONFIRMED]**; การทดสอบ aggregation ต้อง seed ครบ baseline นี้.
+- Capacity headroom ที่เสนอสำหรับ design/load test คืออย่างน้อย 100 หน่วยงานและ 1,500–2,000 บัญชีโดยไม่เปลี่ยน architecture **[PROPOSED; ต้องเทียบแผนเติบโตจริง]**.
 - ทุก business row มี `affiliation_id` และ/หรือ `tenant_id` ตาม owner; foreign key ต้องสอดคล้อง scope.
 - Application sets authorized scope จาก session ไม่รับค่า tenant จาก query เพียงอย่างเดียว.
 - Repository/query policy เติม scope predicate อัตโนมัติ; integration test ตรวจ cross-scope.
@@ -1259,7 +1359,7 @@ flowchart TB
 ### 16.7 Environments and delivery
 
 - แยก dev/test/UAT/staging/production และแยกข้อมูล/credential จริง.
-- UAT ใช้ synthetic/de-identified data; seed scenarios ครอบคลุมหลายสังกัด ปีงบ และ state transitions.
+- UAT ใช้ synthetic/de-identified data; seed scenarios ครอบคลุม 1 สังกัด, 38 รพ.สต., บุคลากรประมาณ 267 คน, หลายปีงบ และ state transitions. เพิ่ม multi-affiliation test เฉพาะเมื่ออนุมัติเป็น future requirement.
 - Database migration forward-compatible; destructive migration สองช่วงและ backup verified.
 - CI: lint/unit/schema/contract/security/tenant-isolation/report golden tests.
 - CD: approval สำหรับ production, migration preview, automated smoke และ rollback/roll-forward plan.
@@ -1291,25 +1391,25 @@ voided_at, voided_by, void_reason -- แทน hard delete สำหรับข
 
 ### 17.2 Organization, people and access
 
-| Table                     | Key fields                                                                                                          | Constraints/notes                                      |
-| ------------------------- | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
-| `affiliations`            | id, name, department, logo_object_id, settings_version                                                              | base organization                                      |
-| `districts`               | id, affiliation_id, code, name, display_order                                                                       | unique code/order per affiliation                      |
-| `tenants`                 | id, affiliation_id, district_id, name, short_name, hosp_code, size_code, cup_code, address fields, active           | unique hosp_code; effective-dated if changed           |
-| `organization_order`      | affiliation_id, district_id, tenant_id, display_order                                                               | exactly one row per unit/order scope                   |
-| `persons`                 | id, prefix, first_name, last_name, national_id_ciphertext/blind_index, birth_date, gender, phone, email, address_id | PII classification; search projection masked           |
-| `employee_profiles`       | person_id, employee_type_id, default_position_id, active                                                            | profile separated from access                          |
-| `tenant_memberships`      | id, person_id, tenant_id, work_group_id, position_id, start_date, end_date, access_enabled                          | no overlapping primary employment unless policy allows |
-| `affiliation_memberships` | id, person_id, affiliation_id, source_tenant_membership_id, access_enabled                                          | shared person, no duplication                          |
-| `employment_history`      | person_id, organization_id, position, start_date, end_date, notes                                                   | effective-dated; supports ฉ.11                         |
-| `professional_licenses`   | person_id, license_type, license_no_ciphertext, issue_date, expiry_date                                             | expiry alert optional                                  |
-| `roles`                   | id, code, name, scope_type, system_defined                                                                          | STAFF/ADMIN seed but extensible                        |
-| `permissions`             | id, code, description, risk_level                                                                                   | action catalog                                         |
-| `role_permissions`        | role_id, permission_id, conditions_json                                                                             | reviewed/versioned                                     |
-| `membership_roles`        | membership_type/id, role_id, effective dates                                                                        | many-to-many if future roles expand                    |
-| `functional_assignments`  | organization_scope, function_code, person_id, start/end, priority                                                   | director, payer, procurement, signer, vehicle approver |
-| `identity_links`          | person_id, provider, subject, status, last_login_at                                                                 | provider subject unique                                |
-| `sessions`                | identity_id, session_hash, device, issued/expires/revoked, risk                                                     | no raw token stored                                    |
+| Table                     | Key fields                                                                                                                    | Constraints/notes                                                             |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| `affiliations`            | id, name, department, logo_object_id, settings_version                                                                        | base organization                                                             |
+| `districts`               | id, affiliation_id, code, name, display_order                                                                                 | unique code/order per affiliation                                             |
+| `tenants`                 | id, affiliation_id, district_id, name, short_name, hosp_code, size_code, cup_code, address fields, active                     | unique hosp_code; effective-dated if changed                                  |
+| `organization_order`      | affiliation_id, district_id, tenant_id, display_order                                                                         | exactly one row per unit/order scope                                          |
+| `persons`                 | id, prefix, first_name, last_name, national_id_ciphertext/blind_index, birth_date, gender, phone, email, address_id           | PII classification; search projection masked                                  |
+| `employee_profiles`       | person_id, active, profile metadata                                                                                           | person-level employment profile separated from organization assignment/access |
+| `tenant_memberships`      | id, person_id, tenant_id, work_group_id, position_id, employee_type_id, start_date, end_date, membership_type, access_enabled | effective-dated; no overlapping primary employment unless policy allows       |
+| `affiliation_memberships` | id, person_id, affiliation_id, source_tenant_membership_id, access_enabled                                                    | shared person, no duplication                                                 |
+| `employment_history`      | person_id, organization_id, position, start_date, end_date, notes                                                             | effective-dated; supports ฉ.11                                                |
+| `professional_licenses`   | person_id, license_type, license_no_ciphertext, issue_date, expiry_date                                                       | expiry alert optional                                                         |
+| `roles`                   | id, code, name, scope_type, system_defined                                                                                    | STAFF/ADMIN seed but extensible                                               |
+| `permissions`             | id, code, description, risk_level                                                                                             | action catalog                                                                |
+| `role_permissions`        | role_id, permission_id, conditions_json                                                                                       | reviewed/versioned                                                            |
+| `membership_roles`        | membership_type/id, role_id, effective dates                                                                                  | many-to-many if future roles expand                                           |
+| `functional_assignments`  | organization_scope, function_code, person_id, start/end, priority                                                             | director, payer, procurement, signer, vehicle approver                        |
+| `identity_links`          | person_id, provider, subject, status, last_login_at                                                                           | provider subject unique                                                       |
+| `sessions`                | identity_id, session_hash, device, issued/expires/revoked, risk                                                               | no raw token stored                                                           |
 
 ### 17.3 Workforce
 
@@ -1329,7 +1429,30 @@ voided_at, voided_by, void_reason -- แทน hard delete สำหรับข
 | `official_duty_companions` | request_id, person_id                                                                               | unique pair                                    |
 | `official_duty_approvals`  | request_id, step_no, decision fields                                                                | if workflow confirmed                          |
 
-### 17.4 Inventory
+### 17.4 Allowance Calculation — ฉ.10/11
+
+ตารางกลุ่มนี้เป็น proposed model สำหรับ first production domain; ชื่อทางการของ scheme และสูตรต้องแทนที่ placeholder หลัง Rulebook ได้รับอนุมัติ **[OPEN]**.
+
+| Table                         | Key fields                                                                                                                                         | Constraints/notes                                                      |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| `allowance_schemes`           | id, code (`CHOR10`/`CHOR11` placeholder), official_name, description, active                                                                       | code/name ต้องยืนยันจากเอกสารทางการ                                    |
+| `allowance_periods`           | id, tenant_id, scheme_id, fiscal_year_id, period_start, period_end, cutoff_at, status                                                              | unique tenant/scheme/period; calendar rule versioned                   |
+| `calculation_rule_versions`   | id, affiliation_id, scheme_id, version, effective_from/to, rule_definition, approved_by/at, status                                                 | immutable เมื่อ published; formula/config ต้องตรวจสอบได้               |
+| `calculation_runs`            | id, allowance_period_id, rule_version_id, run_no, status, source_cutoff_at, calculated/reviewed/confirmed/locked by/at, supersedes_run_id, version | state: DRAFT→CALCULATED→REVIEWED→CONFIRMED→LOCKED; unique run sequence |
+| `calculation_input_snapshots` | id, run_id, person_id, membership_snapshot, employment_snapshot, leave_snapshot/source_refs, source_hash, captured_at                              | immutable; เก็บข้อมูลเท่าที่จำเป็นและ hash สำหรับตรวจซ้ำ               |
+| `allowance_results`           | id, run_id, person_id, membership_id_snapshot, allowance_type, eligible_amount, deduction_amount, final_amount, calculation_details, result_hash   | unique run/person/type; fixed decimal; immutable after lock            |
+| `calculation_reviews`         | id, run_id, reviewer_id, decision, comment, reviewed_at                                                                                            | append-only review history                                             |
+| `calculation_adjustments`     | id, original_result_id, adjustment_period_id, amount_delta, reason_code, reason, requested/approved by/at, status                                  | ห้ามแก้ original result; audit ทุก transition                          |
+| `calculation_run_reports`     | run_id, report_run_id, format, template_version, artifact_checksum                                                                                 | Excel/PDF ต้องย้อนกลับสู่ run เดิมได้                                  |
+
+ข้อกำหนดสำคัญ:
+
+- `calculation_runs` ไม่ควรถือ live query เป็นผลลัพธ์สุดท้าย; ต้องมี snapshot/reference ที่ immutable.
+- `rule_definition` อาจใช้ DSL/config ที่ตรวจได้ แต่ห้ามฝังสูตรสำคัญเฉพาะใน UI หรือ spreadsheet.
+- การ regenerate รายงานจาก run ที่ล็อกต้องให้ตัวเลขเดิม; หาก template ใหม่ ให้สร้าง artifact version ใหม่แต่ไม่เปลี่ยน results.
+- ข้อมูลลาหลัง cutoff ต้องเข้าสู่ adjustment/revision ตาม policy ที่ยังต้องยืนยัน.
+
+### 17.5 Inventory
 
 | Table                     | Key fields                                                                                              | Constraints/notes                   |
 | ------------------------- | ------------------------------------------------------------------------------------------------------- | ----------------------------------- |
@@ -1348,7 +1471,7 @@ voided_at, voided_by, void_reason -- แทน hard delete สำหรับข
 | `annual_issue_plans`      | tenant_id, fiscal_year, work_group_id, revision_no, status, locked_at, supersedes_id                    | never require hard delete to revise |
 | `annual_issue_plan_lines` | plan_id, supply_item_id, planned_qty, issued_qty_projection                                             | unique plan/item                    |
 
-### 17.5 Assets and vehicles
+### 17.6 Assets and vehicles
 
 | Table                                 | Key fields                                                                                                                                                       | Constraints/notes                                                    |
 | ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
@@ -1369,7 +1492,7 @@ voided_at, voided_by, void_reason -- แทน hard delete สำหรับข
 | `accident_parties/injuries/witnesses` | accident_id, structured person/contact/detail fields                                                                                                             | repeatable children; retention policy                                |
 | `vehicle_maintenance`                 | vehicle_id, mileage, items, amount, accepted_date, vendor/place, note                                                                                            | may link asset repair/finance actual                                 |
 
-### 17.6 Finance
+### 17.7 Finance
 
 | Table                     | Key fields                                                                                                                      | Constraints/notes                       |
 | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
@@ -1387,25 +1510,27 @@ voided_at, voided_by, void_reason -- แทน hard delete สำหรับข
 | `financial_adjustments`   | source_type/id, old/new amount, reason, approved_by, effective_at                                                               | no silent overwrite                     |
 | `price_sources`           | affiliation_id, name, reference, effective dates                                                                                | observed master endpoint                |
 
-### 17.7 Documents, files and governance
+### 17.8 Documents, files and governance
 
-| Table                 | Key fields                                                                                                                             | Constraints/notes                    |
-| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ |
-| `report_definitions`  | code, name, version, template_object_id, parameter_schema, active                                                                      | immutable published versions         |
-| `report_runs`         | definition_id/version, organization scope, requested_by, parameters_json, data_snapshot_ref/hash, status, output_object_id, expires_at | reproducible and auditable           |
-| `signature_snapshots` | report_run_id, function_code, person_display, title_display, signature_object_hash                                                     | copy-on-generate                     |
-| `attachments`         | owner_type/id, object_key, mime, size, checksum, classification, scan_status                                                           | signed access                        |
-| `announcements`       | affiliation_id, message, active, activated_at, created_by                                                                              | partial unique index for one active  |
-| `employee_transfers`  | person_id, affiliation_id, source_tenant_id, destination_tenant_id, effective_date, request_type, status, reason                       | state machine                        |
-| `transfer_approvals`  | transfer_id, approver_id, decision, comment, at                                                                                        | immutable                            |
-| `audit_events`        | fields in 14.2                                                                                                                         | append-only/partitioned              |
-| `outbox_events`       | aggregate, event_type, payload_version, occurred/published, attempts                                                                   | transactional                        |
-| `notifications`       | recipient, channel, template, status, attempts, provider_ref                                                                           | no sensitive payload in provider log |
+| Table                 | Key fields                                                                                                                             | Constraints/notes                                               |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| `report_definitions`  | code, name, version, template_object_id, parameter_schema, active                                                                      | immutable published versions                                    |
+| `report_runs`         | definition_id/version, organization scope, requested_by, parameters_json, data_snapshot_ref/hash, status, output_object_id, expires_at | reproducible and auditable                                      |
+| `report_artifacts`    | report_run_id, format, object_key, checksum, size, generated_at, retention_class                                                       | one run may have XLSX/PDF variants; immutable artifact metadata |
+| `signature_snapshots` | report_run_id, function_code, person_display, title_display, signature_object_hash                                                     | copy-on-generate                                                |
+| `attachments`         | owner_type/id, object_key, mime, size, checksum, classification, scan_status                                                           | signed access                                                   |
+| `announcements`       | affiliation_id, message, active, activated_at, created_by                                                                              | partial unique index for one active                             |
+| `employee_transfers`  | person_id, affiliation_id, source_tenant_id, destination_tenant_id, effective_date, request_type, status, reason                       | state machine                                                   |
+| `transfer_approvals`  | transfer_id, approver_id, decision, comment, at                                                                                        | immutable                                                       |
+| `audit_events`        | fields in 14.2                                                                                                                         | append-only/partitioned                                         |
+| `outbox_events`       | aggregate, event_type, payload_version, occurred/published, attempts                                                                   | transactional                                                   |
+| `notifications`       | recipient, channel, template, status, attempts, provider_ref                                                                           | no sensitive payload in provider log                            |
 
-### 17.8 Critical constraints and indexes
+### 17.9 Critical constraints and indexes
 
 - Composite indexes เริ่มด้วย `tenant_id`/`affiliation_id` สำหรับทุก list/report path.
 - Partial unique: announcement active หนึ่งรายการต่อสังกัด; open primary membership ตาม policy; one disposal per asset.
+- Partial/unique: calculation run sequence ต่อ period, result ต่อ run/person/type และห้ามแก้ผลเมื่อ run locked.
 - Exclusion/validation for overlapping vehicle bookings and optionally employee leave/shift.
 - Check constraints: date order, positive quantity, nonnegative money/mileage, fiscal month 1–12.
 - Foreign key ต้องป้องกัน cross-tenant reference; ใช้ composite FK หรือ trigger/policy เมื่อ DB ไม่รองรับตรง.
@@ -1467,6 +1592,28 @@ GET    /v1/employees/{employeeId}/leave-balance?year=
 POST   /v1/tenants/{tenantId}/official-duty-requests
 POST   /v1/official-duty-requests/{id}:approve
 ```
+
+**Allowance calculation — ฉ.10/11**
+
+```http
+GET    /v1/allowance-schemes
+GET    /v1/affiliations/{affiliationId}/allowance-rule-versions?scheme=&effectiveAt=
+POST   /v1/affiliations/{affiliationId}/allowance-rule-versions
+GET    /v1/tenants/{tenantId}/allowance-periods?fiscalYear=&scheme=
+POST   /v1/tenants/{tenantId}/allowance-periods
+POST   /v1/allowance-periods/{periodId}/calculation-runs
+POST   /v1/calculation-runs/{runId}:calculate
+POST   /v1/calculation-runs/{runId}:review
+POST   /v1/calculation-runs/{runId}:confirm
+POST   /v1/calculation-runs/{runId}:lock
+GET    /v1/calculation-runs/{runId}/inputs
+GET    /v1/calculation-runs/{runId}/results
+POST   /v1/calculation-runs/{runId}/adjustments
+POST   /v1/calculation-runs/{runId}/reports
+GET    /v1/calculation-runs/{runId}/reports/{reportId}/download
+```
+
+ทุก command ต้องตรวจ state/version/idempotency และ permission; endpoint `calculate` ต้องบันทึก rule version, cutoff และ source hash. `lock` ต้องห้าม mutation ต่อ inputs/results และ `adjustments` ต้องสร้างผลต่างแยกจาก original **[PROPOSED]**.
 
 **Inventory**
 
@@ -1561,13 +1708,13 @@ If-Match: "4"
 
 ```json
 {
-    "data": {
-        "id": "01J...",
-        "status": "APPROVED",
-        "version": 5,
-        "approvedAt": "2026-08-10T03:15:00Z"
-    },
-    "requestId": "req_..."
+  "data": {
+    "id": "01J...",
+    "status": "APPROVED",
+    "version": 5,
+    "approvedAt": "2026-08-10T03:15:00Z"
+  },
+  "requestId": "req_..."
 }
 ```
 
@@ -1575,13 +1722,13 @@ If-Match: "4"
 
 ```json
 {
-    "type": "https://example.invalid/problems/invalid-transition",
-    "title": "Invalid state transition",
-    "status": 409,
-    "code": "LEAVE_NOT_PENDING",
-    "detail": "Only a pending request can be approved.",
-    "fields": [],
-    "requestId": "req_..."
+  "type": "https://example.invalid/problems/invalid-transition",
+  "title": "Invalid state transition",
+  "status": 409,
+  "code": "LEAVE_NOT_PENDING",
+  "detail": "Only a pending request can be approved.",
+  "fields": [],
+  "requestId": "req_..."
 }
 ```
 
@@ -1601,6 +1748,10 @@ Event ที่ควร publish หลัง commit:
 ```text
 EmployeeTransferred.v1
 LeaveRequestApproved.v1
+AllowanceCalculationCompleted.v1
+AllowanceCalculationReviewed.v1
+AllowanceCalculationLocked.v1
+AllowanceAdjustmentApproved.v1
 OfficialDutyApproved.v1
 SchedulePublished.v1
 StockReceiptPosted.v1
@@ -1623,25 +1774,27 @@ Event payload ส่งเพียง ID, scope, version และข้อม�
 
 ### 19.1 Work packages
 
-| Module                     | Scope                                                                          | Key deliverables                                         | Dependencies         |
-| -------------------------- | ------------------------------------------------------------------------------ | -------------------------------------------------------- | -------------------- |
-| M1 Platform Foundation     | org scope, IAM, session, role/policy, audit, files, notification skeleton      | secure shell, scope switch, permission SDK, audit viewer | none                 |
-| M2 Organization & People   | affiliation/tenant, employee, job/license, access grants, org order            | directory, forms, effective history, transfer foundation | M1                   |
-| M3 Workforce               | shifts, schedules, holidays, leave, official duty                              | monthly matrix, quotas, workflows, print inputs          | M1–M2                |
-| M4 Documents & Reporting   | templates, report runs, PDF/Excel, signer snapshots                            | preview/download, 17 report families phased              | M1 + read models     |
-| M5 Inventory               | supplies, vendors, receipt, issue, ledger, annual plan                         | immutable movement, balances, reports                    | M1–M2, M4            |
-| M6 Assets                  | asset/land lifecycle, depreciation, disposal, repair/custodian/benefit         | พ.ด.1/พ.ด.2 registers                                    | M1–M2, M4            |
-| M7 Vehicles                | registry, asset link, authorizations, requests, usages, accidents, maintenance | forms 2–6, calendar/conflict                             | M1–M2, M6, M4        |
-| M8 Finance                 | master taxonomy, cycles, plans, actuals, comparisons, aggregate                | tenant and affiliation dashboards/reports                | M1–M2, M4            |
-| M9 Integration & Migration | import, external adapters, reconciliation                                      | templates, staging, sync/outbox ops                      | all relevant modules |
-| M10 Quality & Operations   | observability, security, performance, DR, accessibility                        | dashboards, runbooks, test harness                       | continuous           |
+| Module                      | Scope                                                                                      | Key deliverables                                                        | Dependencies           |
+| --------------------------- | ------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------- | ---------------------- |
+| M1 Platform Foundation      | org scope, IAM, session, role/policy, audit, files, notification skeleton                  | secure shell, scope switch, permission SDK, audit viewer                | none                   |
+| M2 Organization & People    | affiliation/tenant, employee, job/license, access grants, org order                        | directory, forms, effective history, transfer foundation                | M1                     |
+| M3 Workforce                | leave first; shifts, holidays and official duty phased later                               | leave policy/balance/request/approval/cancel; later monthly matrix/duty | M1–M2                  |
+| M4 Allowance Calculation    | ฉ.10/11 schemes, rule versions, periods, calculation runs, snapshots, results, adjustments | reproducible monthly calculation and locked results                     | M1–M3                  |
+| M5 Documents & Reporting    | templates, report runs, XLSX/PDF, artifacts, signer snapshots                              | first: Leave + ฉ.10/11 Excel; 17 observed report families phased later  | M1 + M2–M4 read models |
+| M6 Inventory                | supplies, vendors, receipt, issue, ledger, annual plan                                     | immutable movement, balances, reports                                   | M1–M2, M5              |
+| M7 Assets                   | asset/land lifecycle, depreciation, disposal, repair/custodian/benefit                     | พ.ด.1/พ.ด.2 registers                                                   | M1–M2, M5              |
+| M8 Vehicles                 | registry, asset link, authorizations, requests, usages, accidents, maintenance             | forms 2–6, calendar/conflict                                            | M1–M2, M7, M5          |
+| M9 Finance                  | master taxonomy, cycles, plans, actuals, comparisons, aggregate                            | tenant and affiliation dashboards/reports                               | M1–M2, M5              |
+| M10 Integration & Migration | import, external adapters, reconciliation                                                  | templates, staging, sync/outbox ops                                     | all relevant modules   |
+| M11 Quality & Operations    | observability, security, performance, DR, accessibility                                    | dashboards, runbooks, test harness                                      | continuous             |
 
 ### 19.2 Recommended team topology
 
 - Platform/Security team owns M1, common libraries, policy and delivery platform.
-- People & Workforce team owns M2–M3.
-- Resource Operations team owns M5–M7.
-- Finance & Reporting team owns M4/M8 with domain experts.
+- People/Leave/Allowance team owns M2–M4 for first production release.
+- Reporting capability owner works with M5 and domain experts; first priority is reproducible ฉ.10/11 Excel.
+- Resource Operations team owns M6–M8 after pilot.
+- Finance team owns M9 while starting rule/report discovery early.
 - Enabling QA/Data team owns migration test data, report golden masters, tenant isolation and performance.
 
 ถ้าทีมเล็ก ให้ใช้ code ownership ภายใน monorepo/module แทนสร้างหลายทีม/หลาย service.
@@ -1667,91 +1820,97 @@ Event payload ส่งเพียง ID, scope, version และข้อม�
 
 ### 20.1 MVP goal
 
-ให้หน่วยงานและสังกัดทำงานหลักแบบ end-to-end ได้อย่างปลอดภัย พร้อมข้อมูลร่วม เอกสารสำคัญ และ audit โดยยังไม่ต้องเทียบทุกช่อง/รายงานกับระบบอ้างอิงครบ 100%.
+สร้าง Core Personnel Platform ที่ถูกต้อง แล้วเปิดใช้ระบบลา + การคำนวณ ฉ.10/11 + Excel/Report เป็น first production workflow สำหรับ รพ.สต. แบบ incremental โดยยังไม่สร้าง One Data System ทุกโมดูลพร้อมกัน **[OWNER-CONFIRMED DIRECTION + PROPOSED DELIVERY PLAN]**.
 
 ### 20.2 In scope
 
-**Foundation**
+**Release 0 — Core Foundation**
 
-- Authentication, session, MFA สำหรับ admin, affiliation/tenant switch.
-- STAFF/ADMIN seed roles + granular permissions ฝั่ง server.
-- audit append-only, attachment service, organization settings และ functional signers.
+- อบจ.ยะลา/รพ.สต. และ workspace/scope model.
+- Person, EmployeeProfile, UserIdentity, Tenant/Affiliation Membership.
+- effective-dated Employment History, Position, Workgroup, Employee Type และ Professional License เท่าที่จำเป็นต่อ Release 1.
+- Authentication/session และ baseline role/permission ที่บังคับฝั่ง server.
+- functional assignment ขั้นต้นสำหรับผู้ตรวจ/ผู้อนุมัติ/ผู้ลงนาม.
+- append-only audit, secure file/artifact storage และ fiscal/calculation period.
+- seed/migration framework สำหรับ 38 รพ.สต. และบุคลากร 267 คน.
 
-**People**
+**Release 1 — First Production Modules**
 
-- หน่วยงาน/สังกัด, employee profile, membership, position/workgroup/type, employment history/license.
-- directory, active/inactive, grant/revoke affiliation access.
-- direct/request transfer พร้อม effective history.
+- Leave types/policies/balance, request, approval/reject/cancel และประวัติ.
+- ฉ.10/11 scheme/rule version เมื่อ Rulebook ได้รับอนุมัติ.
+- Allowance period และ Calculation Run.
+- input/person/membership/employment/leave snapshots หรือ immutable references.
+- results, review, confirm, lock และ revision/adjustment.
+- Excel report จาก locked calculation run; ดาวน์โหลดซ้ำได้ตรงเดิม.
+- basic leave/allowance dashboard, audit timeline และ reconciliation report.
 
-**Workforce**
+**Pilot rollout**
 
-- shift types, schedule monthly matrix, totals.
-- holiday calendar.
-- leave policies/balance/request/approval/cancel.
-- official duty request และเอกสารพื้นฐาน.
-
-**Inventory**
-
-- supply/vendor master, receipt/post, issue/post, ledger/balance.
-- annual issue plan แบบ draft/lock/supersede.
-- stock remaining/ledger report.
-
-**Assets & vehicles**
-
-- asset/land register, depreciation baseline, repair/custodian, disposal.
-- vehicle register + mandatory/assisted asset link policy, authorized users, request/approve/usage/maintenance; accident basic.
-
-**Finance**
-
-- fiscal year, revenue items, expense categories.
-- BASE cycle open/close, tenant plan, lock.
-- monthly income/expense actuals, plan vs actual, tenant/affiliation summary.
-
-**Documents**
-
-- report engine + signer snapshot.
-- first-wave: ตารางเวร, ใบลา/ไปราชการ, stock ledger/remaining, asset/vehicle registers, finance summary.
-- PDF/print and selected XLSX.
+- รพ.สต. ขนาดใหญ่ 1 แห่ง, ขนาดกลาง 1 แห่ง และขนาดเล็ก 1 แห่ง.
+- ใช้ข้อมูลจริงเฉพาะหลัง migration rehearsal, PDPA/security sign-off และ UAT.
+- rollout แบบ `3 → 10 → 38 รพ.สต.` เมื่อผ่าน exit criteria แต่ละช่วง.
 
 ### 20.3 Out of scope for first release
 
-- ทุก variant ของ OT/ฉ.11/รายงานรวมที่ยังไม่มีสูตรรับรอง.
+- ตารางเวร/OT, ไปราชการ และรายงานที่ไม่จำเป็นต่อ Leave + ฉ.10/11 first workflow.
+- Inventory, Assets, Vehicles และ Finance planning/actuals.
+- รายงาน One Data System ทั้ง 17 แบบนอกเหนือจากแบบที่ต้องใช้ใน first workflow.
+- สูตรหรือ template ฉ.10/11 ที่ยังไม่ได้รับรอง; ห้าม implement จากการคาดเดา.
 - mobile native app, offline-first, public API marketplace.
 - advanced forecasting/AI, OCR, automated bank/accounting integration.
 - highly configurable workflow designer.
 - multi-language beyond Thai/technical English labels.
+- Clinical/patient/HDC data จนกว่าจะมีการตัดสิน System Boundary และ security/privacy review.
 
 ### 20.4 MVP acceptance gates
 
-- UAT end-to-end อย่างน้อย 2 สังกัด, 3 หน่วยงาน, 4 roles/policy profiles.
+- Target baseline ถูกต้อง: อบจ.ยะลา 1 แห่ง, รพ.สต. 38 แห่ง และบุคลากร 267 คน ณ migration cutoff พร้อม reconciliation ที่เจ้าของข้อมูลลงนาม.
+- UAT end-to-end อย่างน้อย 3 รพ.สต. ขนาดใหญ่/กลาง/เล็ก และ role/policy profiles ที่ได้รับอนุมัติ.
 - ไม่มี cross-tenant data leakage ใน automated suite/penetration test.
-- Stock ledger reconcile 100%; plan/actual totals match approved golden cases.
-- Report golden-master ผ่านทุกฟอนต์/page break/signature placement ที่รับรอง.
+- Leave balance/day counting และ approval/cancel ผ่าน golden cases/edge cases ที่ฝ่ายงานรับรอง.
+- ผลคำนวณ ฉ.10/11 ตรงกับ approved examples 100% ตาม tolerance/rounding ที่ระบุ.
+- Locked calculation run ไม่เปลี่ยนเมื่อแก้ข้อมูลบุคลากร การสังกัด ประวัติการจ้าง หรือใบลาภายหลัง.
+- Adjustment/revision ย้อนรอยถึง original result และไม่แก้ประวัติเดิม.
+- Excel golden-master ผ่านคอลัมน์ สูตรรวม ลำดับ รูปแบบ ฟอนต์ และ checksum; ดาวน์โหลดซ้ำจาก run เดิมให้ผลเหมือนเดิม.
+- Seed/load test ครบ 38 รพ.สต. และประมาณ 267 คน รวม aggregate report และช่วงปิดรอบ.
 - Restore drill สำเร็จตาม RPO/RTO ที่ตกลง.
 - Zero open critical/high security issue; medium มี risk acceptance/plan.
 - Accessibility critical path ผ่าน WCAG 2.2 AA audit.
 - Migration rehearsal อย่างน้อย 2 รอบและ reconciliation signed off.
 
+### 20.5 Pilot exit criteria
+
+- ใช้งานครบรอบคำนวณจริงอย่างน้อยหนึ่งรอบโดยไม่มี discrepancy ที่ยังหาสาเหตุไม่ได้.
+- ไม่มี defect ระดับ critical/high ที่เปิดค้าง; business-rule defect มี decision owner และ regression test.
+- ผู้ใช้แต่ละขนาด รพ.สต. ทำ critical tasks สำเร็จตาม usability target ที่ตกลง.
+- Support, backup, incident, correction และ rollback runbook ผ่านการซ้อม.
+- Product owner, HR/ผู้รับผิดชอบการลา, เจ้าของสูตร ฉ.10/11, การเงิน/ผู้ตรวจ และ security/PDPA ลงนาม go/no-go.
+
 ---
 
 ## 21. Phase 2 / Future Features
 
-1. รายงาน OT/ฉ.11/ฉ.5 และเอกสารราชการครบชุดพร้อม template versioning advanced.
-2. แผนเพิ่มเติม/เปลี่ยนแปลง การเปรียบเทียบ revision และ approval หลายชั้น.
-3. Bulk import/export center, scheduled exports และ migration self-service.
-4. Notification orchestration ผ่าน push/email/Line/SMS พร้อม preference/escalation.
-5. Mobile/PWA สำหรับขอลา ขอรถ รับ/คืนรถ ถ่ายภาพเลขไมล์ และอนุมัติ.
-6. Barcode/QR สำหรับวัสดุ/ครุภัณฑ์, mobile stock count, cycle count และ reconciliation.
-7. Lot/expiry/serial tracking และ stock reservation/approval ถ้าธุรกิจต้องใช้.
-8. Preventive maintenance ตามเวลา/เลขไมล์, service reminder และ total cost of ownership.
-9. Asset survey ประจำปีผ่าน mobile, geotag และ duplicate detection.
-10. Advanced HR: license expiry, workforce planning, replacement and competency.
-11. Data warehouse/BI semantic layer พร้อม KPI dictionary และ cross-year trends.
-12. External API/webhook + SSO/HR/e-Saraban/accounting connectors.
-13. Workflow/rule configuration ต่อสังกัด โดยมี guardrail/version/test sandbox.
-14. Digital signature ที่สอดคล้องกฎหมาย/PKI หากต้องการ มากกว่าภาพลายเซ็น.
-15. Archival/records management, retention automation, legal hold และ e-discovery.
-16. Anomaly detection: stock variance, plan overspend, duplicate asset/vehicle, unusual bulk export โดยมี human review.
+Roadmap หลัง First Production Release **[PROPOSED; reprioritize ตามผล pilot]**:
+
+1. **Release 2 — Workforce Expansion:** ตารางเวร วันหยุด ไปราชการ/อบรม OT และรายงานที่เชื่อมค่าตอบแทน.
+2. **Release 3 — Vehicles:** ทะเบียนรถ ผู้มีสิทธิ์ คำขอ/อนุมัติ usage/mileage อุบัติเหตุ ซ่อม และแบบ 2–6. หากรถต้องเชื่อมครุภัณฑ์ ให้สร้าง minimum asset registry เป็น dependency.
+3. **Release 4 — Inventory:** วัสดุ ร้านค้า รับเข้า เบิก ledger/balance แผนประจำปี และรายงานคงเหลือ.
+4. **Release 5 — Assets:** พ.ด.1/พ.ด.2 ค่าเสื่อม ผู้รับผิดชอบ ซ่อม ประโยชน์ และจำหน่าย.
+5. **Release 6 — Finance:** master/cycle, BASE/เพิ่มเติม/เปลี่ยนแปลง, แผน ผลจริง เทียบแผน dashboard และรายงานรวม.
+6. **Release 7 — Advanced Reporting & Integration:** รายงานราชการครบชุด, bulk import/export, API/webhook, SSO/HR/e-Saraban/accounting connectors และ analytics.
+
+Future enhancements ที่ไม่ผูกกับ release จนกว่าจะมี business case:
+
+- Notification orchestration ผ่าน in-app/push/email/Line/SMS พร้อม preference/escalation.
+- Mobile/PWA สำหรับขอลา ขอรถ รับ/คืนรถ ถ่ายภาพเลขไมล์ และอนุมัติ.
+- Barcode/QR, mobile stock count, lot/expiry/serial tracking และ reconciliation.
+- Preventive maintenance ตามเวลา/เลขไมล์, asset survey, geotag และ duplicate detection.
+- Advanced HR: license expiry, workforce planning, replacement and competency.
+- Data warehouse/BI semantic layer พร้อม KPI dictionary และ cross-year trends.
+- Workflow/rule configuration ต่อสังกัด โดยมี guardrail/version/test sandbox.
+- Digital signature ที่สอดคล้องกฎหมาย/PKI หากต้องการ มากกว่าภาพลายเซ็น.
+- Archival/records management, retention automation, legal hold และ e-discovery.
+- Anomaly detection โดยมี human review.
 
 ทุก future feature ต้องเริ่มจาก business owner, data classification และ success metric ไม่ควรเพิ่มเพียงเพราะระบบอ้างอิงมีช่องให้กรอก.
 
@@ -1800,35 +1959,57 @@ Event payload ส่งเพียง ID, scope, version และข้อม�
 - Preserve source/destination history transactionally.
 - Add access grant/revoke and transfer audit.
 
-### Epic E03 — Schedule, leave and official duty
+### Epic E03 — Leave-first workforce
 
 **Features**
 
-- E03-F1 Shift master with per-shift/per-hour compensation
-- E03-F2 Monthly schedule matrix and inspector
-- E03-F3 Holiday source/calendar
-- E03-F4 Leave policies, balances and requests
-- E03-F5 Approval task and document
-- E03-F6 Official duty/training request and companions
+- E03-F1 Leave policy/rule catalog and effective dates
+- E03-F2 Leave balances/reservation ledger
+- E03-F3 Request, approval, reject, cancel and correction
+- E03-F4 Holiday/day-counting source
+- E03-F5 Leave document/report inputs
+- E03-F6 Shift/official duty extension after pilot
 
 **Representative tasks**
 
 - Workshop all 11 leave policies and day-counting examples.
 - Implement date/overlap/quota reservation engine.
-- Add optimistic cell updates and schedule totals.
 - Define approval assignment fallback/acting director.
-- Golden-test leave/official duty documents.
+- Golden-test leave documents and every rule edge case.
 - Add cancel/reversal handling that restores balance.
+- Defer shift matrix/official duty coding until first production workflow is stable.
 
-### Epic E04 — Reporting and documents
+### Epic E04 — ฉ.10/11 allowance calculation
 
 **Features**
 
-- E04-F1 Versioned report definitions
-- E04-F2 Async render/preview/download
-- E04-F3 Signer and data snapshots
-- E04-F4 PDF/print and XLSX framework
-- E04-F5 Report access/audit/retention
+- E04-F1 Scheme and calculation-rule versioning
+- E04-F2 Allowance periods and cutoff
+- E04-F3 Calculation run/input snapshots
+- E04-F4 Per-person results and calculation explanation
+- E04-F5 Review, confirm and lock
+- E04-F6 Revision/adjustment and reconciliation
+
+**Representative tasks**
+
+- Obtain official names, regulations, formulas and approved examples for ฉ.10/11.
+- Define eligibility, leave impact, partial-period, rounding and cutoff rules.
+- Build deterministic calculation engine with published rule version.
+- Snapshot person/membership/employment/leave inputs and source hash.
+- Implement DRAFT→CALCULATED→REVIEWED→CONFIRMED→LOCKED guards.
+- Add adjustment flow that never mutates locked original results.
+- Golden-test every approved calculation example and retrospective correction.
+
+### Epic E05 — Reporting and documents
+
+**Features**
+
+- E05-F1 Versioned report definitions
+- E05-F2 Async render/preview/download
+- E05-F3 Signer and data snapshots
+- E05-F4 XLSX/PDF artifact framework
+- E05-F5 Report access/audit/retention
+- E05-F6 Calculation-run report reproducibility
 
 **Representative tasks**
 
@@ -1838,17 +2019,18 @@ Event payload ส่งเพียง ID, scope, version และข้อม�
 - Prevent spreadsheet formula injection.
 - Implement report job retry, expiry and regeneration policy.
 - Build report diff tests across template versions.
+- Verify repeated download from one locked run yields identical content/checksum under the approved policy.
 
-### Epic E05 — Inventory
+### Epic E06 — Inventory
 
 **Features**
 
-- E05-F1 Supply/vendor/unit/location master
-- E05-F2 Receipt and posting
-- E05-F3 Issue and posting
-- E05-F4 Movement ledger/balance/reconciliation
-- E05-F5 Annual issue plan revision/lock
-- E05-F6 Stock reports
+- E06-F1 Supply/vendor/unit/location master
+- E06-F2 Receipt and posting
+- E06-F3 Issue and posting
+- E06-F4 Movement ledger/balance/reconciliation
+- E06-F5 Annual issue plan revision/lock
+- E06-F6 Stock reports
 
 **Representative tasks**
 
@@ -1859,15 +2041,15 @@ Event payload ส่งเพียง ID, scope, version และข้อม�
 - Replace delete-to-edit with superseding revision.
 - Golden-test opening/receipt/issue/balance values.
 
-### Epic E06 — Assets and land/buildings
+### Epic E07 — Assets and land/buildings
 
 **Features**
 
-- E06-F1 พ.ด.1/พ.ด.2 register
-- E06-F2 Asset code generator
-- E06-F3 Depreciation engine
-- E06-F4 Custodian/benefit/repair histories
-- E06-F5 Disposal workflow
+- E07-F1 พ.ด.1/พ.ด.2 register
+- E07-F2 Asset code generator
+- E07-F3 Depreciation engine
+- E07-F4 Custodian/benefit/repair histories
+- E07-F5 Disposal workflow
 
 **Representative tasks**
 
@@ -1878,16 +2060,16 @@ Event payload ส่งเพียง ID, scope, version และข้อม�
 - Build asset duplicate search by serial/registration/code.
 - Golden-test registers and depreciation schedule.
 
-### Epic E07 — Vehicles
+### Epic E08 — Vehicles
 
 **Features**
 
-- E07-F1 Vehicle registry and asset link
-- E07-F2 Authorized users
-- E07-F3 Request/approval/calendar conflict
-- E07-F4 Usage and mileage
-- E07-F5 Accident and maintenance
-- E07-F6 Forms 2–6/monthly report
+- E08-F1 Vehicle registry and asset link
+- E08-F2 Authorized users
+- E08-F3 Request/approval/calendar conflict
+- E08-F4 Usage and mileage
+- E08-F5 Accident and maintenance
+- E08-F6 Forms 2–6/monthly report
 
 **Representative tasks**
 
@@ -1898,16 +2080,16 @@ Event payload ส่งเพียง ID, scope, version และข้อม�
 - Classify/secure accident PII.
 - Add service reminder hooks and report golden tests.
 
-### Epic E08 — Finance planning and actuals
+### Epic E09 — Finance planning and actuals
 
 **Features**
 
-- E08-F1 Fiscal calendar/revenue/expense master
-- E08-F2 BASE planning cycle open/close
-- E08-F3 Tenant plan and lock
-- E08-F4 Monthly actual income/expense
-- E08-F5 Plan-vs-actual dashboards
-- E08-F6 Affiliation aggregate/reports
+- E09-F1 Fiscal calendar/revenue/expense master
+- E09-F2 BASE planning cycle open/close
+- E09-F3 Tenant plan and lock
+- E09-F4 Monthly actual income/expense
+- E09-F5 Plan-vs-actual dashboards
+- E09-F6 Affiliation aggregate/reports
 
 **Representative tasks**
 
@@ -1918,14 +2100,14 @@ Event payload ส่งเพียง ID, scope, version และข้อม�
 - Implement zero-denominator/rounding rules.
 - Reconcile tenant totals to affiliation aggregates.
 
-### Epic E09 — Announcements, notifications and support
+### Epic E10 — Announcements, notifications and support
 
 **Features**
 
-- E09-F1 Single-active announcement with activation history
-- E09-F2 In-app task inbox
-- E09-F3 Notification adapters/preferences
-- E09-F4 Support case handoff
+- E10-F1 Single-active announcement with activation history
+- E10-F2 In-app task inbox
+- E10-F3 Notification adapters/preferences
+- E10-F4 Support case handoff
 
 **Representative tasks**
 
@@ -1934,15 +2116,15 @@ Event payload ส่งเพียง ID, scope, version และข้อม�
 - Add delivery status/retry/dead-letter.
 - Replace opaque browser diagnostics with actionable setup.
 
-### Epic E10 — Migration, security and production readiness
+### Epic E11 — Migration, security and production readiness
 
 **Features**
 
-- E10-F1 Staged import center
-- E10-F2 Data reconciliation and cutover
-- E10-F3 Observability/runbooks/DR
-- E10-F4 Security/privacy/accessibility test program
-- E10-F5 Performance/capacity
+- E11-F1 Staged import center
+- E11-F2 Data reconciliation and cutover
+- E11-F3 Observability/runbooks/DR
+- E11-F4 Security/privacy/accessibility test program
+- E11-F5 Performance/capacity
 
 **Representative tasks**
 
@@ -1958,49 +2140,81 @@ Event payload ส่งเพียง ID, scope, version และข้อม�
 Suggested sequence:
 
 ```text
-E01 → E02 → E03/E04
-          ↘ E05 → E06 → E07
-          ↘ E08
-E09 spans workflows; E10 spans all releases
+E01 Platform
+  ↓
+E02 People/Organization
+  ↓
+E03 Leave → E04 ฉ.10/11 → E05 Excel/Reports
+  ↓
+Pilot 3 รพ.สต. → 10 → 38
+  ↓
+E08 Vehicles / E06 Inventory / E07 Assets / E09 Finance ตามผล pilot และ roadmap ที่ Product Owner อนุมัติ
+
+E10 spans workflows; E11 spans all releases
 ```
 
-Finance discovery and report-template approval should start early even if coding E08 comes later เพราะเป็นพื้นที่ที่กฎไม่ชัดและเสี่ยง rework สูง.
+ฉ.10/11 Rulebook และ report-template approval ต้องเริ่มก่อน E04/E05 coding. Finance discovery ควรเริ่มล่วงหน้าแม้ coding E09 มาภายหลัง เพราะกฎไม่ชัดและเสี่ยง rework สูง.
 
 ---
 
-## 23. Unknown / Requires Verification
+## 23. Decision Register / Unknown / Requires Verification
 
-### 23.1 Priority 0 — ต้องตอบก่อน finalize domain/API
+### 23.0 Decisions and baselines closed in revision 1.2
 
-1. **Role matrix จริง:** เจ้าหน้าที่อ่าน/สร้าง/แก้/ลบ/อนุมัติ/export อะไรได้ในแต่ละ scope? มี superadmin, auditor, approver หรือ role อื่นหรือไม่?
-2. **Approval actors/state:** ลา ไปราชการ ขอรถ ย้ายบุคลากร แผน และจำหน่ายทรัพย์สินมีสถานะ/ผู้อนุมัติ/ลำดับ/acting/delegation อย่างไร?
-3. **Leave calculation:** นับวันหยุด/ครึ่งวัน/ช่วงทับซ้อน/อายุงาน/สะสม/ยกมา/แก้ย้อนหลังอย่างไรสำหรับทั้ง 11 ประเภท?
-4. **Stock accounting:** FIFO, weighted average, latest price หรือวิธีอื่น? ติดลบได้ไหม? มี approval, reservation, lot/expiry, year-end opening อย่างไร?
-5. **Financial formulas:** นิยามยอดยกมา รายได้รวม รายจ่าย เงินยกไป utilization, plan-vs-actual, revision combination และ rounding.
-6. **Plan state model:** BASE/เพิ่มเติม/เปลี่ยนแปลง สร้าง/ส่ง/อนุมัติ/ล็อก/ปลดล็อก/ยกเลิกและผลต่อรายงานอย่างไร?
-7. **Asset depreciation:** residual value, partial year, useful life ตามประเภท, revaluation, impairment, disposal-year treatment.
-8. **Report specification:** แบบฟอร์มทางการฉบับใดเป็น source of truth, version/effective date, สูตรและผู้ลงนามแต่ละแบบ.
-9. **Organization topology:** หลายสังกัด สังกัดซ้อน หน่วยงานย้ายสังกัด หน่วยงานไม่มีสังกัด และ district master รองรับหรือไม่?
-10. **Identity:** login ด้วยอะไร, phone/email uniqueness, invitation/recovery/MFA/session lifetime/SSO requirements.
+| ID     | Decision/baseline                                                                        | Status                             | Impact                                       |
+| ------ | ---------------------------------------------------------------------------------------- | ---------------------------------- | -------------------------------------------- |
+| DR-001 | Target affiliation รุ่นแรกคือ อบจ.ยะลา 1 แห่ง                                            | OWNER-CONFIRMED                    | organization root/scope                      |
+| DR-002 | มี รพ.สต. 38 แห่ง ณ baseline                                                             | OWNER-CONFIRMED                    | tenant seed, aggregation, rollout            |
+| DR-003 | บุคลากร 267 คน ณ 10 ส.ค. 2569 และจะเพิ่ม                                                 | OWNER-CONFIRMED                    | migration/capacity/test data                 |
+| DR-004 | กลุ่มเป้าหมายคือเจ้าหน้าที่ทุกคนของ รพ.สต. ในสังกัด                                      | OWNER-CONFIRMED                    | identity/UX/training; login mapping ยัง OPEN |
+| DR-005 | พัฒนา incremental ไม่สร้างทุกโมดูลก่อนเปิดใช้                                            | OWNER-CONFIRMED                    | release strategy                             |
+| DR-006 | First production direction คือ People/Organization Core → Leave → ฉ.10/11 → Excel/Report | OWNER-CONFIRMED + PROPOSED DESIGN  | MVP/backlog/data model                       |
+| DR-007 | Rollout แบบ pilot 3 แห่ง แล้ว 10 และ 38                                                  | PROPOSED — formal approval pending | UAT/support/cutover                          |
+| DR-008 | Modular Monolith เป็น architecture baseline; technology stack ยังไม่ล็อก                 | PROPOSED — ADR pending             | implementation/deployment                    |
 
-### 23.2 Priority 1 — ต้องตอบก่อน UAT/production
+### 23.1 Priority 0 — ต้องตอบก่อน finalize Release 0–1 domain/API
 
-11. Retention/archival/legal hold ของบุคลากร ลา การเงิน สต็อก อุบัติเหตุ ลายเซ็น รายงาน และ audit.
-12. Data classification/PDPA purpose, consent/lawful basis, masking และสิทธิ์เข้าถึงข้ามหน่วยงาน.
-13. RPO/RTO, availability, peak concurrent users, จำนวนหน่วยงาน/บุคลากร/รายการต่อปี และรายงานใหญ่สุด.
-14. Vehicle request state, booking conflict, driver qualification, mileage correction, fuel log และผู้โดยสาร.
-15. กฎเชื่อมรถกับครุภัณฑ์สำหรับ owned/leased และวิธีรวมระเบียนซ้ำ.
-16. Asset code uniqueness/running reset และกติกาโอนทรัพย์สินข้ามหน่วยงาน.
-17. การย้ายบุคลากรมี effective date, payroll/history/leave balance/schedule impact อย่างไร?
-18. วันหยุดมาจาก source ใด ใคร override ได้ และรองรับวันหยุดเฉพาะพื้นที่หรือไม่?
-19. ผู้ลงนามใช้ลายเซ็นภาพหรือ digital signature ตามกฎหมาย? ใครแทนใครและ snapshot เมื่อใด?
-20. Notification channels, SLA, preference, escalation และข้อมูลที่ส่งออกภายนอก.
-21. External integrations/SSO/API/webhook ที่มีหรือจะมี รวม source of truth ของแต่ละข้อมูล.
-22. Import formats/volume/error policy/duplicate matching และ cutoff migration.
-23. Accessibility/browser/mobile/offline requirements และพื้นที่ bandwidth ต่ำ.
-24. ภาษา/timezone/currency อื่นนอก Thai/Asia-Bangkok/THB หรือไม่?
+| ID    | Open decision                                                                                                               | Suggested owner                                         | Required artifact                             |
+| ----- | --------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- | --------------------------------------------- |
+| P0-01 | ระบบรุ่นแรกเป็นงานบริหารหลังบ้านเท่านั้น หรือรวมข้อมูลผู้ป่วย/เวชระเบียน/HDC                                                | Product owner + DPO/security + health-information owner | signed System Boundary                        |
+| P0-02 | เจ้าหน้าที่ทั้ง 267 คนต้องมีบัญชีรายบุคคลทุกคนหรือบางคนเป็น employee record เท่านั้น; login/SSO/recovery/MFA ใช้อะไร        | Product owner + IT/security                             | Identity & Account Policy                     |
+| P0-03 | บุคลากรมีหลาย รพ.สต./หลายกลุ่มงาน/ช่วยราชการ/รักษาการพร้อมกันได้หรือไม่ และย้ายกลางงวดอย่างไร                               | HR owner                                                | People & Membership Rulebook                  |
+| P0-04 | Role matrix จริง: self/tenant/affiliation visibility, CRUD, approve, export, PII และ superadmin/auditor                     | Process owners + security/DPO                           | signed Permission Matrix                      |
+| P0-05 | Workflow การลา: ผู้ขอ ผู้ตรวจ ผู้อนุมัติ ลำดับ acting/delegation, reject/cancel/correct/backdate และ status                 | HR/process owner                                        | Leave State Diagram                           |
+| P0-06 | กฎลา 11 ประเภท: วันหยุด ครึ่งวัน overlap อายุงาน สะสม ยกมา cutoff และการคืนโควตา                                            | HR/legal/process owner                                  | Leave Rulebook + golden cases                 |
+| P0-07 | ชื่อทางการ/ฐานระเบียบ/ผู้มีสิทธิ์/สูตร ฉ.10 และ ฉ.11 รวมผลจากประเภทลา การเริ่มงานกลางเดือน การย้าย และ rounding             | Allowance/finance/HR owner                              | ฉ.10/11 Calculation Rulebook                  |
+| P0-08 | รอบคำนวณและ cutoff; review/confirm/lock; ข้อมูลมาหลัง cutoff; revision/adjustment และการเบิกชดเชย                           | Allowance/finance owner + auditor                       | Calculation State Diagram + correction policy |
+| P0-09 | Excel/PDF source-of-truth: template, คอลัมน์, สูตรรวม, ผู้ลงนาม, filename, submission destination, retention และการพิมพ์ซ้ำ | Document/finance owner                                  | approved golden templates                     |
+| P0-10 | แหล่งข้อมูลบุคลากร 267 คน/38 รพ.สต., field mapping, duplicates, validation, migration cutoff และ reconciliation             | Data owners + HR + IT                                   | migration inventory/mapping                   |
 
-### 23.3 Technical evidence gaps ของระบบอ้างอิง
+ห้าม finalize calculation schema/formula หรือเริ่ม E04/E05 implementation จากการคาดเดาจน P0-07–P0-09 ได้รับอนุมัติ.
+
+### 23.2 Deferred domain unknowns — ต้องปิดก่อน release ของโมดูลนั้น
+
+- **Shift/OT/Official Duty:** rate, overlap, holiday multiplier, inspectors, approval และเอกสาร.
+- **Stock:** valuation (FIFO/weighted average/latest), negative stock, approval, reservation, lot/expiry, opening/reversal.
+- **Vehicles:** request states, approver, booking conflict, driver qualification, mileage correction, fuel, asset link.
+- **Assets:** code uniqueness/reset, useful life, residual/partial year, revaluation, transfer/disposal reversal.
+- **Finance:** KPI/formulas, BASE/เพิ่มเติม/เปลี่ยนแปลง, submit/approve/lock/unlock, revision aggregation, rounding.
+- **Organization expansion:** หลาย อบจ., affiliation nesting, tenant transfer/no-affiliation และ district master.
+- **Integration:** HR, HDC, e-Saraban, accounting, SSO, API/webhook และ source of truth.
+
+รายการเหล่านี้ไม่บล็อก Release 0–1 หากไม่มี dependency โดยตรง แต่ discovery ต้องเริ่มก่อน release ที่เกี่ยวข้อง.
+
+### 23.3 Priority 1 — ต้องตอบก่อน Pilot/Production
+
+1. Retention/archival/legal hold ของบุคลากร ลา calculation snapshots/results ลายเซ็น รายงาน และ audit.
+2. Data classification/PDPA purpose/lawful basis, ROPA, masking, DSAR และสิทธิ์ข้ามหน่วยงาน.
+3. RPO/RTO, availability, peak usage, support hours และ incident escalation.
+4. ผู้ลงนามใช้ภาพลายเซ็นหรือ digital signature ตามกฎหมาย; acting/snapshot/effective date.
+5. Notification channels, SLA, preference และข้อมูลที่อนุญาตให้ออกจากระบบ.
+6. Browser/mobile/accessibility/offline/พื้นที่ bandwidth ต่ำ.
+7. Hosting/data residency, backup key ownership และผู้ดูแลระบบหลังส่งมอบ.
+8. แผนเติบโต 3–5 ปี เพื่อยืนยัน capacity headroom 100 หน่วยงาน/1,500–2,000 บัญชี.
+9. ภาษา/timezone/currency อื่นนอก Thai/Asia-Bangkok/THB.
+10. Pilot sites ขนาดใหญ่/กลาง/เล็ก, champion, training, support และ go/no-go authority.
+
+### 23.4 Technical evidence gaps ของระบบอ้างอิง
 
 - HTTP methods, status codes, headers, request/response bodies และ mutation endpoints **[UNKNOWN]**
 - Server-side permission enforcement และ cross-tenant isolation **[UNKNOWN]**
@@ -2011,18 +2225,22 @@ Finance discovery and report-template approval should start early even if coding
 - Push notification actual delivery **[UNKNOWN; current browser diagnostics unsupported]**
 - Central audit/history หากซ่อนอยู่ใน role อื่น **[UNKNOWN]**
 
-### 23.4 Verification plan
+ช่องว่างเหล่านี้ไม่จำเป็นต้อง reverse engineer เพื่อสร้างระบบใหม่; ให้ยืนยัน requirement ของระบบใหม่ด้วย workshop, sandbox test และ acceptance cases.
 
-| Question class   | Safest verification                                        | Required participants                        | Artifact                           |
-| ---------------- | ---------------------------------------------------------- | -------------------------------------------- | ---------------------------------- |
-| Business rules   | Workshop ด้วยตัวอย่าง/edge cases และ expected result       | HR, finance, procurement, fleet, unit admins | signed rule catalog                |
-| Permissions      | Role-by-role UAT accounts ใน sandbox                       | security owner + representatives             | permission matrix/test results     |
-| Workflow         | State-transition walkthrough + test data                   | process owner/approvers                      | state diagrams + SLA               |
-| Reports          | Golden file comparison                                     | document owner/auditor                       | approved templates/data dictionary |
-| API/schema       | Contract and domain review of new design                   | architects/developers                        | OpenAPI/ERD/ADRs                   |
-| Migration        | Two rehearsals + row/amount/hash reconciliation            | data owners                                  | reconciliation sign-off            |
-| Security/privacy | Threat model, DPIA, penetration and tenant isolation tests | security/DPO                                 | risk register/test report          |
-| Operations       | Load/restore/failover drills                               | platform/operations                          | runbooks/SLO report                |
+### 23.5 Verification plan
+
+| Question class    | Safest verification                                                    | Required participants               | Artifact                             |
+| ----------------- | ---------------------------------------------------------------------- | ----------------------------------- | ------------------------------------ |
+| People/membership | Workshop ด้วยการย้าย ช่วยราชการ รักษาการ และหลาย assignment            | HR + unit/affiliation admins        | signed People Rulebook               |
+| Leave             | ตัวอย่างปกติ/edge cases และ expected balance/status                    | HR + approvers + users              | Leave Rulebook/golden tests          |
+| ฉ.10/11           | ระเบียบจริง + Excel ที่ใช้งาน (de-identified) + manual calculations    | allowance/finance/HR/auditor        | Calculation Rulebook/golden workbook |
+| Permissions       | Role-by-role UAT accounts ใน sandbox                                   | security/DPO + representatives      | permission matrix/test results       |
+| Workflow          | State-transition walkthrough + synthetic data                          | process owner/approvers             | state diagrams + SLA                 |
+| Reports           | Golden file comparison และ repeat-download test                        | document owner/auditor              | approved templates/data dictionary   |
+| API/schema        | Contract/domain reviewหลัง Rulebook approved                           | architects/developers/domain owners | OpenAPI/ERD/ADRs                     |
+| Migration         | Two rehearsals + row/amount/hash reconciliation                        | data owners                         | reconciliation sign-off              |
+| Security/privacy  | Threat model, DPIA/ROPA review, penetration and tenant isolation tests | security/DPO                        | risk register/test report            |
+| Operations        | Load/restore/failover/support drills                                   | platform/operations                 | runbooks/SLO report                  |
 
 ---
 
@@ -2102,8 +2320,9 @@ Finance discovery and report-template approval should start early even if coding
 ระหว่าง refinement ให้เปลี่ยนแต่ละข้อเป็น requirement ID และเชื่อม:
 
 ```text
-Observed evidence
+Observed evidence / Owner-confirmed decision
   → Business rule (BR-xxx)
+  → Decision Register item (DR/P0)
   → User story / acceptance criteria
   → Permission
   → API operation
@@ -2119,4 +2338,4 @@ Observed evidence
 
 # Conclusion
 
-แก่นของระบบใหม่ไม่ใช่การทำหน้าเว็บเหมือน One Data System แต่คือแพลตฟอร์มงานราชการระดับหน่วยบริการที่มีข้อมูลบุคลากรร่วม workflow ที่ตรวจสอบได้ ledger ที่ย้อนรอยได้ เอกสารที่พิมพ์ซ้ำได้ และการกำกับหลายหน่วยงานอย่างปลอดภัย. หากยืนยัน unknowns ลำดับต้นก่อนเริ่มสร้าง finance/report/approval engine จะลดความเสี่ยง rework ได้มากที่สุด.
+แก่นของระบบใหม่ไม่ใช่การทำหน้าเว็บเหมือน One Data System แต่คือแพลตฟอร์มงานราชการระดับหน่วยบริการที่มีข้อมูลบุคลากรร่วม workflow ที่ตรวจสอบได้ ledger/history ที่ย้อนรอยได้ เอกสารที่พิมพ์ซ้ำได้ และการกำกับ 38 รพ.สต. ภายใต้ อบจ.ยะลาอย่างปลอดภัย. ลำดับเริ่มต้นคือ People/Organization Core → Leave → ฉ.10/11 Calculation Run → Excel/Report → Pilot 3→10→38 แห่ง. ก่อนเริ่ม implementation ของสูตรและรายงานต้องปิด P0 Rulebook, Permission, Workflow, Cutoff/Adjustment และ Golden Template; module อื่นต่อภายหลังโดยใช้ Core เดิม.
