@@ -3278,3 +3278,29 @@ source code ของ `Special-Allowances` ที่ตรวจในรอบ�
 - service token ใช้ผ่าน runtime environment เท่านั้น ไม่เก็บใน repository และไม่พิมพ์ลง log.
 - local real-data shadow run ยังไม่ใช่ UAT, reconciliation sign-off หรือ production readiness.
 - ก่อนใช้งานจริงต้องทำ Portal user → employee mapping ที่ตรวจสอบได้, data-owner reconciliation, PII/log review, backup/restore rehearsal และ pilot ตาม G0–G5.
+
+---
+
+# Implementation Addendum v1.21 — source-user reconciliation foundation (29 สิงหาคม 2569)
+
+ภาคผนวกนี้บันทึกการเพิ่มชั้น reconciliation สำหรับ users ที่อ่านจาก `Special-Allowances` โดยยังไม่สร้าง Portal mapping อัตโนมัติ.
+
+## 1. สิ่งที่ลงมือทำแล้ว
+
+- เพิ่ม `SourceUserProjection` เพื่อเก็บ source user id, username, role, หน่วยบริการ, source employee id, active state และเวลาที่พบล่าสุดแบบ idempotent.
+- sync จะตรวจ duplicate/source reference ของ users และ soft-inactivate source users ที่หายจาก snapshot โดยไม่ลบ audit หรือ mapping เดิม.
+- เพิ่ม `GET /api/v1/people/identity-mappings/portal` สำหรับผู้มี capability `employee.identity-mapping.manage` เพื่อดู aggregate และรายการ source users/Portal mappings สำหรับ reconciliation.
+- คงการจับคู่ Portal แบบ explicit ผ่าน `POST /api/v1/people/identity-mappings/portal`; ระบบไม่เดา username/source user id เป็น Portal subject และบันทึก audit เมื่อ map.
+- เพิ่ม forward migration แยก `20260829230000_source_user_projection`; ไม่แก้ไข initial migration ที่อาจถูก deploy แล้ว.
+
+## 2. สิ่งที่ยังต้องทำต่อ
+
+- ต้องได้รับรายชื่อ/subject จาก Portal ที่เจ้าของข้อมูลรับรอง แล้วทำ mapping กับ employee เป็นรายบัญชี.
+- ต้องทำ reconciliation UI และรายงานผลตรวจรับกับ data owner; endpoint รุ่นนี้เป็น API foundation.
+- ต้องทดสอบ mapping ด้วยบัญชี Portal จริง, delegated approver และ cross-tenant scope ใน staging.
+
+## 3. Acceptance ของ checkpoint นี้
+
+- target typecheck/build ผ่าน และ test เพิ่มเป็น 13 suites / 44 tests.
+- local source-user projection/report รองรับข้อมูลจริงจาก Special โดยไม่เขียนฐานข้อมูลต้นทาง.
+- สถานะยังเป็น local/integration foundation ไม่ใช่ Portal mapping sign-off หรือ production readiness.

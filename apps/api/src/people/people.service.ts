@@ -4,9 +4,16 @@ import { randomUUID } from 'node:crypto';
 import {
   EMPLOYEE_IDENTITY_MAPPING_MANAGE,
 } from '@onedata/contracts';
-import type { CurrentUser, IdentityMappingSummary, PersonListItem } from '@onedata/contracts';
+import type {
+  CurrentUser,
+  IdentityMappingSummary,
+  PersonListItem,
+  PortalIdentityMappingReport,
+} from '@onedata/contracts';
 import { PrismaService } from '../database/prisma.service';
 import { hasOneDataPermission } from '../platform/auth/permissions';
+import { PORTAL_EXTERNAL_SYSTEM } from '../platform/auth/auth-session.service';
+import { SPECIAL_ALLOWANCES_SOURCE_SYSTEM } from './special-master-data.client';
 
 @Injectable()
 export class PeopleService {
@@ -148,6 +155,57 @@ export class PeopleService {
       employeeId: mapping.employeeId!,
       personId: mapping.personId!,
       isActive: mapping.isActive,
+    };
+  }
+
+  async portalIdentityMappingReport(user: CurrentUser): Promise<PortalIdentityMappingReport> {
+    if (!hasOneDataPermission(user, EMPLOYEE_IDENTITY_MAPPING_MANAGE)) {
+      throw new ForbiddenException('The account cannot inspect Portal identity mappings.');
+    }
+
+    const [sourceUsers, portalMappings] = await Promise.all([
+      this.prisma.sourceUserProjection.findMany({
+        where: { sourceSystem: SPECIAL_ALLOWANCES_SOURCE_SYSTEM },
+        orderBy: [{ isActive: 'desc' }, { username: 'asc' }],
+      }),
+      this.prisma.externalIdentityMapping.findMany({
+        where: { externalSystem: PORTAL_EXTERNAL_SYSTEM },
+        orderBy: [{ isActive: 'desc' }, { externalSubject: 'asc' }],
+      }),
+    ]);
+
+    const activeSourceUsers = sourceUsers.filter((sourceUser) => sourceUser.isActive);
+    const activePortalMappings = portalMappings.filter((mapping) => mapping.isActive);
+
+    return {
+      summary: {
+        sourceUsers: sourceUsers.length,
+        activeSourceUsers: activeSourceUsers.length,
+        sourceUsersWithEmployeeMapping: activeSourceUsers.filter((sourceUser) => sourceUser.sourceEmployeeId !== null).length,
+        sourceUsersWithoutEmployeeMapping: activeSourceUsers.filter((sourceUser) => sourceUser.sourceEmployeeId === null).length,
+        portalMappings: portalMappings.length,
+        activePortalMappings: activePortalMappings.length,
+        portalMappingsWithoutEmployee: activePortalMappings.filter((mapping) => mapping.employeeId === null).length,
+      },
+      sourceUsers: sourceUsers.map((sourceUser) => ({
+        id: sourceUser.id,
+        sourceSystem: sourceUser.sourceSystem,
+        sourceId: sourceUser.sourceId,
+        username: sourceUser.username,
+        role: sourceUser.role,
+        healthCenterSourceId: sourceUser.healthCenterSourceId,
+        sourceEmployeeId: sourceUser.sourceEmployeeId,
+        isActive: sourceUser.isActive,
+        lastSeenAt: sourceUser.lastSeenAt.toISOString(),
+      })),
+      portalMappings: portalMappings.map((mapping) => ({
+        id: mapping.id,
+        externalSystem: mapping.externalSystem,
+        externalSubject: mapping.externalSubject,
+        employeeId: mapping.employeeId,
+        personId: mapping.personId,
+        isActive: mapping.isActive,
+      })),
     };
   }
 }

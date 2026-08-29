@@ -14,6 +14,7 @@ import {
   SpecialEmployee,
   SpecialMasterDataSnapshot,
   SpecialMasterDataClient,
+  SpecialUser,
 } from './special-master-data.client';
 import { hasOneDataPermission } from '../platform/auth/permissions';
 import { EMPLOYEE_MASTER_DATA_SYNC } from '@onedata/contracts';
@@ -193,6 +194,27 @@ export class PeopleSyncService {
       if (employee.sourceId && !seenEmployeeSourceIds.has(employee.sourceId) && employee.isActive) {
         await tx.employee.update({ where: { id: employee.id }, data: { isActive: false } });
         employeesDeactivated += 1;
+      }
+    }
+
+    const seenSourceUserIds = new Set<string>();
+    for (const sourceUser of snapshot.users) {
+      seenSourceUserIds.add(sourceUser.id);
+      await this.upsertSourceUser(tx, sourceUser, snapshot.sourceCompletedAt);
+    }
+
+    const existingSourceUsers = await tx.sourceUserProjection.findMany({
+      where: { sourceSystem: SPECIAL_ALLOWANCES_SOURCE_SYSTEM },
+      select: { id: true, sourceId: true, isActive: true },
+    });
+    for (const sourceUser of existingSourceUsers) {
+      if (sourceUser.sourceId
+        && !seenSourceUserIds.has(sourceUser.sourceId)
+        && sourceUser.isActive) {
+        await tx.sourceUserProjection.update({
+          where: { id: sourceUser.id },
+          data: { isActive: false },
+        });
       }
     }
 
@@ -376,6 +398,47 @@ export class PeopleSyncService {
     };
   }
 
+  private async upsertSourceUser(
+    tx: Prisma.TransactionClient,
+    sourceUser: SpecialUser,
+    lastSeenAt: Date,
+  ) {
+    const sourceWhere = {
+      sourceSystem_sourceId: {
+        sourceSystem: SPECIAL_ALLOWANCES_SOURCE_SYSTEM,
+        sourceId: sourceUser.id,
+      },
+    } as const;
+    const existing = await tx.sourceUserProjection.findUnique({ where: sourceWhere });
+    if (existing) {
+      return tx.sourceUserProjection.update({
+        where: { id: existing.id },
+        data: {
+          username: sourceUser.username,
+          role: sourceUser.role,
+          healthCenterSourceId: sourceUser.healthCenterId,
+          sourceEmployeeId: sourceUser.employeeId,
+          isActive: sourceUser.isActive,
+          lastSeenAt,
+        },
+      });
+    }
+
+    return tx.sourceUserProjection.create({
+      data: {
+        id: randomUUID(),
+        sourceSystem: SPECIAL_ALLOWANCES_SOURCE_SYSTEM,
+        sourceId: sourceUser.id,
+        username: sourceUser.username,
+        role: sourceUser.role,
+        healthCenterSourceId: sourceUser.healthCenterId,
+        sourceEmployeeId: sourceUser.employeeId,
+        isActive: sourceUser.isActive,
+        lastSeenAt,
+      },
+    });
+  }
+
   private async syncMembership(
     tx: Prisma.TransactionClient,
     employeeId: string,
@@ -468,6 +531,27 @@ export class PeopleSyncService {
         throw new BadGatewayException(`Special employee ${employee.id} references an unknown health center.`);
       }
       employeeIds.add(employee.id);
+    }
+
+    const userIds = new Set<string>();
+    for (const user of snapshot.users) {
+      this.assertSourceIdLength(user.id, 'user');
+      if (user.healthCenterId !== null) {
+        this.assertSourceIdLength(user.healthCenterId, 'user health center');
+      }
+      if (user.employeeId !== null) {
+        this.assertSourceIdLength(user.employeeId, 'user employee');
+      }
+      if (userIds.has(user.id)) {
+        throw new BadGatewayException(`Special returned duplicate user ${user.id}.`);
+      }
+      if (user.healthCenterId !== null && !healthCenterIds.has(user.healthCenterId)) {
+        throw new BadGatewayException(`Special user ${user.id} references an unknown health center.`);
+      }
+      if (user.employeeId !== null && !employeeIds.has(user.employeeId)) {
+        throw new BadGatewayException(`Special user ${user.id} references an unknown employee.`);
+      }
+      userIds.add(user.id);
     }
   }
 

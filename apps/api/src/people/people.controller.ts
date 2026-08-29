@@ -31,6 +31,14 @@ export class PeopleController {
     return toApiEnvelope({ items }, request);
   }
 
+  @Get('identity-mappings/portal')
+  @UseGuards(AuthGuard, PermissionGuard)
+  @RequirePermission(EMPLOYEE_IDENTITY_MAPPING_MANAGE)
+  async portalIdentityMappingReport(@Req() request: Request) {
+    const user = (request as RequestWithContext).user as CurrentUser;
+    return toApiEnvelope(await this.peopleService.portalIdentityMappingReport(user), request);
+  }
+
   @Post('sync/special')
   @UseGuards(AuthGuard, PermissionGuard)
   @RequirePermission(EMPLOYEE_MASTER_DATA_SYNC)

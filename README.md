@@ -111,6 +111,7 @@ Target API จะ fail-fast หาก `NODE_ENV=production` แต่ขาด d
 Target API มีคำสั่ง sync สำหรับผู้ดูแลที่มี capability `employee.master-data.sync` (Portal role/position จะถูก map เป็น allowlist ฝั่ง One Data; `PEOPLE_SYNC_ADMIN` หรือ role development ใช้ใน local test ได้):
 
 - `POST /api/v1/people/sync/special`
+- `GET /api/v1/people/identity-mappings/portal` สำหรับดู source-user/Portal mapping reconciliation
 - `POST /api/v1/people/identity-mappings/portal` สำหรับผู้ดูแลจับคู่ Portal subject กับ employee ที่ตรวจสอบแล้ว
 
 คำสั่งนี้จะทำงานได้เมื่อกำหนด `SPECIAL_ALLOWANCES_BASE_URL` และ `SPECIAL_ALLOWANCES_INTEGRATION_TOKEN`; จะสร้าง projection ด้วย source ID, เก็บประวัติ membership และบันทึก `MasterDataSyncRun` โดยไม่ลบข้อมูลเดิม

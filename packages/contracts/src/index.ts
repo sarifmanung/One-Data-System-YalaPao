@@ -187,6 +187,41 @@ export interface IdentityMappingSummary {
   isActive: boolean;
 }
 
+export interface PortalIdentityMappingSummary {
+  id: string;
+  externalSystem: string;
+  externalSubject: string;
+  employeeId: string | null;
+  personId: string | null;
+  isActive: boolean;
+}
+
+export interface SourceUserProjectionSummary {
+  id: string;
+  sourceSystem: string;
+  sourceId: string;
+  username: string;
+  role: string;
+  healthCenterSourceId: string | null;
+  sourceEmployeeId: string | null;
+  isActive: boolean;
+  lastSeenAt: string;
+}
+
+export interface PortalIdentityMappingReport {
+  summary: {
+    sourceUsers: number;
+    activeSourceUsers: number;
+    sourceUsersWithEmployeeMapping: number;
+    sourceUsersWithoutEmployeeMapping: number;
+    portalMappings: number;
+    activePortalMappings: number;
+    portalMappingsWithoutEmployee: number;
+  };
+  sourceUsers: SourceUserProjectionSummary[];
+  portalMappings: PortalIdentityMappingSummary[];
+}
+
 export interface LeaveTypeSummary {
   id: string;
   code: string;

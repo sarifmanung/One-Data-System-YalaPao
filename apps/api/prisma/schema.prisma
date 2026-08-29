@@ -180,6 +180,25 @@ model MasterDataSyncRun {
   @@index([status, createdAt])
 }
 
+model SourceUserProjection {
+  id                  String   @id @db.VarChar(36)
+  sourceSystem        String   @db.VarChar(64)
+  sourceId            String   @db.VarChar(128)
+  username            String   @db.VarChar(255)
+  role                String   @db.VarChar(100)
+  healthCenterSourceId String? @db.VarChar(128)
+  sourceEmployeeId    String?  @db.VarChar(128)
+  isActive            Boolean  @default(true)
+  lastSeenAt          DateTime
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@unique([sourceSystem, sourceId])
+  @@index([sourceSystem, username])
+  @@index([sourceSystem, isActive])
+  @@index([healthCenterSourceId])
+}
+
 model LeaveType {
   id                  String                  @id @db.VarChar(36)
   code                String                  @unique @db.VarChar(64)

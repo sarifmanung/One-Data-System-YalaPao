@@ -74,6 +74,12 @@ describe('PeopleSyncService', () => {
         findMany: jest.fn().mockResolvedValue([]),
         create: jest.fn().mockResolvedValue({ id: 'membership-1' }),
       },
+      sourceUserProjection: {
+        findUnique: jest.fn().mockResolvedValue(null),
+        create: jest.fn().mockResolvedValue({ id: 'source-user-1' }),
+        findMany: jest.fn().mockResolvedValue([]),
+        update: jest.fn().mockResolvedValue({ id: 'source-user-1' }),
+      },
     };
     const prisma = {
       masterDataSyncRun: {
@@ -117,6 +123,7 @@ describe('PeopleSyncService', () => {
     expect(transactionClient.person.create).toHaveBeenCalledTimes(1);
     expect(transactionClient.employee.create).toHaveBeenCalledTimes(1);
     expect(transactionClient.employmentMembership.create).toHaveBeenCalledTimes(1);
+    expect(transactionClient.sourceUserProjection.create).toHaveBeenCalledTimes(2);
     expect(transactionClient.tenant.create).toHaveBeenNthCalledWith(1, {
       data: expect.objectContaining({
         code: 'SPECIAL-special-hc-1',
