@@ -75,8 +75,6 @@ export class LeaveController {
   }
 
   @Post('requests/:id/paper-result')
-  @UseGuards(PermissionGuard)
-  @RequirePermission(LEAVE_PAPER_DECISION_RECORD)
   async paperResult(
     @Req() request: Request,
     @Param('id') id: string,
@@ -96,8 +94,6 @@ export class LeaveController {
   }
 
   @Post('requests/:id/void')
-  @UseGuards(PermissionGuard)
-  @RequirePermission(LEAVE_REQUEST_VOID)
   async void(
     @Req() request: Request,
     @Param('id') id: string,

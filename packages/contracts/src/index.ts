@@ -4,6 +4,7 @@ export const DASHBOARD_VIEW = 'dashboard.view' as const;
 export const EMPLOYEE_PROFILE_READ = 'employee.profile.read' as const;
 export const EMPLOYEE_MASTER_DATA_SYNC = 'employee.master-data.sync' as const;
 export const EMPLOYEE_IDENTITY_MAPPING_MANAGE = 'employee.identity-mapping.manage' as const;
+export const AUTHORIZATION_DELEGATED_APPROVER_MANAGE = 'authorization.delegated-approver.manage' as const;
 export const LEAVE_REQUEST_READ = 'leave.request.read' as const;
 export const LEAVE_REQUEST_CREATE = 'leave.request.create' as const;
 export const LEAVE_REQUEST_SUBMIT = 'leave.request.submit' as const;
@@ -17,6 +18,7 @@ export const ONE_DATA_PERMISSIONS = [
   EMPLOYEE_PROFILE_READ,
   EMPLOYEE_MASTER_DATA_SYNC,
   EMPLOYEE_IDENTITY_MAPPING_MANAGE,
+  AUTHORIZATION_DELEGATED_APPROVER_MANAGE,
   LEAVE_REQUEST_READ,
   LEAVE_REQUEST_CREATE,
   LEAVE_REQUEST_SUBMIT,
@@ -220,6 +222,26 @@ export interface PortalIdentityMappingReport {
   };
   sourceUsers: SourceUserProjectionSummary[];
   portalMappings: PortalIdentityMappingSummary[];
+}
+
+export type DelegatedApproverCapability =
+  | typeof LEAVE_PAPER_DECISION_RECORD
+  | typeof LEAVE_REQUEST_VOID;
+
+export interface DelegatedApproverSummary {
+  id: string;
+  externalSystem: string;
+  externalSubject: string;
+  capability: DelegatedApproverCapability;
+  workspaceKind: 'tenant' | 'affiliation';
+  workspaceId: string;
+  effectiveFrom: string;
+  effectiveTo: string | null;
+  isActive: boolean;
+  reason: string | null;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface LeaveTypeSummary {

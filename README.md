@@ -113,6 +113,7 @@ Target API มีคำสั่ง sync สำหรับผู้ดูแล
 - `POST /api/v1/people/sync/special`
 - `GET /api/v1/people/identity-mappings/portal` สำหรับดู source-user/Portal mapping reconciliation
 - `POST /api/v1/people/identity-mappings/portal` สำหรับผู้ดูแลจับคู่ Portal subject กับ employee ที่ตรวจสอบแล้ว
+- `GET/POST /api/v1/authorization/delegated-approvers` และ `POST /api/v1/authorization/delegated-approvers/{id}/revoke` สำหรับ delegated assignment ที่มี workspace/effective-date/audit
 
 คำสั่งนี้จะทำงานได้เมื่อกำหนด `SPECIAL_ALLOWANCES_BASE_URL` และ `SPECIAL_ALLOWANCES_INTEGRATION_TOKEN`; จะสร้าง projection ด้วย source ID, เก็บประวัติ membership และบันทึก `MasterDataSyncRun` โดยไม่ลบข้อมูลเดิม
 

@@ -1,3 +1,16 @@
+import {
+  AUTHORIZATION_DELEGATED_APPROVER_MANAGE,
+  EMPLOYEE_IDENTITY_MAPPING_MANAGE,
+  EMPLOYEE_MASTER_DATA_SYNC,
+  EMPLOYEE_PROFILE_READ,
+  LEAVE_PAPER_DECISION_RECORD,
+  LEAVE_REQUEST_CANCEL,
+  LEAVE_REQUEST_CREATE,
+  LEAVE_REQUEST_READ,
+  LEAVE_REQUEST_SUBMIT,
+  LEAVE_REQUEST_VOID,
+  LEAVE_SNAPSHOT_MANAGE,
+} from '@onedata/contracts';
 import type { CurrentUser, OneDataPermission } from '@onedata/contracts';
 
 export const ONE_DATA_ALL_PERMISSION = '*' as const;
@@ -7,6 +20,7 @@ export const ONE_DATA_PERMISSION_GRANTS = [
   'employee.profile.read',
   'employee.master-data.sync',
   'employee.identity-mapping.manage',
+  'authorization.delegated-approver.manage',
   'leave.request.read',
   'leave.request.create',
   'leave.request.submit',
@@ -52,6 +66,7 @@ const PEOPLE_ADMIN_PERMISSIONS: readonly OneDataPermission[] = [
   ...MANAGER_PERMISSIONS,
   'employee.master-data.sync',
   'employee.identity-mapping.manage',
+  AUTHORIZATION_DELEGATED_APPROVER_MANAGE,
   'leave.snapshot.manage',
 ];
 
@@ -142,4 +157,54 @@ export function permissionsFromPortalClaims(claims: PortalAuthorizationClaims): 
 
 export function hasOneDataPermission(user: Pick<CurrentUser, 'permissions'>, permission: OneDataPermission): boolean {
   return user.permissions.includes(ONE_DATA_ALL_PERMISSION) || user.permissions.includes(permission);
+}
+
+export type OneDataScope = 'self' | 'tenant' | 'affiliation';
+
+/**
+ * The scope matrix is intentionally derived from the operation, not from a
+ * raw Portal role. Portal roles grant capabilities; One Data decides the
+ * maximum data scope for each capability here.
+ */
+export function scopeForPermission(
+  user: Pick<CurrentUser, 'permissions'>,
+  permission: OneDataPermission,
+): OneDataScope | null {
+  if (!hasOneDataPermission(user, permission)) {
+    return null;
+  }
+
+  if (
+    permission === EMPLOYEE_MASTER_DATA_SYNC
+    || permission === EMPLOYEE_IDENTITY_MAPPING_MANAGE
+    || permission === AUTHORIZATION_DELEGATED_APPROVER_MANAGE
+    || permission === LEAVE_SNAPSHOT_MANAGE
+  ) {
+    return 'affiliation';
+  }
+
+  if (permission === LEAVE_REQUEST_CREATE
+    || permission === LEAVE_REQUEST_SUBMIT
+    || permission === LEAVE_REQUEST_CANCEL) {
+    return 'self';
+  }
+
+  if (permission === LEAVE_PAPER_DECISION_RECORD || permission === LEAVE_REQUEST_VOID) {
+    return 'tenant';
+  }
+
+  if (permission === EMPLOYEE_PROFILE_READ) {
+    return hasOneDataPermission(user, EMPLOYEE_MASTER_DATA_SYNC) ? 'affiliation' : 'tenant';
+  }
+
+  if (permission === LEAVE_REQUEST_READ) {
+    if (hasOneDataPermission(user, LEAVE_PAPER_DECISION_RECORD)
+      || hasOneDataPermission(user, LEAVE_REQUEST_VOID)
+      || hasOneDataPermission(user, EMPLOYEE_PROFILE_READ)) {
+      return hasOneDataPermission(user, EMPLOYEE_MASTER_DATA_SYNC) ? 'affiliation' : 'tenant';
+    }
+    return 'self';
+  }
+
+  return 'tenant';
 }

@@ -16,7 +16,7 @@
 | Next.js web | เสร็จระดับ local development | `/tenant-dashboard`, `/leave`, `/auth/portal/launch`, runtime API health/current user และ server actions ของ Paper-first leave workflow ตาม reference direction |
 | Docker | เสร็จระดับ local foundation | `docker-compose.target.yml`, API `3100`, web `3101`, แยกจาก Laravel compose |
 | People master-data projection | เสร็จระดับ local real-data shadow run | `SpecialMasterDataClient`, transaction/idempotent upsert ด้วย source ID, effective membership, soft-inactivate, `SourceUserProjection` และ `MasterDataSyncRun`; local contract test กับ Special จริงผ่าน: 38 หน่วยงาน, 267 บุคลากร, 43 users และ idempotent re-sync ผ่าน; มี endpoint รายงาน source-user/Portal mapping แล้ว แต่ยังไม่มี user-to-employee mapping ที่ยืนยันจาก source |
-| Authorization | เสร็จระดับ local integration foundation | Portal role/position → One Data capability allowlist, session permission snapshot, server-side route guard และ self/requester paper-result separation |
+| Authorization | เสร็จระดับ local scoped foundation | Portal role/position → One Data capability allowlist, operation scope matrix (`self`/`tenant`/`affiliation`), session permission snapshot, server-side route guard, delegated approver assignment API และ self/requester paper-result separation |
 | Production security guard foundation | เสร็จระดับ local integration foundation | production config fail-fast, idle session timeout, secure-cookie validation, CSRF origin policy, security headers และ auth/mutation rate limit; distributed replay/revocation/edge limiter ยังไม่เสร็จ |
 | Special leave snapshot adapter | เสร็จระดับ local integration foundation | prepare complete snapshot จาก `PAPER_APPROVED`, source hash/idempotency, immutable batch, service-token client, delivery history, retry metadata และ period/version acknowledgement guard; ยังไม่เปิด real-data delivery |
 | Leave snapshot worker | เสร็จระดับ local integration foundation | API image มี `worker`/`worker:once`, MySQL named lock, retry due deliveries, optional previous-month cutoff orchestration และ affiliation-scoped system identity; ปิดด้วย `ONEDATA_WORKER_ENABLED=false` เป็นค่าเริ่มต้น |
@@ -28,7 +28,7 @@
 ## ยังไม่เสร็จและห้ามตีความว่า production-ready
 
 - production backup/restore rehearsal และการอนุมัติ baseline ฐานข้อมูลเดิม (migration policy, initial migration และ runbook มีแล้ว)
-- permission scope matrix แบบละเอียดครบทุกโมดูลและ delegated approver configuration (People/Leave capability guard รุ่นแรกทำแล้ว)
+- permission scope matrix แบบละเอียดครบทุกโมดูลและ owner sign-off (base `self`/`tenant`/`affiliation` matrix และ delegated approver configuration รุ่นแรกทำแล้ว)
 - production session hardening ที่ยังเหลือ เช่น distributed replay/revocation strategy, session rotation, proxy trust policy และ operational cleanup (idle timeout/CSRF origin/security headers/rate-limit foundation มีแล้ว)
 - People reconciliation จาก Special-Allowances, การ map Portal user กับ employee และการยืนยันผลกับ data owner (local shadow import และ source-user projection/report ผ่านแล้ว; ยังต้องทำ mapping ที่ตรวจรับและ sign-off)
 - HR-approved leave Rulebook, quota/balance engine, half-day policy, complete snapshot และ production acceptance rules (provisional day calculation/state machine/revision/audit/outbox foundation มีแล้ว; ห้ามถือ provisional rule เป็นกฎสิทธิ์จริง)

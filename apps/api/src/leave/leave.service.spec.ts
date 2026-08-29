@@ -49,7 +49,11 @@ function user(employeeId: string, permissions = ['leave.paper-decision.record'])
 }
 
 function serviceWith(prisma: Record<string, unknown>): LeaveService {
-  return new LeaveService(prisma as never, {} as LeaveRulesService);
+  return new LeaveService(
+    prisma as never,
+    {} as LeaveRulesService,
+    { assertCanAct: jest.fn().mockResolvedValue(undefined) } as never,
+  );
 }
 
 describe('LeaveService paper-result workflow', () => {

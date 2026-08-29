@@ -135,6 +135,26 @@ model ExternalIdentityMapping {
   @@index([employeeId])
 }
 
+model DelegatedApproverAssignment {
+  id              String   @id @db.VarChar(36)
+  externalSystem  String   @db.VarChar(64)
+  externalSubject String   @db.VarChar(255)
+  capability      String   @db.VarChar(100)
+  workspaceKind   String   @db.VarChar(32)
+  workspaceId     String   @db.VarChar(36)
+  effectiveFrom   DateTime @db.Date
+  effectiveTo     DateTime? @db.Date
+  isActive        Boolean  @default(true)
+  reason          String?  @db.Text
+  createdBy       String   @db.VarChar(128)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([externalSystem, externalSubject, capability, isActive])
+  @@index([workspaceKind, workspaceId, capability, isActive])
+  @@index([effectiveFrom, effectiveTo])
+}
+
 model AuthSession {
   id              String    @id @db.VarChar(36)
   tokenHash       String    @unique @db.Char(64)

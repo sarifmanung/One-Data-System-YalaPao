@@ -3304,3 +3304,29 @@ source code ของ `Special-Allowances` ที่ตรวจในรอบ�
 - target typecheck/build ผ่าน และ test เพิ่มเป็น 13 suites / 44 tests.
 - local source-user projection/report รองรับข้อมูลจริงจาก Special โดยไม่เขียนฐานข้อมูลต้นทาง.
 - สถานะยังเป็น local/integration foundation ไม่ใช่ Portal mapping sign-off หรือ production readiness.
+
+---
+
+# Implementation Addendum v1.22 — permission scopes & delegated approver foundation (29 สิงหาคม 2569)
+
+ภาคผนวกนี้บันทึกการเพิ่ม permission scope matrix รุ่นแรกและ configuration สำหรับ delegated paper-result/void actor.
+
+## 1. สิ่งที่ลงมือทำแล้ว
+
+- กำหนด scope operation กลางเป็น `self`, `tenant` และ `affiliation`; ใบลาของ requester ถูกจำกัดที่ employee ของตนเอง ส่วน manager/recorder จำกัดที่ tenant และงาน integration/admin จำกัดที่ affiliation.
+- เพิ่ม `DelegatedApproverAssignment` แบบ effective-dated ระบุ Portal subject, capability, workspace และ audit; รองรับ `leave.paper-decision.record` กับ `leave.request.void`.
+- เพิ่ม API list/create/revoke ภายใต้ `authorization.delegated-approver.manage`; การสร้างต้องมี active Portal identity mapping, workspace ที่ผู้ดูแลเข้าถึงได้ และช่วงเวลาที่ไม่ทับซ้อน.
+- delegated actor ที่ไม่มี direct capability จะทำ paper result/void ได้เฉพาะเมื่อมี assignment active ครอบคลุม tenant; direct capability เดิมยังใช้ได้เพื่อ backward compatibility.
+- requester ไม่สามารถบันทึกผลกระดาษหรือ void ใบลาของตนเอง และ tenant scope ไม่ขยายไปยัง affiliation โดยอัตโนมัติสำหรับ requester.
+
+## 2. สิ่งที่ยังต้องทำต่อ
+
+- ต้องรับรอง matrix ราย role/position/workspace กับเจ้าของระบบ และทดสอบบัญชี Portal จริงทุกบทบาท.
+- ต้องทำ delegated approver UI, notification/expiry monitoring และ policy สำหรับการเปลี่ยนแปลงสิทธิ์จาก Portal.
+- ต้องทำ distributed session/revocation และ edge rate limit ก่อน scale-out หลาย replica.
+
+## 3. Acceptance ของ checkpoint นี้
+
+- target tests ผ่าน 14 suites / 48 tests, typecheck/build ผ่าน.
+- local API smoke ผ่านสำหรับ delegated-approver endpoint และ source-user reconciliation โดยไม่สร้าง assignment หรือเปลี่ยนข้อมูลต้นทาง.
+- สถานะยังเป็น local/integration foundation ไม่ใช่ permission sign-off หรือ production readiness.

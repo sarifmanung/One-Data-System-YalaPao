@@ -8,9 +8,11 @@ import {
 } from '../common/http/security.middleware';
 import { AuthGuard } from './auth/auth.guard';
 import { AuthSessionService } from './auth/auth-session.service';
+import { DelegatedApproverService } from './auth/delegated-approver.service';
 import { DevAuthGuard } from './auth/dev-auth.guard';
 import { PermissionGuard } from './auth/permission.guard';
 import { AuthController } from './controllers/auth.controller';
+import { AuthorizationController } from './controllers/authorization.controller';
 import { MeController } from './controllers/me.controller';
 import { WorkspacesController } from './controllers/workspaces.controller';
 import {
@@ -19,11 +21,12 @@ import {
 } from './sso/portal-launch-token.service';
 
 @Module({
-  controllers: [AuthController, MeController, WorkspacesController],
+  controllers: [AuthController, AuthorizationController, MeController, WorkspacesController],
   providers: [
     AuditLogService,
     AuthGuard,
     AuthSessionService,
+    DelegatedApproverService,
     DevAuthGuard,
     InMemoryReplayGuard,
     PermissionGuard,
@@ -37,6 +40,7 @@ import {
     AuditLogService,
     AuthGuard,
     AuthSessionService,
+    DelegatedApproverService,
     DevAuthGuard,
     PermissionGuard,
     PortalLaunchTokenService,

@@ -12,14 +12,17 @@ import type {
   LeaveRequestSummary,
   LeaveStatus,
   LeaveTypeSummary,
+  OneDataPermission,
 } from '@onedata/contracts';
 import {
   LEAVE_PAPER_DECISION_RECORD,
+  LEAVE_REQUEST_READ,
   LEAVE_REQUEST_VOID,
 } from '@onedata/contracts';
 import { PrismaService } from '../database/prisma.service';
 import type { AuthenticatedIdentity, TenantContext } from '../common/tenant/tenant-context';
-import { hasOneDataPermission } from '../platform/auth/permissions';
+import { DelegatedApproverService } from '../platform/auth/delegated-approver.service';
+import { scopeForPermission } from '../platform/auth/permissions';
 import { CreateLeaveRequestDto } from './dto/create-leave-request.dto';
 import { PaperResultDto } from './dto/paper-result.dto';
 import { VoidLeaveDto } from './dto/void-leave.dto';
@@ -49,6 +52,7 @@ export class LeaveService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly leaveRules: LeaveRulesService,
+    private readonly delegatedApprovers: DelegatedApproverService,
   ) {}
 
   async listTypes(): Promise<LeaveTypeSummary[]> {
@@ -66,7 +70,7 @@ export class LeaveService {
   }
 
   async listRequests(user: CurrentUser): Promise<LeaveRequestSummary[]> {
-    const where = this.scopeWhere(user);
+    const where = await this.scopeWhere(user, LEAVE_REQUEST_READ);
     if (!where) {
       return [];
     }
@@ -248,13 +252,11 @@ export class LeaveService {
     user: CurrentUser,
     input: PaperResultDto,
   ): Promise<LeaveRequestSummary> {
-    const request = await this.getRequestForUser(id, user);
+    const request = await this.getRequestForUser(id, user, LEAVE_PAPER_DECISION_RECORD);
     if (request.status !== 'SUBMITTED') {
       throw new ConflictException('Only a submitted leave request can receive a paper result.');
     }
-    if (!hasOneDataPermission(user, LEAVE_PAPER_DECISION_RECORD)) {
-      throw new ForbiddenException('The account cannot record a paper leave result.');
-    }
+    await this.delegatedApprovers.assertCanAct(user, LEAVE_PAPER_DECISION_RECORD, request.tenantId);
 
     const actorEmployeeId = await this.employeeIdForUser(user);
     if (actorEmployeeId && actorEmployeeId === request.employeeId) {
@@ -342,7 +344,7 @@ export class LeaveService {
       });
     });
 
-    return this.getSummaryForUser(id, user);
+    return this.getSummaryForUser(id, user, LEAVE_PAPER_DECISION_RECORD);
   }
 
   async cancel(id: string, user: CurrentUser): Promise<LeaveRequestSummary> {
@@ -387,13 +389,11 @@ export class LeaveService {
   }
 
   async void(id: string, user: CurrentUser, input: VoidLeaveDto): Promise<LeaveRequestSummary> {
-    const request = await this.getRequestForUser(id, user);
+    const request = await this.getRequestForUser(id, user, LEAVE_REQUEST_VOID);
     if (request.status !== 'PAPER_APPROVED') {
       throw new ConflictException('Only an effective paper-approved leave can be voided.');
     }
-    if (!hasOneDataPermission(user, LEAVE_REQUEST_VOID)) {
-      throw new ForbiddenException('The account cannot void an effective leave request.');
-    }
+    await this.delegatedApprovers.assertCanAct(user, LEAVE_REQUEST_VOID, request.tenantId);
 
     const actorEmployeeId = await this.employeeIdForUser(user);
     if (actorEmployeeId && actorEmployeeId === request.employeeId) {
@@ -441,10 +441,28 @@ export class LeaveService {
       });
     });
 
-    return this.getSummaryForUser(id, user);
+    return this.getSummaryForUser(id, user, LEAVE_REQUEST_VOID);
   }
 
-  private scopeWhere(user: CurrentUser): Prisma.LeaveRequestWhereInput | null {
+  private async scopeWhere(
+    user: CurrentUser,
+    permission: OneDataPermission,
+  ): Promise<Prisma.LeaveRequestWhereInput | null> {
+    let scope = scopeForPermission(user, permission);
+    if (!scope && (permission === LEAVE_PAPER_DECISION_RECORD || permission === LEAVE_REQUEST_VOID)) {
+      // A delegated actor is checked against the concrete request tenant after
+      // the request is found. Keep this lookup tenant-scoped, never global.
+      scope = 'tenant';
+    }
+    if (!scope) {
+      return null;
+    }
+
+    if (scope === 'self') {
+      const employeeId = await this.employeeIdForUser(user);
+      return employeeId ? { employeeId } : null;
+    }
+
     const tenantIds = user.workspaces
       .filter((workspace) => workspace.kind === 'tenant')
       .map((workspace) => workspace.id);
@@ -453,18 +471,22 @@ export class LeaveService {
       .map((workspace) => workspace.id);
     const scopes: Prisma.LeaveRequestWhereInput[] = [];
 
-    if (tenantIds.length > 0) {
+    if ((scope === 'tenant' || scope === 'affiliation') && tenantIds.length > 0) {
       scopes.push({ tenantId: { in: tenantIds } });
     }
-    if (affiliationIds.length > 0) {
+    if (scope === 'affiliation' && affiliationIds.length > 0) {
       scopes.push({ tenant: { affiliationId: { in: affiliationIds } } });
     }
 
     return scopes.length > 0 ? { OR: scopes } : null;
   }
 
-  private async getRequestForUser(id: string, user: CurrentUser) {
-    const scope = this.scopeWhere(user);
+  private async getRequestForUser(
+    id: string,
+    user: CurrentUser,
+    permission: OneDataPermission = LEAVE_REQUEST_READ,
+  ) {
+    const scope = await this.scopeWhere(user, permission);
     if (!scope) {
       throw new NotFoundException('Leave request not found.');
     }
@@ -479,8 +501,12 @@ export class LeaveService {
     return request;
   }
 
-  private async getSummaryForUser(id: string, user: CurrentUser): Promise<LeaveRequestSummary> {
-    return this.toSummary(await this.getRequestForUser(id, user));
+  private async getSummaryForUser(
+    id: string,
+    user: CurrentUser,
+    permission: OneDataPermission = LEAVE_REQUEST_READ,
+  ): Promise<LeaveRequestSummary> {
+    return this.toSummary(await this.getRequestForUser(id, user, permission));
   }
 
   private async employeeIdForUser(user: CurrentUser): Promise<string | null> {
