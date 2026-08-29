@@ -52,6 +52,7 @@
 | AUTH-002 | token invalid/expired/replay | ถูกปฏิเสธ, durable `jti` replay ใช้ซ้ำไม่ได้ข้าม API replica และไม่สร้าง session บางส่วน |
 | AUTH-003 | logout/idle expiry/rotation | session เดิมใช้ต่อไม่ได้หลัง logout หรือเกิน idle timeout; rotate ออก token ใหม่โดยไม่ต่อ absolute expiry |
 | AUTH-004 | permission deny | บัญชีที่ไม่มี capability ได้ `403`; development auth ปิดใน staging/production |
+| AUTH-005 | SSO test double negative suite | valid exchange สำเร็จ; expired, issuer/audience/signature/future และ replay ถูกปฏิเสธ; session เก่าหลัง rotation/logout ใช้ต่อไม่ได้ |
 | SCOPE-001 | workspace ที่ได้รับอนุญาต | ผู้ใช้เห็นเฉพาะ tenant/affiliation ที่ membership อนุญาตและสลับ workspace ได้เท่าที่ควร |
 | SCOPE-002 | cross-tenant read/write | เปลี่ยน `x-tenant-id` หรือ resource ID ไปยัง tenant อื่นแล้วถูกปฏิเสธ ไม่เกิด side effect |
 | PEOPLE-001 | master-data sync ครั้งแรก | จำนวน/รหัส source/ชื่อ/หน่วยงานตรงกับ source ที่อนุมัติ และมี sync run สรุปผล |
@@ -92,6 +93,7 @@
 - [ ] มีรายชื่อ tenant, ผู้ใช้, บทบาท, ผู้รับผิดชอบ และ support contact
 - [ ] baseline People/membership และ leave ถูก export/reconcile พร้อมผู้อนุมัติ
 - [ ] Portal launch route, domain, cookie, CORS/CSRF และ reverse proxy ผ่าน staging
+- [ ] รัน SSO test double/negative suite ด้วย test identity และเก็บผล status โดยไม่เก็บ token
 - [ ] migration/backup/restore และ rollback window ถูกทดสอบ
 - [ ] เก็บ UAT evidence artifact แบบ aggregate-only พร้อม commit/build และผู้ทดสอบ
 - [ ] Special period, contract version, service token และ cutoff ถูกยืนยันโดย owner
@@ -135,7 +137,7 @@
 
 ## 8. สิ่งที่ยัง BLOCKED ใน checkpoint ปัจจุบัน
 
-- การทดสอบกับบัญชี Portal และข้อมูลบุคลากรจริงยังต้องมี owner อนุมัติและ mapping ที่ตรวจรับ
+- มี SSO test double และ negative runner ใน repository แล้ว แต่การทดสอบกับ Portal staging จริง/บัญชี Portal และข้อมูลบุคลากรจริงยังต้องมี owner อนุมัติและ mapping ที่ตรวจรับ
 - แบบ Word/DOCX ฉบับราชการและตัวอย่าง golden form ยังไม่มี จึงยังไม่ควรประกาศเอกสารจากระบบเป็นแบบทางการ
 - มี reconciliation UI foundation สำหรับ snapshot/schedule, durable session/replay foundation และ aggregate-only UAT evidence tooling แล้ว แต่ยังไม่มี alerting production และ distributed edge rate limit แบบหลาย replica; base permission scope/delegated assignment API มีแล้ว แต่ยังต้องทดสอบครบทุก role/workspace กับ owner sign-off
 - ยังไม่ได้ทำ backup/restore rehearsal กับ production-like infrastructure และยังไม่มี pilot จริง

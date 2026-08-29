@@ -11,7 +11,7 @@
 | Shared contract | เสร็จระดับ foundation | `packages/contracts`, contract version `1.4`, typed One Data capabilities, `PAPER_APPROVED` effective status, snapshot reconciliation/schedule summaries และ fixture ที่ไม่มี `CONFIRMED` |
 | NestJS API | เสร็จระดับ foundation | `apps/api`, `/api/health/live`, `/api/health/ready`, `/api/v1/system/contract` |
 | HTTP boundary | เสร็จระดับ foundation | request-id, API envelope, problem-details, validation configuration และ aggregate response metrics ที่ไม่เก็บ PII |
-| Auth boundary | เสร็จระดับ local integration foundation | Portal HS256 token verification/exchange, issuer/audience/expiry/jti replay checks แบบ database-backed, opaque session token ที่เก็บเฉพาะ SHA-256 hash, secure httpOnly cookie, session rotation/revocation audit และ development fallback ที่ปิดเป็นค่าเริ่มต้น |
+| Auth boundary | เสร็จระดับ local + staging-test foundation | Portal HS256 token verification/exchange, issuer/audience/expiry/jti replay checks แบบ database-backed, opaque session token ที่เก็บเฉพาะ SHA-256 hash, secure httpOnly cookie, session rotation/revocation audit, SSO test double/negative runner และ development fallback ที่ปิดเป็นค่าเริ่มต้น |
 | Tenant boundary | guard เสร็จระดับ session foundation | session workspace derive จาก active employee membership; `x-tenant-id` เลือกได้เฉพาะ workspace ที่ identity มีสิทธิ์ |
 | Next.js web | เสร็จระดับ local development | `/tenant-dashboard`, `/leave`, `/auth/portal/launch`, runtime API health/current user และ server actions ของ Paper-first leave workflow ตาม reference direction |
 | Docker | เสร็จระดับ local + staging foundation | `docker-compose.target.yml`, production template, `docker-compose.target.staging.yml`, API `3100`, web `3101`, แยกจาก Laravel compose และมี staging preflight |
@@ -24,7 +24,7 @@
 | UAT/pilot operating foundation | เสร็จระดับ planning + local evidence/shadow | [UAT/Pilot/Cutover Plan](UAT_PILOT_CUTOVER_PLAN.md), [Release Readiness](RELEASE_READINESS.md), test matrix, G0–G5 gate, reconciliation/rollback checklist, snapshot/schedule monitor, `scripts/target-uat-smoke.sh` และ aggregate-only `scripts/target-uat-evidence.sh`; local evidence ผ่านโดยใช้ dev-auth override แต่ยังไม่มี staging/real-data pilot |
 | Prisma/People/Leave vertical slice | เสร็จระดับ local development | schema + synthetic seed, People read, Leave `DRAFT → SUBMITTED → PAPER_APPROVED/PAPER_REJECTED`, `CANCELLED/VOIDED`, provisional server-side day calculation, fixed-decimal requested days, holiday exclusion, active-request overlap guard, Paper-first UI/server actions และ durable audit/outbox |
 | Leave Rulebook foundation | เสร็จระดับ local development | versioned/effective-dated `LeavePolicyProfile`/`LeavePolicyRule`, draft/publish API, legal-basis/approval audit, active leave-type validation และ production guard ที่ไม่อนุญาต provisional calculation |
-| Regression checks | ผ่าน | target typecheck, target build, API 19 suites/69 tests, shell syntax/tooling checks, staging Compose/preflight with dummy values, UAT evidence script, legacy Vite build, Docker health smoke และ browser workflow smoke ด้วยข้อมูลสังเคราะห์ |
+| Regression checks | ผ่าน | target typecheck, target build, API 19 suites/69 tests, shell syntax/tooling checks, staging Compose/preflight with dummy values, SSO test double/negative runner, UAT evidence script, legacy Vite build, Docker health smoke และ browser workflow smoke ด้วยข้อมูลสังเคราะห์ |
 
 ## ยังไม่เสร็จและห้ามตีความว่า production-ready
 
@@ -50,6 +50,13 @@ docker compose -f docker-compose.target.yml up --build -d
 DATABASE_URL="$ONEDATA_TARGET_DATABASE_URL" npm run target:db:migrate
 # Staging config preflight (use a private env file outside the repository)
 ONEDATA_STAGING_ENV_FILE=/private/path/onedata-staging.env npm run target:staging:preflight
+# Staging SSO test double + invalid/replay/session checks (test identity only)
+ONEDATA_SSO_BASE_URL=https://onedata-staging.example.org \
+  ONEDATA_SSO_TEST_SECRET="$STAGING_SSO_TEST_SECRET" \
+  ONEDATA_SSO_TEST_ISSUER=yala-pao-health-portal-staging \
+  ONEDATA_SSO_TEST_AUDIENCE=one_data_staging \
+  ONEDATA_SSO_ORIGIN=https://onedata-staging.example.org \
+  ONEDATA_SSO_EXPECT_SECURE_COOKIE=true npm run target:sso:negative
 # Read-only target smoke (set ONEDATA_UAT_WEB_URL for the web probe)
 ONEDATA_UAT_BASE_URL=http://localhost:3100 ONEDATA_UAT_WEB_URL=http://localhost:3101 ./scripts/target-uat-smoke.sh
 # Aggregate-only UAT evidence; local dev auth may require ONEDATA_UAT_EXPECT_ME_STATUS=200

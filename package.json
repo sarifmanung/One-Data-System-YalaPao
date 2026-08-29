@@ -15,6 +15,8 @@
         "target:restore:verify": "scripts/target-restore-verify.sh",
         "target:uat:evidence": "scripts/target-uat-evidence.sh",
         "target:staging:preflight": "scripts/target-staging-preflight.sh",
+        "target:sso:double": "node scripts/target-sso-test-double.mjs",
+        "target:sso:negative": "scripts/target-sso-negative.sh",
         "target:typecheck": "npm run build -w @onedata/contracts && npm run db:generate -w @onedata/api && npm run typecheck -w @onedata/api && npm run typecheck -w @onedata/web",
         "target:test": "npm run build -w @onedata/contracts && npm run db:generate -w @onedata/api && npm run test -w @onedata/api",
         "target:dev": "concurrently -k \"npm run start:dev -w @onedata/api\" \"npm run dev -w @onedata/web\""

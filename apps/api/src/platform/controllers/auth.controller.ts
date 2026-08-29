@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Req, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, HttpCode, HttpStatus, Post, Req, Res, UseGuards } from '@nestjs/common';
 import type { AuthSessionResponse, LogoutResponse } from '@onedata/contracts';
 import type { Request, Response } from 'express';
 import { toApiEnvelope } from '../../common/http/api-envelope';
@@ -15,6 +15,7 @@ export class AuthController {
   ) {}
 
   @Post('portal/exchange')
+  @HttpCode(HttpStatus.OK)
   async exchange(
     @Req() request: Request,
     @Res({ passthrough: true }) response: Response,
@@ -33,6 +34,7 @@ export class AuthController {
   }
 
   @Post('logout')
+  @HttpCode(HttpStatus.OK)
   async logout(
     @Req() request: Request,
     @Res({ passthrough: true }) response: Response,
@@ -45,6 +47,7 @@ export class AuthController {
   }
 
   @Post('rotate')
+  @HttpCode(HttpStatus.OK)
   @UseGuards(AuthGuard)
   async rotate(
     @Req() request: Request,

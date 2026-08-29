@@ -17,6 +17,7 @@
 | Target tests | 19 suites / 69 tests ผ่าน |
 | Typecheck/build | ผ่าน |
 | Staging configuration | production Compose + staging overlay และ preflight ผ่านด้วยค่าจำลอง; ยังไม่ได้ deploy staging จริง |
+| SSO negative suite | test double, valid exchange/session/rotation/logout และ invalid/expired/replay checks ผ่านบน local; ยังไม่ได้ทดสอบ Portal staging จริง |
 | Schema/backup/restore tooling | syntax, local schema check, backup checksum และ restore-to-new-database verification ผ่าน |
 | UAT evidence | `scripts/target-uat-evidence.sh` สร้าง JSON/Markdown aggregate-only ได้; local run ใช้ dev-auth override `expected HTTP 200` |
 
@@ -25,7 +26,7 @@
 | Gate | สถานะ | เหตุผล |
 | --- | --- | --- |
 | G0 Local/CI | **PASS** | automated test, typecheck, build, local health, contract, metrics และ evidence tooling ผ่าน |
-| G1 Staging | **BLOCKED** | overlay/preflight พร้อมแล้ว แต่ยังต้อง deploy จริง, restore rehearsal, SSO test double, Special contract/negative test, proxy/edge rate-limit และ alerting |
+| G1 Staging | **BLOCKED** | overlay/preflight และ local SSO test double พร้อมแล้ว แต่ยังต้อง deploy จริง, restore rehearsal, Portal/Special staging contract, proxy/edge rate-limit และ alerting |
 | G2 Shadow run | **BLOCKED** | ยังต้องตรวจ People/Portal mapping และ leave reconciliation กับข้อมูลจริงโดย data owner |
 | G3 Pilot 1 รพ.สต. | **BLOCKED** | ต้องผ่าน G1/G2 และมีผู้รับผิดชอบ paper-first/SoD ที่ตรวจรับแล้ว |
 | G4 Pilot 3 รพ.สต. | **BLOCKED** | ต้องมี reconciliation อย่างน้อย 2 รอบและไม่มี Sev-1/Sev-2 ค้าง |
