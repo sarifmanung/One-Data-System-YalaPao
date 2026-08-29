@@ -1,0 +1,35 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    body { font-family: "Noto Sans Thai", "Tahoma", ui-sans-serif, system-ui, sans-serif; }
+}
+
+@layer components {
+    .panel { @apply rounded-2xl border border-slate-200 bg-white p-5 shadow-sm; }
+    .stat-card { @apply rounded-2xl border border-slate-200 bg-white p-5 shadow-sm; }
+    .stat-label { @apply text-sm font-medium text-slate-500; }
+    .stat-value { @apply mt-2 text-3xl font-bold text-slate-900; }
+    .section-title { @apply text-lg font-semibold text-slate-900; }
+    .section-help { @apply mt-1 text-sm text-slate-500; }
+    .label { @apply mb-1 block text-sm font-medium text-slate-700; }
+    .field { @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-teal-600 focus:ring-2 focus:ring-teal-100; }
+    .btn-primary { @apply inline-flex items-center justify-center rounded-lg bg-teal-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-60; }
+    .btn-secondary { @apply inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50; }
+    .btn-small { @apply rounded-md border px-2.5 py-1 text-xs font-semibold transition; }
+    .btn-green { @apply border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100; }
+    .btn-amber { @apply border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100; }
+    .btn-muted { @apply border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100; }
+    .form-error { @apply mt-1 text-sm text-red-600; }
+    .data-table { @apply min-w-full divide-y divide-slate-200 text-left text-sm; }
+    .data-table th { @apply whitespace-nowrap bg-slate-50 px-5 py-3 font-semibold text-slate-600; }
+    .data-table td { @apply whitespace-nowrap border-t border-slate-100 px-5 py-3 text-slate-700; }
+    .status-pill { @apply inline-flex rounded-full px-2.5 py-1 text-xs font-semibold; }
+    .status-draft { @apply bg-slate-100 text-slate-700; }
+    .status-confirmed, .status-acknowledged { @apply bg-emerald-100 text-emerald-800; }
+    .status-cancelled, .status-failed { @apply bg-red-100 text-red-800; }
+    .status-void, .status-dry_run { @apply bg-amber-100 text-amber-800; }
+    .status-pending, .status-sending { @apply bg-blue-100 text-blue-800; }
+    .empty-state { @apply px-5 py-10 text-center text-sm text-slate-500; }
+}

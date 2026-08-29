@@ -1,0 +1,171 @@
+# One Data ↔ Special-Allowances Integration Contract
+
+สถานะ: MVP contract v1.0
+วันที่: 29 สิงหาคม 2569 (2026)
+
+เอกสารนี้เป็น contract ที่ implementation รอบแรกใช้งานจริงร่วมกันระหว่าง One Data และ `Special-Allowances` โดยยึด ownership ตาม [ARCHITECTURE.md](../ARCHITECTURE.md) และ decision ล่าสุดใน [One Data System - Reimplementation Blueprint.md](../One%20Data%20System%20-%20Reimplementation%20Blueprint.md)
+
+## Boundary และทิศทางข้อมูล
+
+- `Special-Allowances` เป็น source ของ health centers และ employees ในช่วง migration/MVP
+- One Data เก็บสำเนาเพื่อใช้งาน People/Leave และเก็บ `external_id_mappings` เพื่อไม่จับคู่ด้วยชื่อหรือ PII
+- One Data เป็นผู้ส่ง complete monthly leave snapshot
+- Special เป็นเจ้าของการคำนวณ ฉ.10/11, period, lock/adjustment และรายงาน
+- ห้ามอ่านหรือเขียนฐานข้อมูลของอีกระบบโดยตรง แม้อยู่ server เดียวกัน
+
+## Authentication
+
+ทุก endpoint ใช้ service token แยกจาก Portal SSO:
+
+```http
+Authorization: Bearer <ONEDATA_INTEGRATION_TOKEN>
+```
+
+Special ตรวจ token แบบ constant-time และตอบ `401` หาก token ไม่ถูกต้อง หรือ `503` หากยังไม่ได้ตั้งค่า token ฝั่ง server
+
+## Master data: Special → One Data
+
+### `GET /internal/api/v1/master-data/health-centers`
+
+```json
+{
+  "data": [
+    { "id": "health-center-id", "name": "รพ.สต.ตัวอย่าง", "areaKey": "YALA-HC-001" }
+  ]
+}
+```
+
+### `GET /internal/api/v1/master-data/employees`
+
+ฟิลด์หลักที่ One Data ใช้:
+
+```json
+{
+  "data": [
+    {
+      "id": "employee-id",
+      "firstName": "ชื่อ",
+      "lastName": "นามสกุล",
+      "positionGroup": "ข้าราชการ",
+      "effectivePositionGroup": "ข้าราชการ",
+      "positionName": "ตำแหน่ง",
+      "startDate": "2020-01-01",
+      "governmentServiceStartDate": "2020-01-01",
+      "healthCenterStartDate": "2026-01-01",
+      "healthCenterId": "health-center-id",
+      "isActive": true,
+      "updatedAt": "2026-08-29T00:00:00.000Z"
+    }
+  ]
+}
+```
+
+### `GET /internal/api/v1/master-data/users`
+
+ใน source schema ปัจจุบัน Special ยังไม่มี relation ระหว่าง `User` กับ `Employee` จึงส่ง `employeeId: null` จนกว่าจะมี mapping ที่ตรวจสอบแล้ว:
+
+```json
+{
+  "data": [
+    {
+      "id": "user-id",
+      "username": "staff",
+      "role": "HEALTH_CENTER_USER",
+      "healthCenterId": "health-center-id",
+      "employeeId": null,
+      "isActive": true
+    }
+  ]
+}
+```
+
+การ sync เป็น transaction ใน One Data และเขียน effective-dated membership จาก `healthCenterStartDate` หากบุคลากรย้ายหน่วยงานจะปิด membership เดิมก่อนเริ่ม membership ใหม่
+
+## Leave snapshot: One Data → Special
+
+### `POST /internal/api/v1/periods/{YYYY-MM}/leave-snapshot`
+
+One Data ส่งเฉพาะใบลาสถานะ `CONFIRMED` และรวมรายการที่มีผลในเดือนนั้น โดย v1 ใช้ **complete reset semantics**: Special จะคำนวณ monthly records ของบุคลากรทั้ง period ใหม่ และถือบุคลากรที่ไม่ปรากฏใน payload ว่าไม่มีวันลา (`0`) การส่งแบบ explicit employee rows ว่างทุกคนอาจเพิ่มใน contract รุ่นถัดไปได้หากต้องการตรวจ scope แบบเข้มขึ้น
+
+ตัวอย่าง:
+
+```json
+{
+  "contract_version": "1.0",
+  "period": "2026-08",
+  "period_year": 2026,
+  "period_month": 8,
+  "snapshot_version": 1,
+  "idempotency_key": "leave-snapshot:affiliation-id:2026-08:sha256",
+  "source_cutoff": "2026-08-29T08:00:00+00:00",
+  "source_hash": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+  "employees": [
+    {
+      "special_employee_id": "employee-id",
+      "leave_entries": [
+        {
+          "one_data_leave_id": "leave-request-id",
+          "type": "SICK_LEAVE",
+          "starts_on": "2026-08-10",
+          "ends_on": "2026-08-10",
+          "dates": ["2026-08-10"],
+          "duration_days": 1,
+          "revision": 2
+        }
+      ]
+    }
+  ]
+}
+```
+
+ประเภทลาที่รองรับใน v1.0:
+
+| One Data / Special type | ความหมาย |
+| --- | --- |
+| `PERSONAL_LEAVE` | ลากิจส่วนตัว |
+| `SICK_LEAVE` | ลาป่วย |
+| `VACATION_LEAVE` | ลาพักผ่อน |
+| `ABSENT` | ขาดงาน/ไม่มาปฏิบัติงาน |
+| `MATERNITY_LEAVE` | ลาคลอดบุตร |
+| `HAJJ_LEAVE` | ลาไปประกอบพิธีฮัจย์ |
+| `ORDAIN_LEAVE` | ลาอุปสมบท |
+
+### Response
+
+```json
+{
+  "data": {
+    "status": "applied",
+    "periodId": "special-period-id",
+    "period": "2026-08",
+    "snapshotVersion": 1,
+    "processedEmployees": 267,
+    "processedLeaveEntries": 12
+  }
+}
+```
+
+## Idempotency และ period protocol
+
+- Special รับเฉพาะ period `NORMAL` ที่ `OPEN`
+- `period` ใน path และ body ต้องตรงกับ `period_year`/`period_month`
+- `snapshot_version` ต้องมากกว่า version ล่าสุดของ period
+- ถ้า `idempotency_key` และ `source_hash` ซ้ำ จะตอบ `status: duplicate` โดยไม่เขียนข้อมูลซ้ำ
+- การยกเลิกใบลาใน One Data จะไม่ถูกส่งเป็นรายการใหม่; complete snapshot ครั้งถัดไปทำให้ Special คำนวณค่าปัจจุบันใหม่
+- หลัง Special lock period แล้ว ห้าม overwrite ด้วย v1.0; ต้องใช้ adjustment/correction contract ที่จะกำหนดเพิ่ม
+
+## ขั้นตอนปฏิบัติรายเดือน
+
+1. One Data sync master data ตามรอบที่กำหนด หรือสั่ง manual ก่อนทำงาน
+2. ผู้ใช้สร้างและยืนยันใบลาใน One Data
+3. ผู้ดูแลตรวจ unmapped employee, จำนวนรายการ และ source hash
+4. One Data prepare snapshot และส่งไป Special
+5. Special ตรวจ period, คำนวณตัวแปรการลา และบันทึก audit
+6. หากส่งซ้ำ ใช้ batch เดิม/เวอร์ชันใหม่ตามผลการแก้ไข ไม่สร้างข้อมูลซ้ำ
+
+## ข้อจำกัดที่ยังเปิดไว้
+
+- ต้องกำหนด mapping บัญชี Portal ↔ person และ organization code จริงก่อน pilot
+- ต้องเพิ่ม contract สำหรับ locked-period adjustment และ reconciliation UI
+- ต้องยืนยัน rulebook วันลาและเอกสาร Word ก่อนเปิด document module
+- การใช้ `Float` ใน schema เดิมของ Special เป็นข้อจำกัด legacy; One Data ไม่คำนวณสูตร ฉ.10/11 ซ้ำ

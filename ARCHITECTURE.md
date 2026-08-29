@@ -2,9 +2,9 @@
 
 เอกสารคำแนะนำด้านสถาปัตยกรรมก่อนเริ่มพัฒนาระบบ One Data System สำหรับองค์การบริหารส่วนจังหวัดยะลา
 
-- สถานะ: Proposed baseline — รออนุมัติก่อนเริ่ม implementation
+- สถานะ: Implementation baseline — MVP implementation in progress
 - วันที่จัดทำ: 29 สิงหาคม 2569 (2026)
-- ขอบเขตรุ่นแรก: Organization & People Core, ระบบลาแบบสร้าง Word/ลงนามภายนอก และเชื่อมระบบ Special-Allowances เดิม
+- ขอบเขตรุ่นแรก: Organization & People Core, ระบบลาขั้นพื้นฐาน และเชื่อมระบบ Special-Allowances เดิม; Word/document module เป็นระยะถัดไป
 - ระบบที่เกี่ยวข้อง: `yala-pao-public-health-portal`, `Special-Allowances`, `shared-infra` และ `carbooking-yala-pao`
 
 เอกสารนี้ใช้ประกอบกับ `One Data System - Reimplementation Blueprint.md` โดยมุ่งตอบคำถามว่า One Data ควรสร้างและเชื่อมกับระบบที่มีอยู่ด้วยสถาปัตยกรรมแบบใด ไม่ได้แทนที่ business requirements ใน Blueprint
@@ -106,7 +106,7 @@ One Data
 | Platform | external identities, sessions, memberships, roles, permissions, audit, files, outbox | ไม่เป็นเจ้าของ HR profile หรือ business workflow |
 | Organization | affiliation, tenant, workgroup และโครงสร้างองค์กร | การเปลี่ยนโครงสร้างต้องมี effective date/history |
 | People | person, employee profile, employment และ job history | onboarding ต้อง atomic; ห้ามจับ identity ด้วยชื่อหรือ PII อย่างเดียว |
-| Leave | leave policy, balance/entitlement, leave request, paper result และ cancellation/void | รุ่นแรกไม่มี online approval; เฉพาะ `PAPER_APPROVED` ที่ยังมีผลจึงส่งต่อได้ |
+| Leave | leave request, revision, status, cancellation/void และ monthly snapshot source | รุ่นแรกไม่ทำ online approval/Word; เฉพาะ `CONFIRMED` ที่ยังมีผลจึงส่งต่อได้ |
 | Documents | template version, document run, snapshot, artifact และ checksum | เอกสารที่ออกแล้วต้องสร้างซ้ำได้จาก snapshot เดิม |
 | SpecialAllowances Integration | external ID mapping, export batch, delivery, reconciliation และ external result/report references | ไม่สร้างสูตรหรือแก้ period/result ของ Special โดยตรง |
 
@@ -151,32 +151,26 @@ Portal เป็นผู้ยืนยันตัวตนและอนุ�
 
 ## 8. Leave Workflow for the First Release
 
-รุ่นแรกใช้ Word-first workflow: ผู้ใช้กรอกใบลาในระบบ สร้าง DOCX พิมพ์และลงนามภายนอก จากนั้นเจ้าหน้าที่ผู้มีสิทธิ์บันทึกผลเอกสารกลับเข้าระบบ
+รุ่นแรกเน้นการเก็บข้อมูลการลาให้ใช้งานง่าย ผู้ใช้กรอกข้อมูลใน One Data แล้วบันทึกเป็นใบลาในระบบ ส่วน Word/การพิมพ์/การลงนามภายนอกยังไม่บังคับใน release นี้ และจะทำหลังจากได้แบบฟอร์มจริงกับกฎที่ฝ่ายบุคคลรับรอง
 
-สถานะเป้าหมายเบื้องต้น:
+สถานะที่ใช้ใน MVP:
 
 ```mermaid
 stateDiagram-v2
     [*] --> DRAFT
-    DRAFT --> DOCUMENT_GENERATED
-    DOCUMENT_GENERATED --> WAITING_PAPER_RESULT
-    WAITING_PAPER_RESULT --> PAPER_APPROVED
-    WAITING_PAPER_RESULT --> PAPER_REJECTED
-    DRAFT --> CANCELLED
-    DOCUMENT_GENERATED --> CANCELLED
-    PAPER_APPROVED --> CANCELLED: ยกเลิกตามกฎที่อนุญาต
-    PAPER_APPROVED --> VOID: รายการผิด/ไม่มีผล
-    PAPER_APPROVED --> CORRECTED: สร้าง revision/รายการแก้ไข
+    DRAFT --> CONFIRMED: ยืนยันข้อมูล
+    CONFIRMED --> CANCELLED: ยกเลิกตามกฎที่อนุญาต
+    DRAFT --> VOID: รายการผิด/ไม่ใช้
+    CANCELLED --> VOID: เก็บเป็นโมฆะภายหลัง
 ```
 
 กฎสำคัญ:
 
-- การสร้าง DOCX ไม่เท่ากับการอนุมัติลา
-- การบันทึกผลกระดาษต้องเก็บผู้บันทึก เวลา เลขที่/วันที่เอกสาร ผู้ลงนาม และหลักฐานขั้นต่ำที่ฝ่ายบุคคลกำหนด
-- เอกสารที่แก้ไขหลังออกแล้วต้องมี revision ใหม่ ไม่เขียนทับ artifact เดิม
-- เก็บ template version, source snapshot และ checksum ของทุกเอกสารทางการ
-- ใบลาที่เข้าสู่ workflow แล้วใช้ cancel/void/correction แทน hard delete
-- เฉพาะใบลาสถานะ `PAPER_APPROVED` ที่ยังมีผลเท่านั้นเป็น input ของ Special-Allowances
+- การบันทึกใหม่เริ่มที่ `DRAFT` และไม่ถูกส่งไปคำนวณ
+- `CONFIRMED` คือสถานะเดียวที่มีผลและเป็น input ของ Special-Allowances
+- `CANCELLED` ไม่ถูกส่งใน snapshot ใหม่; complete snapshot จะทำให้ปลายทางสะท้อนรายการที่มีผลล่าสุด
+- ใช้ revision, cancel และ void แทน hard delete เพื่อรักษาประวัติ
+- รุ่นแรกไม่ทำ online approval และไม่บังคับ requester–approver separation ตามความต้องการของผู้ใช้
 
 ## 9. Special-Allowances Integration
 
@@ -186,11 +180,22 @@ One Data ไม่คำนวณ ฉ.10/11 ซ้ำ แต่มี anti-corru
 
 - จับคู่ immutable `person_id` ของ One Data กับ employee ID ใน Special-Allowances
 - แปลงประเภทลาและช่วงวันที่เป็น attendance fields ที่ contract รองรับ
-- ส่งข้อมูลลาเป็นราย period/month
+- ส่งข้อมูลลาเป็น complete snapshot ราย period/month จาก One Data ไป Special
 - รองรับการส่งซ้ำแบบ idempotent โดยไม่สร้างข้อมูลซ้ำ
 - รายงาน unmapped persons, invalid mappings และ changed/cancelled leave
 - เปรียบเทียบ row count และ checksum เพื่อ reconciliation
-- อ่าน period status, result summary และ report artifacts มาแสดงผ่าน One Data
+- อ่าน period status, result summary และ report artifacts มาแสดงผ่าน One Data ในระยะถัดไป
+
+contract รุ่นแรกที่ implement แล้ว:
+
+- `GET /internal/api/v1/master-data/health-centers`
+- `GET /internal/api/v1/master-data/employees`
+- `GET /internal/api/v1/master-data/users`
+- `POST /internal/api/v1/periods/{YYYY-MM}/leave-snapshot`
+- ใช้ `Authorization: Bearer <ONEDATA_INTEGRATION_TOKEN>` สำหรับ service-to-service call
+- snapshot มี `contract_version`, `snapshot_version`, `idempotency_key`, `source_hash`, `source_cutoff` และรายการลาแยกบุคลากร
+
+ทิศทาง sync ที่เลือกคือ One Data เป็นผู้ส่ง leave snapshot รายเดือน และ Special เป็นเจ้าของการรับข้อมูล/คำนวณ/รายงาน ส่วน master data เป็นการดึงจาก Special เข้ามา One Data ผ่าน API; export/import จะใช้เป็น fallback หรือเครื่องมือ migration เท่านั้น
 
 ข้อกำหนด API:
 
@@ -270,24 +275,22 @@ Shared private Docker network
 ### Release 0 — Foundation
 
 - Project skeleton และ module boundaries
-- Portal manifest/launch-token integration
-- Organization hierarchy และ seed 1 อบจ./38 รพ.สต.
-- Tenant scope, local session, role/permission และ audit foundation
-- CI, migration, health checks, backup/restore baseline และ test fixtures
+- Portal manifest/launch-token integration (One Data route ถูกเตรียมไว้ใน Portal seeder)
+- Organization hierarchy, tenant scope, local session, role/permission และ audit foundation
+- Laravel migration, Docker Compose, health checks และ test fixtures
 
-### Release 1 — People and Leave
+### Release 1 — People and Leave (กำลังพัฒนา)
 
 - People Core และ effective-dated employment/membership history
 - Import/reconciliation บุคลากรประมาณ 267 คน
-- Leave policy profiles ที่ฝ่ายบุคคลรับรอง
-- Leave request, DOCX revision และ paper-result workflow
-- Cancel/void/correction, audit และ tenant-isolation tests
+- Leave request, revision, `DRAFT → CONFIRMED → CANCELLED/VOID`, audit และ outbox
+- ยังไม่สร้าง DOCX/paper-result จนกว่าจะมีแบบฟอร์มและกฎที่ฝ่ายบุคคลรับรอง
 
-### Release 2 — Special-Allowances Integration
+### Release 2 — Special-Allowances Integration (โครงสร้างเริ่มต้นทำแล้ว)
 
 - Immutable person mapping
 - Versioned attendance/leave API contract
-- Monthly export/sync, idempotency และ reconciliation
+- Monthly complete snapshot/sync, idempotency, source hash และ delivery history
 - Period status/result/report access ผ่าน One Data
 - Contract, failure/retry และ locked-period adjustment tests
 
@@ -328,20 +331,22 @@ Shared private Docker network
 - Migration dry run และ reconciliation report
 - Security review สำหรับ PII, session, file access, logs และ service credentials
 
-## 17. Decisions Required Before Implementation
+## 17. Decisions Required Before Production Integration
 
-Architecture สามารถตั้งโครงและทำ test doubles ได้ แต่ต้องปิดรายการต่อไปนี้ก่อนพัฒนา domain/integration สำหรับ production:
+สำหรับ MVP ได้ล็อก decision ที่จำเป็นต่อการเริ่มพัฒนาแล้ว:
 
-1. การจับคู่บัญชี Portal กับบุคลากรประมาณ 267 คน
-2. กฎการมีหลายหน่วยงาน ช่วยราชการ รักษาการ และการย้ายกลางงวด
-3. Permission matrix ระดับตนเอง รพ.สต. และ อบจ.
-4. ผู้มีสิทธิ์บันทึกผลเอกสารกระดาษ และกฎ Segregation of Duties/break-glass
-5. Leave Rulebook สำหรับข้าราชการและสถานะการจ้างแต่ละกลุ่ม
-6. แบบ Word ฉบับจริง field mapping และ golden samples
-7. Mapping จาก `PAPER_APPROVED` leave ไป Special-Allowances รวมกรณีข้ามเดือนและยกเลิกย้อนหลัง
-8. Exact Special period statuses, lock/paid/adjustment API และสิทธิ์ reopen
-9. Report access, retention และ checksum contract ของ ฉ.10/11
-10. แหล่งข้อมูลบุคลากร/หน่วยงาน วิธี import duplicate policy และ migration cutoff
+1. master data บุคลากร/หน่วยงานดึงจาก Special-Allowances ผ่าน API; export/import เป็น fallback
+2. ใบลา `CONFIRMED` เท่านั้นที่มีผลและถูกส่งไปคำนวณ; `DRAFT` ไม่ถูกส่ง
+3. One Data เป็นผู้ส่ง complete leave snapshot รายเดือน และ Special เป็นผู้รับ/คำนวณ/รายงาน
+4. รุ่นแรกใช้ role baseline และ local session/Portal SSO โดยไม่ทำ online approval หรือ SoD ที่ซับซ้อน
+5. การย้าย/ช่วยราชการเก็บเป็น effective-dated membership; รายละเอียด edge case จะทดสอบกับข้อมูลจริงก่อน production
+
+สิ่งที่เลื่อนไปก่อน production เต็มรูปแบบ:
+
+- การจับคู่ Portal user กับ person ให้ครบทุกบัญชี และ mapping organization code จริง
+- Leave Rulebook ที่ฝ่ายบุคคลรับรอง, แบบ Word จริง และ golden samples
+- locked-period adjustment, report read-through และ reconciliation dashboard ของ Special
+- การย้ายกลางงวด/หลายสังกัดที่ซับซ้อนและการทดสอบ aggregate ครบ 38 แห่ง
 
 ## 18. Architecture Decision Records to Approve
 
@@ -355,7 +360,7 @@ Architecture สามารถตั้งโครงและทำ test doub
 | ADR-004 | Portal เป็น identity/module-entry; One Data มี local session และ authorization |
 | ADR-005 | Special-Allowances เป็นเจ้าของ formula/period/result/report และเชื่อมผ่าน REST API |
 | ADR-006 | แต่ละ application แยก database, user, secret และ backup boundary |
-| ADR-007 | Leave รุ่นแรกเป็น Word-first/paper-result workflow |
+| ADR-007 | Leave รุ่นแรกใช้ `DRAFT → CONFIRMED → CANCELLED/VOID`; Word/paper-result เป็นระยะถัดไป |
 | ADR-008 | REST + database queue/outbox ก่อน message broker |
 | ADR-009 | Official records ใช้ revision/void/reversal/history แทน destructive update/delete |
 | ADR-010 | Rollout แบบ incremental และ pilot 3 → 10 → 38 รพ.สต. |

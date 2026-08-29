@@ -2,7 +2,7 @@
 
 เอกสารวิเคราะห์ระบบเพื่อการสร้างใหม่แบบ Clean-Room
 
-- เวอร์ชันเอกสาร: 1.5 — Leave-first Integration Baseline Revision
+- เวอร์ชันเอกสาร: 1.6 — MVP Implementation Baseline
 - แก้ไขล่าสุด: 29 สิงหาคม 2569 (2026)
 - วันที่สำรวจ: 10–11 สิงหาคม 2569 (2026)
 - ขอบเขตที่สำรวจ: หน่วยงาน รพ.สต. 1 แห่ง และสังกัดระดับองค์การบริหารส่วนจังหวัดที่เชื่อมกัน
@@ -20,6 +20,7 @@
 | 1.3     | 10 ส.ค. 2569 | ทดสอบซ้ำแบบไม่เปลี่ยนข้อมูล: ยืนยันโครงสร้างประวัติการทำงานที่ใช้กับ ฉ.11, control การพิจารณาใบลา, วงจรไปราชการ และ parameters ของรายงาน ฉ.11; ระบุช่องว่างว่าไม่พบ ฉ.10 ใน catalog ระบบอ้างอิง                                                                                  |
 | 1.4     | 11 ส.ค. 2569 | ทดสอบ mutation แบบ end-to-end ด้วยข้อมูลสังเคราะห์ใน People, Leave/Duty, Schedule, Inventory, Assets, Vehicles, Finance gate, Settings และ Announcement; เพิ่มกฎที่ยืนยันจริง, defect/anti-requirement register, transactional/SoD/decimal/reversal guardrails และบันทึก cleanup |
 | 1.5     | 29 ส.ค. 2569 | ปิดทิศทาง MVP เป็น People Core + ระบบลาแบบ Word-first/ลงนามกระดาษ + เชื่อมระบบ Special-Allowances เดิมผ่าน API; เพิ่มฐานประกาศการลา อบจ. พ.ศ. 2569, paper-result verification, SSO Portal boundary, cutoff/lock/adjustment policy และตัดการสร้าง calculation engine ซ้ำใน One Data |
+| 1.6     | 29 ส.ค. 2569 | ปรับ implementation baseline ตามคำตัดสินล่าสุด: People/Organization + ระบบลาแบบเรียบง่าย + Special API ก่อน; เลื่อน Word/paper-result และ online approval; กำหนด `CONFIRMED` เป็นสถานะที่มีผล, complete reset snapshot, API master-data และ One Data เป็นผู้ส่ง snapshot |
 
 ## วิธีอ่านระดับความมั่นใจ
 
@@ -39,6 +40,8 @@
 
 > เอกสารนี้สกัด “ความต้องการทางธุรกิจ” จากระบบอ้างอิง ไม่ใช่คำสั่งให้คัดลอกหน้าจอ โค้ด เทคโนโลยี หรือข้อจำกัดของระบบเดิมแบบ 1:1
 
+> **Effective implementation baseline:** ส่วน `Implementation Addendum v1.6` ท้ายเอกสารเป็นคำตัดสินล่าสุดของเจ้าของโครงการ และ supersede เฉพาะ workflow/ขอบเขต MVP ที่ขัดกับข้อความก่อนหน้า; ข้อความ revision 1.5 ที่เป็น historical discovery ยังคงไว้เพื่อ traceability.
+
 ## Target Product Baseline
 
 | รายการ                 | Baseline สำหรับระบบใหม่                                                              | สถานะ                               |
@@ -49,7 +52,7 @@
 | กลุ่มเป้าหมาย          | เจ้าหน้าที่ทุกคนของ รพ.สต. ที่สังกัด อบจ.ยะลา                                        | [OWNER-CONFIRMED]                   |
 | กลุ่มเปิดใช้ Leave แรก | ข้าราชการ อบจ. ที่ฝ่ายบุคคลยืนยันว่าอยู่ใต้ประกาศ ก.จ. พ.ศ. 2569; สถานะอื่นเปิดตาม policy profile ที่รับรองแล้ว | [OWNER-CONFIRMED + LEGAL GUARDRAIL] |
 | โครงสร้างรุ่นแรก       | `อบจ.ยะลา → รพ.สต. → บุคลากร`                                                        | [OWNER-CONFIRMED]                   |
-| First production scope | People/Organization Core, ระบบลาแบบสร้าง Word/ลงนามภายนอก และเชื่อมระบบ ฉ.10/11 เดิมผ่าน API | [OWNER-CONFIRMED]                    |
+| First production scope | People/Organization Core, ระบบลาแบบเรียบง่าย และเชื่อมระบบ ฉ.10/11 เดิมผ่าน API; Word/document module เป็นระยะถัดไป | [OWNER-CONFIRMED]                    |
 | ระบบคำนวณ ฉ.10/11      | ใช้ `Special-Allowances` ที่พัฒนาเสร็จแล้วเป็นเจ้าของสูตร รอบคำนวณ ผลลัพธ์ และรายงาน; One Data ส่งข้อมูลลาเท่านั้น | [OWNER-CONFIRMED + CODEBASE-VERIFIED] |
 | จุดเข้าใช้งาน/SSO       | เชื่อม `yala-pao-public-health-portal` ด้วย launch-token contract; ไม่สร้างบัญชี/รหัสผ่านข้ามระบบซ้ำ | [OWNER-CONFIRMED + CODEBASE-VERIFIED] |
 | การขยายระบบ            | เพิ่ม รพ.สต./บุคลากรและต่อโมดูลอื่นแบบ incremental                                   | [OWNER-CONFIRMED]                   |
@@ -2600,6 +2603,45 @@ Observed evidence / Owner-confirmed decision
 
 ---
 
+# Implementation Addendum v1.6 — MVP decisions (29 สิงหาคม 2569)
+
+ส่วนนี้เป็น decision ล่าสุดจากเจ้าของระบบเพื่อใช้กำกับ implementation รอบแรก และ supersede เฉพาะ workflow/ขอบเขต MVP ที่ขัดกันในส่วนก่อนหน้า; รายละเอียด Word, paper-result และ Leave Rulebook ยังเก็บไว้เป็น backlog ระยะถัดไป
+
+## MVP ที่เริ่มพัฒนา
+
+- One Data ใช้ Laravel Modular Monolith + Vue/Inertia และแยก database ownership จาก Special-Allowances
+- รอบแรกทำ People/Organization Core, ระบบลาแบบเรียบง่าย และ integration กับ Special-Allowances
+- ยังไม่สร้าง Word/document module และไม่ทำ online approval chain ในรอบแรก
+- ระบบจองรถยังคงแยกใช้งานต่อไปจนกว่าจะมี decision แยกเรื่อง migration/ownership
+
+## สถานะใบลาและ source ที่มีผล
+
+```text
+DRAFT → CONFIRMED → CANCELLED
+  └────────────────→ VOID
+```
+
+- `DRAFT` เป็นข้อมูลที่ยังแก้ไขได้และไม่ส่งไปคำนวณ
+- `CONFIRMED` เป็นสถานะเดียวที่มีผลและเป็น input ของ Special-Allowances
+- `CANCELLED` ไม่อยู่ใน complete snapshot ใหม่; `VOID` ใช้รักษาประวัติรายการที่ไม่ใช้
+- One Data ส่ง complete monthly leave snapshot; Special เป็นเจ้าของการคำนวณ period ผลลัพธ์ และรายงาน
+
+## Integration decisions
+
+- master data บุคลากร/หน่วยงานดึงจาก Special ผ่าน API; export/import เป็น fallback สำหรับ migration/กู้คืนเท่านั้น
+- snapshot มี contract version, snapshot version, idempotency key, source cutoff, source hash และรายการวันลาแยกบุคลากร
+- Special รับ snapshot เฉพาะ period `NORMAL` ที่ `OPEN`; งวดที่ lock แล้วต้องใช้ adjustment/correction flow ภายหลัง
+- การเชื่อมใช้ service token แยกจาก Portal SSO และไม่อ่าน/เขียน database ของกันและกัน
+
+## Deferred decisions
+
+- จับคู่ Portal user กับ person ให้ครบและ mapping organization code จริง
+- กฎวันลาที่ฝ่ายบุคคลรับรอง, แบบ Word จริง และ paper-result metadata
+- การลาเศษวัน/การลาแบบช่วงข้ามเดือนในรูปแบบเอกสารทางการ
+- locked-period adjustment, reconciliation dashboard และการทดสอบ aggregate/transfer ครบ 38 รพ.สต.
+
+---
+
 # Conclusion
 
-แก่นของระบบใหม่ไม่ใช่การทำหน้าเว็บเหมือน One Data System แต่คือแพลตฟอร์มงานราชการระดับหน่วยบริการที่มี People Core ร่วม ข้อมูลที่ย้อนรอยได้ เอกสารที่พิมพ์ซ้ำได้ และ integration boundary ที่ชัดเจนสำหรับ 38 รพ.สต. ภายใต้ อบจ.ยะลา. ลำดับเริ่มต้นคือ Portal SSO/People Core → Leave + official DOCX → บันทึกผลลงนามภายนอก → Special-Allowances API/reconciliation → Pilot 3→10→38 แห่ง. One Data เป็น source of truth ของการลา ส่วน Special-Allowances เดิมเป็นเจ้าของสูตร รอบคำนวณ lock/adjustment ผล และรายงาน ฉ.10/11; ห้ามสร้างซ้ำหรือเชื่อมฐานข้อมูลตรง. ก่อนเริ่ม implementation production ต้องปิด Leave Rulebook ตามประกาศ ก.จ. พ.ศ. 2569, policy profile ตามสถานะการจ้าง, paper-result Permission/SoD, Portal/person mapping, Special API contract และ golden DOCX พร้อมนำ REF-DEF-001–012 ไปเป็น negative acceptance tests.
+แก่นของระบบใหม่ไม่ใช่การทำหน้าเว็บเหมือน One Data System แต่คือแพลตฟอร์มงานราชการระดับหน่วยบริการที่มี People Core ร่วม ข้อมูลที่ย้อนรอยได้ และ integration boundary ที่ชัดเจนสำหรับ 38 รพ.สต. ภายใต้ อบจ.ยะลา. ลำดับ implementation เริ่มต้นคือ Portal SSO/People Core → Leave MVP → Special-Allowances API/reconciliation → Pilot 3→10→38 แห่ง; Word/document module และโมดูลอื่นเพิ่มภายหลัง. One Data เป็น source of truth ของการลา ส่วน Special-Allowances เดิมเป็นเจ้าของสูตร รอบคำนวณ lock/adjustment ผล และรายงาน ฉ.10/11; ห้ามสร้างซ้ำหรือเชื่อมฐานข้อมูลตรง. ก่อนเปิด production เต็มรูปแบบต้องปิด Leave Rulebook ตามประกาศ ก.จ. พ.ศ. 2569, policy profile ตามสถานะการจ้าง, Portal/person mapping, Special API contract และ golden DOCX ตามลำดับความสำคัญ พร้อมนำ REF-DEF-001–012 ไปเป็น negative acceptance tests.

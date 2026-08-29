@@ -1,0 +1,122 @@
+services:
+  db:
+    image: mysql:8.0
+    container_name: onedata-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: "${ONEDATA_DB_DATABASE:-onedata}"
+      MYSQL_USER: "${ONEDATA_DB_USERNAME:-onedata}"
+      MYSQL_PASSWORD: "${ONEDATA_DB_PASSWORD:-change-this-local-password}"
+      MYSQL_ROOT_PASSWORD: "${ONEDATA_DB_ROOT_PASSWORD:-change-this-local-root-password}"
+    ports:
+      - "${ONEDATA_DB_PORT:-13306}:3306"
+    volumes:
+      - onedata-mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u$${MYSQL_USER}", "-p$${MYSQL_PASSWORD}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: onedata-app
+    restart: unless-stopped
+    environment:
+      APP_NAME: "${APP_NAME:-One Data System}"
+      APP_ENV: "${APP_ENV:-local}"
+      APP_KEY: "${APP_KEY:?APP_KEY must be set in .env}"
+      APP_DEBUG: "${APP_DEBUG:-false}"
+      APP_URL: "${APP_URL:-http://localhost:8088}"
+      APP_TIMEZONE: "${APP_TIMEZONE:-Asia/Bangkok}"
+      LOG_CHANNEL: "${LOG_CHANNEL:-stderr}"
+      LOG_LEVEL: "${LOG_LEVEL:-info}"
+      DB_CONNECTION: mysql
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_DATABASE: "${ONEDATA_DB_DATABASE:-onedata}"
+      DB_USERNAME: "${ONEDATA_DB_USERNAME:-onedata}"
+      DB_PASSWORD: "${ONEDATA_DB_PASSWORD:-change-this-local-password}"
+      SESSION_DRIVER: database
+      CACHE_STORE: database
+      QUEUE_CONNECTION: database
+      ONEDATA_DEFAULT_AFFILIATION_CODE: "${ONEDATA_DEFAULT_AFFILIATION_CODE:-YALA-PAO}"
+      ONEDATA_LOCAL_LOGIN_ENABLED: "${ONEDATA_LOCAL_LOGIN_ENABLED:-true}"
+      ONEDATA_SEED_ADMIN_PASSWORD: "${ONEDATA_SEED_ADMIN_PASSWORD:-}"
+      ONEDATA_SCHEDULED_MASTER_SYNC: "${ONEDATA_SCHEDULED_MASTER_SYNC:-false}"
+      ONEDATA_PORTAL_AUDIENCE: "${ONEDATA_PORTAL_AUDIENCE:-one_data}"
+      ONEDATA_PORTAL_ISSUER: "${ONEDATA_PORTAL_ISSUER:-}"
+      PORTAL_SHARED_SECRET: "${PORTAL_SHARED_SECRET:-}"
+      SPECIAL_ALLOWANCES_BASE_URL: "${SPECIAL_ALLOWANCES_BASE_URL:-}"
+      SPECIAL_ALLOWANCES_INTEGRATION_TOKEN: "${SPECIAL_ALLOWANCES_INTEGRATION_TOKEN:-}"
+      SPECIAL_ALLOWANCES_TIMEOUT: "${SPECIAL_ALLOWANCES_TIMEOUT:-15}"
+      SPECIAL_ALLOWANCES_DRY_RUN: "${SPECIAL_ALLOWANCES_DRY_RUN:-true}"
+    ports:
+      - "${ONEDATA_PORT:-8088}:80"
+    depends_on:
+      db:
+        condition: service_healthy
+    command: ["sh", "-c", "php artisan migrate --force && php -S 0.0.0.0:80 -t public"]
+    healthcheck:
+      test: ["CMD", "php", "-r", "exit(@file_get_contents('http://127.0.0.1/up') !== false ? 0 : 1);"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: onedata-worker
+    restart: unless-stopped
+    environment:
+      APP_NAME: "${APP_NAME:-One Data System}"
+      APP_ENV: "${APP_ENV:-local}"
+      APP_KEY: "${APP_KEY:?APP_KEY must be set in .env}"
+      DB_CONNECTION: mysql
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_DATABASE: "${ONEDATA_DB_DATABASE:-onedata}"
+      DB_USERNAME: "${ONEDATA_DB_USERNAME:-onedata}"
+      DB_PASSWORD: "${ONEDATA_DB_PASSWORD:-change-this-local-password}"
+      QUEUE_CONNECTION: database
+      CACHE_STORE: database
+      LOG_CHANNEL: "${LOG_CHANNEL:-stderr}"
+      LOG_LEVEL: "${LOG_LEVEL:-info}"
+    depends_on:
+      app:
+        condition: service_healthy
+    command: ["php", "artisan", "queue:work", "--sleep=3", "--tries=3", "--timeout=120"]
+
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: onedata-scheduler
+    restart: unless-stopped
+    environment:
+      APP_NAME: "${APP_NAME:-One Data System}"
+      APP_ENV: "${APP_ENV:-local}"
+      APP_KEY: "${APP_KEY:?APP_KEY must be set in .env}"
+      DB_CONNECTION: mysql
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_DATABASE: "${ONEDATA_DB_DATABASE:-onedata}"
+      DB_USERNAME: "${ONEDATA_DB_USERNAME:-onedata}"
+      DB_PASSWORD: "${ONEDATA_DB_PASSWORD:-change-this-local-password}"
+      ONEDATA_SCHEDULED_MASTER_SYNC: "${ONEDATA_SCHEDULED_MASTER_SYNC:-false}"
+      SPECIAL_ALLOWANCES_BASE_URL: "${SPECIAL_ALLOWANCES_BASE_URL:-}"
+      SPECIAL_ALLOWANCES_INTEGRATION_TOKEN: "${SPECIAL_ALLOWANCES_INTEGRATION_TOKEN:-}"
+      SPECIAL_ALLOWANCES_TIMEOUT: "${SPECIAL_ALLOWANCES_TIMEOUT:-15}"
+      LOG_CHANNEL: "${LOG_CHANNEL:-stderr}"
+      LOG_LEVEL: "${LOG_LEVEL:-info}"
+    depends_on:
+      app:
+        condition: service_healthy
+    command: ["php", "artisan", "schedule:work"]
+
+volumes:
+  onedata-mysql-data:

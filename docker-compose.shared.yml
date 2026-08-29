@@ -1,0 +1,19 @@
+# Optional production/shared-infra override.
+# Use this file after shared-infra has created the external `webproxy` network.
+# The database stays on One Data's private compose network; only application
+# processes that need reverse-proxy/service-to-service access join webproxy.
+
+services:
+  app:
+    networks:
+      - default
+      - webproxy
+
+  scheduler:
+    networks:
+      - default
+      - webproxy
+
+networks:
+  webproxy:
+    external: true
