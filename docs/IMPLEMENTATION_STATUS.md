@@ -23,6 +23,7 @@
 | Prisma migration/deployment foundation | เสร็จระดับ local integration foundation | initial migration `20260829210000_initial_target_schema`, `migrate deploy`, production Compose template และ [deployment runbook](DEPLOYMENT_RUNBOOK.md); ตรวจ deploy/status กับ MySQL ชั่วคราวแล้ว แต่ยังไม่ baseline ฐานข้อมูลเดิมหรือ restore rehearsal |
 | UAT/pilot operating foundation | เสร็จระดับ planning + local smoke/shadow | [UAT/Pilot/Cutover Plan](UAT_PILOT_CUTOVER_PLAN.md), test matrix, G0–G5 gate, reconciliation/rollback checklist และ `scripts/target-uat-smoke.sh`; local real-data shadow run ผ่าน แต่ยังไม่มี staging/real-data pilot |
 | Prisma/People/Leave vertical slice | เสร็จระดับ local development | schema + synthetic seed, People read, Leave `DRAFT → SUBMITTED → PAPER_APPROVED/PAPER_REJECTED`, `CANCELLED/VOIDED`, provisional server-side day calculation, fixed-decimal requested days, holiday exclusion, active-request overlap guard, Paper-first UI/server actions และ durable audit/outbox |
+| Leave Rulebook foundation | เสร็จระดับ local development | versioned/effective-dated `LeavePolicyProfile`/`LeavePolicyRule`, draft/publish API, legal-basis/approval audit, active leave-type validation และ production guard ที่ไม่อนุญาต provisional calculation |
 | Regression checks | ผ่าน | target typecheck, target build, API 12 suites/42 tests, legacy Vite build, Docker health smoke และ browser workflow smoke ด้วยข้อมูลสังเคราะห์ |
 
 ## ยังไม่เสร็จและห้ามตีความว่า production-ready
@@ -31,7 +32,7 @@
 - permission scope matrix แบบละเอียดครบทุกโมดูลและ owner sign-off (base `self`/`tenant`/`affiliation` matrix และ delegated approver configuration รุ่นแรกทำแล้ว)
 - production session hardening ที่ยังเหลือ เช่น distributed replay/revocation strategy, session rotation, proxy trust policy และ operational cleanup (idle timeout/CSRF origin/security headers/rate-limit foundation มีแล้ว)
 - People reconciliation จาก Special-Allowances, การ map Portal user กับ employee และการยืนยันผลกับ data owner (local shadow import และ source-user projection/report ผ่านแล้ว; ยังต้องทำ mapping ที่ตรวจรับและ sign-off)
-- HR-approved leave Rulebook, quota/balance engine, half-day policy, complete snapshot และ production acceptance rules (provisional day calculation/state machine/revision/audit/outbox foundation มีแล้ว; ห้ามถือ provisional rule เป็นกฎสิทธิ์จริง)
+- HR-approved leave Rulebook/official legal basis, quota/balance engine, half-day policy, holiday ownership, complete snapshot และ production acceptance rules (versioned policy draft/publish foundation และ provisional day calculation/state machine/revision/audit/outbox foundation มีแล้ว; ห้ามถือ provisional rule เป็นกฎสิทธิ์จริง)
 - reconciliation UI, locked-period adjustment/correction contract และ production schedule approval (worker retry/monthly foundation มีแล้ว แต่ยังปิด scheduled delivery)
 - document/DOCX, report access และ operational observability (leave UI เป็น form workflow แล้ว แต่ยังไม่มีการสร้าง Word/DOCX; backup/restore ยังต้องซ้อมใน staging/production-like environment)
 - UAT กับข้อมูล/บัญชีจริงและ pilot 3 รพ.สต.

@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../database/prisma.service';
 
 export type LeaveCountingMode = 'WORKING_DAYS' | 'CALENDAR_DAYS';
@@ -66,19 +67,62 @@ export function countLeaveDays(
 
 @Injectable()
 export class LeaveRulesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly config: ConfigService,
+  ) {}
 
   async calculate(
     leaveTypeCode: string,
     affiliationId: string,
     startsOn: Date,
     endsOn: Date,
+    employeeTypeScope = 'UNKNOWN',
   ): Promise<LeaveCalculation> {
-    const countingMode = countingModeForLeaveType(leaveTypeCode);
-    if (!countingMode) {
-      throw new BadRequestException(
-        'The selected leave type has no approved counting rule yet.',
-      );
+    const publishedPolicies = await this.prisma.leavePolicyProfile.findMany({
+      where: {
+        affiliationId,
+        status: 'PUBLISHED',
+        employeeTypeScope: { in: [employeeTypeScope, 'ALL'] },
+        effectiveFrom: { lte: startsOn },
+        OR: [{ effectiveTo: null }, { effectiveTo: { gte: endsOn } }],
+      },
+      include: {
+        rules: {
+          where: { leaveType: { code: leaveTypeCode, isActive: true } },
+          include: { leaveType: true },
+        },
+      },
+      orderBy: { effectiveFrom: 'desc' },
+    });
+    const policy = publishedPolicies.find((candidate) => candidate.employeeTypeScope === employeeTypeScope)
+      ?? publishedPolicies.find((candidate) => candidate.employeeTypeScope === 'ALL');
+    const policyRule = policy?.rules[0];
+
+    let countingMode: LeaveCountingMode | null = policyRule
+      ? this.countingModeFromPolicy(policyRule.countingMode)
+      : null;
+    let calculationBasis = '';
+    if (policy) {
+      if (!policyRule || !countingMode) {
+        throw new BadRequestException(
+          'The published leave rulebook has no valid rule for the selected leave type.',
+        );
+      }
+      calculationBasis = `RULEBOOK:${policy.code}:${policy.id}:${countingMode}`;
+    } else {
+      countingMode = countingModeForLeaveType(leaveTypeCode);
+      if (!countingMode) {
+        throw new BadRequestException(
+          'The selected leave type has no approved counting rule yet.',
+        );
+      }
+      if (!this.provisionalRulesAllowed()) {
+        throw new BadRequestException(
+          'A published leave rulebook is required before leave calculation is enabled.',
+        );
+      }
+      calculationBasis = `${PROVISIONAL_RULEBOOK_VERSION}:${countingMode}`;
     }
 
     const holidays = countingMode === 'WORKING_DAYS'
@@ -102,7 +146,19 @@ export class LeaveRulesService {
     return {
       requestedDays: requestedDays.toFixed(2),
       countingMode,
-      calculationBasis: `${PROVISIONAL_RULEBOOK_VERSION}:${countingMode}`,
+      calculationBasis,
     };
+  }
+
+  private countingModeFromPolicy(value: string): LeaveCountingMode | null {
+    return value === 'WORKING_DAYS' || value === 'CALENDAR_DAYS' ? value : null;
+  }
+
+  private provisionalRulesAllowed(): boolean {
+    const configured = this.config.get<string>('ONEDATA_ALLOW_PROVISIONAL_LEAVE_RULES');
+    if (configured !== undefined) {
+      return configured === 'true';
+    }
+    return this.config.get<string>('NODE_ENV', process.env.NODE_ENV ?? 'development') !== 'production';
   }
 }

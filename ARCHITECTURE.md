@@ -244,6 +244,7 @@ Period protocol:
 - ใช้ database transaction สำหรับ use case ที่ต้องสำเร็จหรือย้อนกลับพร้อมกัน เช่น employee onboarding
 - ใช้ fixed decimal สำหรับจำนวนเงิน อัตรา และค่าที่ใช้ในรายงาน ห้ามใช้ binary floating point
 - ใช้ immutable history หรือ effective-dated record สำหรับข้อมูลบุคลากรและกฎที่มีผลตามเวลา
+- Leave Rulebook ใช้ `LeavePolicyProfile` แบบ versioned/effective-dated และ `LeavePolicyRule` ต่อประเภทการลา; profile ต้องถูก publish พร้อม legal basis/ผู้รับรองก่อนจึงนำไปคำนวณ. `DRAFT` ใช้เตรียมข้อมูลเท่านั้น และ production ห้ามใช้ provisional rule.
 - ใช้ state transition ที่ตรวจสอบได้แทน boolean หลายตัว
 - ใช้ optimistic locking/version สำหรับรายการที่อาจแก้พร้อมกัน
 - ใช้ archive, void, reversal และ correction แทน hard delete สำหรับข้อมูลราชการและข้อมูลที่มีรายการต่อเนื่อง

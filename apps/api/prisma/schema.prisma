@@ -227,6 +227,7 @@ model LeaveType {
   createdAt           DateTime                @default(now())
   updatedAt           DateTime                @updatedAt
   requests            LeaveRequest[]
+  policyRules         LeavePolicyRule[]
 }
 
 model LeavePolicyProfile {
@@ -239,12 +240,35 @@ model LeavePolicyProfile {
   effectiveFrom       DateTime                @db.Date
   effectiveTo         DateTime?               @db.Date
   status              String                  @default("DRAFT") @db.VarChar(32)
+  approvedBy          String?                 @db.VarChar(128)
+  approvedAt          DateTime?
   createdAt           DateTime                @default(now())
   updatedAt           DateTime                @updatedAt
   affiliation         Affiliation             @relation(fields: [affiliationId], references: [id])
+  rules               LeavePolicyRule[]
 
   @@unique([affiliationId, code, effectiveFrom])
   @@index([affiliationId, status, effectiveFrom])
+}
+
+model LeavePolicyRule {
+  id                         String             @id @db.VarChar(36)
+  policyProfileId            String             @db.VarChar(36)
+  leaveTypeId                String             @db.VarChar(36)
+  countingMode               String             @db.VarChar(32)
+  halfDayAllowed             Boolean            @default(false)
+  entitlementDays            Decimal?           @db.Decimal(8, 2)
+  entitlementPeriod          String?            @db.VarChar(32)
+  carryOverAllowed           Boolean            @default(false)
+  maxCarryOverDays           Decimal?           @db.Decimal(8, 2)
+  requiresSupportingDocument Boolean            @default(false)
+  createdAt                  DateTime           @default(now())
+  updatedAt                  DateTime           @updatedAt
+  policyProfile              LeavePolicyProfile @relation(fields: [policyProfileId], references: [id])
+  leaveType                  LeaveType          @relation(fields: [leaveTypeId], references: [id])
+
+  @@unique([policyProfileId, leaveTypeId])
+  @@index([leaveTypeId, countingMode])
 }
 
 model Holiday {

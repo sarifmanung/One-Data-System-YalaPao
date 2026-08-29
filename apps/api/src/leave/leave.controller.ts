@@ -15,6 +15,7 @@ import {
   LEAVE_REQUEST_READ,
   LEAVE_REQUEST_SUBMIT,
   LEAVE_REQUEST_VOID,
+  LEAVE_POLICY_MANAGE,
 } from '@onedata/contracts';
 import type { CurrentUser } from '@onedata/contracts';
 import type { Request } from 'express';
@@ -27,12 +28,49 @@ import { RequirePermission } from '../platform/auth/permission.decorator';
 import { CreateLeaveRequestDto } from './dto/create-leave-request.dto';
 import { PaperResultDto } from './dto/paper-result.dto';
 import { VoidLeaveDto } from './dto/void-leave.dto';
+import { CreateLeavePolicyDto } from './dto/create-leave-policy.dto';
+import { PublishLeavePolicyDto } from './dto/publish-leave-policy.dto';
+import { LeavePolicyService } from './leave-policy.service';
 import { LeaveService } from './leave.service';
 
 @Controller('v1/leave')
 @UseGuards(AuthGuard)
 export class LeaveController {
-  constructor(private readonly leaveService: LeaveService) {}
+  constructor(
+    private readonly leaveService: LeaveService,
+    private readonly leavePolicyService: LeavePolicyService,
+  ) {}
+
+  @Get('policies')
+  @UseGuards(PermissionGuard)
+  @RequirePermission(LEAVE_POLICY_MANAGE)
+  async policies(@Req() request: Request) {
+    return toApiEnvelope(await this.leavePolicyService.list(this.userFrom(request)), request);
+  }
+
+  @Post('policies')
+  @UseGuards(PermissionGuard)
+  @RequirePermission(LEAVE_POLICY_MANAGE)
+  async createPolicy(@Req() request: Request, @Body() input: CreateLeavePolicyDto) {
+    return toApiEnvelope(
+      await this.leavePolicyService.createDraft(this.userFrom(request), input),
+      request,
+    );
+  }
+
+  @Post('policies/:id/publish')
+  @UseGuards(PermissionGuard)
+  @RequirePermission(LEAVE_POLICY_MANAGE)
+  async publishPolicy(
+    @Req() request: Request,
+    @Param('id') id: string,
+    @Body() input: PublishLeavePolicyDto,
+  ) {
+    return toApiEnvelope(
+      await this.leavePolicyService.publish(this.userFrom(request), id, input.approvalReference),
+      request,
+    );
+  }
 
   @Get('types')
   @UseGuards(PermissionGuard)

@@ -16,6 +16,17 @@ function positiveInteger(config: Environment, key: string, fallback: number): nu
   return parsed;
 }
 
+function optionalBoolean(config: Environment, key: string): boolean | undefined {
+  const raw = value(config, key);
+  if (!raw) {
+    return undefined;
+  }
+  if (raw !== 'true' && raw !== 'false') {
+    throw new Error(`${key} must be true or false.`);
+  }
+  return raw === 'true';
+}
+
 /**
  * Keep local/test startup permissive, but fail before serving traffic when a
  * production deployment is missing a security boundary or uses an unsafe one.
@@ -27,9 +38,14 @@ export function validateEnvironment(config: Environment): Environment {
   positiveInteger(config, 'ONEDATA_SESSION_IDLE_TIMEOUT_SECONDS', 1_800);
   positiveInteger(config, 'ONEDATA_AUTH_RATE_LIMIT_PER_MINUTE', 20);
   positiveInteger(config, 'ONEDATA_MUTATION_RATE_LIMIT_PER_MINUTE', 120);
+  const provisionalRulesAllowed = optionalBoolean(config, 'ONEDATA_ALLOW_PROVISIONAL_LEAVE_RULES');
 
   if (environment !== 'production') {
     return config;
+  }
+
+  if (provisionalRulesAllowed === true) {
+    throw new Error('ONEDATA_ALLOW_PROVISIONAL_LEAVE_RULES must be false in production.');
   }
 
   const processRole = value(config, 'ONEDATA_PROCESS_ROLE') || 'api';

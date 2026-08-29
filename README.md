@@ -18,6 +18,8 @@
 
 Target contract กำหนดให้เฉพาะใบลา `PAPER_APPROVED` ที่ยังมีผลเท่านั้นถูกนำไปสร้าง snapshot ให้ระบบ ฉ. ระบบ Special ยังเป็นเจ้าของสูตร การคำนวณ period ผลลัพธ์ และรายงาน ส่วนการสร้าง Word/DOCX ถูกเลื่อนไปหลังจากมีแบบฟอร์มมาตรฐานและกฎที่ฝ่ายบุคคลรับรอง
 
+Leave Rulebook รุ่น foundation เก็บกฎแบบ versioned/effective-dated แยกตาม affiliation, ประเภทบุคลากร และประเภทการลา ผ่าน `GET/POST /api/v1/leave/policies` และ `POST /api/v1/leave/policies/:id/publish`. เฉพาะ policy สถานะ `PUBLISHED` ที่ครอบคลุมช่วงวันลาทั้งช่วงเท่านั้นที่ใช้คำนวณ; policy `DRAFT` ไม่ถูกนำไปใช้ และการแก้กฎที่ publish แล้วต้องสร้าง version ใหม่. ใน local/dev ค่า `ONEDATA_ALLOW_PROVISIONAL_LEAVE_RULES=true` อนุญาตกฎชั่วคราวสำหรับการทดสอบเท่านั้น; production default เป็น `false` และ API จะปฏิเสธการคำนวณจนกว่าจะมี rulebook ที่รับรองแล้ว.
+
 ## Target workspace foundation (NestJS + Next.js)
 
 Laravel/Vue เดิมยังทำงานแยกตามปกติ ส่วน target workspace อยู่ใน `apps/api`, `apps/web` และ `packages/contracts`:

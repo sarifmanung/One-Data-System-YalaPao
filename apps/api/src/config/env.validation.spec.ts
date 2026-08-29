@@ -26,6 +26,20 @@ describe('validateEnvironment', () => {
     expect(() => validateEnvironment(base)).toThrow('ONEDATA_SESSION_COOKIE_SECURE must be true');
   });
 
+  it('rejects provisional leave rules in production', () => {
+    expect(() => validateEnvironment({
+      NODE_ENV: 'production',
+      ONEDATA_ALLOW_PROVISIONAL_LEAVE_RULES: 'true',
+    })).toThrow('ONEDATA_ALLOW_PROVISIONAL_LEAVE_RULES must be false in production');
+  });
+
+  it('rejects malformed provisional leave rule configuration', () => {
+    expect(() => validateEnvironment({
+      NODE_ENV: 'test',
+      ONEDATA_ALLOW_PROVISIONAL_LEAVE_RULES: 'yes',
+    })).toThrow('ONEDATA_ALLOW_PROVISIONAL_LEAVE_RULES must be true or false');
+  });
+
   it('accepts a complete production configuration', () => {
     expect(validateEnvironment({
       NODE_ENV: 'production',

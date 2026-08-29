@@ -12,6 +12,7 @@ export const LEAVE_REQUEST_CANCEL = 'leave.request.cancel' as const;
 export const LEAVE_PAPER_DECISION_RECORD = 'leave.paper-decision.record' as const;
 export const LEAVE_REQUEST_VOID = 'leave.request.void' as const;
 export const LEAVE_SNAPSHOT_MANAGE = 'leave.snapshot.manage' as const;
+export const LEAVE_POLICY_MANAGE = 'leave.policy.manage' as const;
 
 export const ONE_DATA_PERMISSIONS = [
   DASHBOARD_VIEW,
@@ -26,6 +27,7 @@ export const ONE_DATA_PERMISSIONS = [
   LEAVE_PAPER_DECISION_RECORD,
   LEAVE_REQUEST_VOID,
   LEAVE_SNAPSHOT_MANAGE,
+  LEAVE_POLICY_MANAGE,
 ] as const;
 
 export type OneDataPermission = (typeof ONE_DATA_PERMISSIONS)[number];
@@ -242,6 +244,35 @@ export interface DelegatedApproverSummary {
   createdBy: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface LeavePolicyRuleSummary {
+  id: string;
+  leaveTypeId: string;
+  leaveTypeCode: string;
+  leaveTypeName: string;
+  countingMode: 'WORKING_DAYS' | 'CALENDAR_DAYS';
+  halfDayAllowed: boolean;
+  entitlementDays: number | null;
+  entitlementPeriod: string | null;
+  carryOverAllowed: boolean;
+  maxCarryOverDays: number | null;
+  requiresSupportingDocument: boolean;
+}
+
+export interface LeavePolicyProfileSummary {
+  id: string;
+  affiliationId: string;
+  code: string;
+  name: string;
+  employeeTypeScope: string;
+  legalBasis: string | null;
+  effectiveFrom: string;
+  effectiveTo: string | null;
+  status: 'DRAFT' | 'PUBLISHED' | 'RETIRED';
+  approvedBy: string | null;
+  approvedAt: string | null;
+  rules: LeavePolicyRuleSummary[];
 }
 
 export interface LeaveTypeSummary {

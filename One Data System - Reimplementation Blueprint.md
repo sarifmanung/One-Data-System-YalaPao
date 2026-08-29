@@ -3330,3 +3330,32 @@ source code ของ `Special-Allowances` ที่ตรวจในรอบ�
 - target tests ผ่าน 14 suites / 48 tests, typecheck/build ผ่าน.
 - local API smoke ผ่านสำหรับ delegated-approver endpoint และ source-user reconciliation โดยไม่สร้าง assignment หรือเปลี่ยนข้อมูลต้นทาง.
 - สถานะยังเป็น local/integration foundation ไม่ใช่ permission sign-off หรือ production readiness.
+
+---
+
+# Implementation Addendum v1.23 — Versioned Leave Rulebook foundation (29 สิงหาคม 2569)
+
+ภาคผนวกนี้บันทึกโครงสร้างกฎวันลารุ่นแรกที่เพิ่มใน NestJS API โดยยังไม่อ้างว่าเป็นกฎสิทธิ์ราชการฉบับสมบูรณ์. เนื่องจากแบบฟอร์มและรายละเอียดกฎจริงจากฝ่ายบุคคลยังไม่ครบ ระบบจึงเก็บกฎแบบ versioned/effective-dated เพื่อให้ตรวจสอบและเปลี่ยน version ได้ภายหลัง โดยไม่ฝังกฎเฉพาะหน่วยงานเพิ่มลงใน code.
+
+## 1. สิ่งที่ลงมือทำแล้ว
+
+- เพิ่ม `LeavePolicyProfile` ที่มี affiliation, code/version, employee type scope, legal basis, effective period, status (`DRAFT`, `PUBLISHED`, `RETIRED`) และข้อมูลผู้รับรอง/เวลารับรอง.
+- เพิ่ม `LeavePolicyRule` ต่อประเภทการลา รองรับ counting mode, half-day flag, entitlement, carry-over และ supporting-document flag โดยใช้ Decimal สำหรับจำนวนวัน.
+- เพิ่ม API สำหรับผู้มีสิทธิ์ระดับ affiliation: `GET /api/v1/leave/policies`, `POST /api/v1/leave/policies` และ `POST /api/v1/leave/policies/:id/publish`.
+- การสร้าง profile กับ rules ทำใน transaction เดียวและสร้าง audit event; ตรวจ effective date, active leave type และ duplicate leave type ก่อนบันทึก.
+- การ publish ต้องมี legal basis และ approval reference, ไม่อนุญาตช่วง effective date ทับกับ published profile ของ employee type scope เดียวกัน และไม่แก้ไข profile ที่ publish แล้วโดยตรง.
+- การคำนวณวันลาจะเลือกเฉพาะ published profile ที่ครอบคลุมช่วงวันลาทั้งช่วง โดยเลือก employee type ที่ตรงก่อน `ALL`; หากไม่มี profile ให้ใช้ provisional rule ได้เฉพาะ local/dev ที่เปิด `ONEDATA_ALLOW_PROVISIONAL_LEAVE_RULES`.
+- production compose ตั้งค่า provisional rule เป็น `false` และ environment validation ปฏิเสธการเปิดค่าดังกล่าวใน production.
+
+## 2. สิ่งที่ยังไม่เสร็จและห้ามตีความว่า production-ready
+
+- ยังต้องให้ฝ่ายบุคคลรับรองรายการประเภทลา, legal basis, สิทธิ์รายประเภทบุคลากร, entitlement/carry-over และ effective period จริง.
+- ยังไม่มี quota/balance ledger, การคืนโควตา, half-day/ช่วงเวลา, วันหยุดที่รับรองแล้ว หรือ correction ของ period ที่ถูก lock.
+- ยังไม่มีหน้าจอจัดการ Rulebook และ approval workflow สำหรับเจ้าของนโยบาย; API รุ่นนี้เป็น foundation สำหรับ integration/UAT.
+- ต้องเพิ่ม policy version selection และ migration test เมื่อมีข้อมูล rulebook จริง และต้องทดสอบผลคำนวณเทียบกับตัวอย่างที่ฝ่ายบุคคลรับรอง.
+
+## 3. Acceptance ของ checkpoint นี้
+
+- target typecheck ผ่าน และ API test ผ่าน 15 suites / 52 tests.
+- มี unit test ยืนยัน draft ไม่ถูกนำไปใช้, publish ต้องมี approval/audit, published rulebook มี precedence เหนือ provisional rule และ production ปฏิเสธการคำนวณเมื่อไม่มี published rulebook.
+- ยังเป็น local development foundation; ไม่ได้สร้างหรือส่งข้อมูลจริงไป Special-Allowances และไม่เปลี่ยนข้อมูลต้นทาง.

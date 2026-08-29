@@ -121,6 +121,7 @@ export class LeaveService {
         effectiveFrom: { lte: startsOn },
         OR: [{ effectiveTo: null }, { effectiveTo: { gte: endsOn } }],
       },
+      include: { employee: { select: { positionGroup: true } } },
     });
     if (!membership) {
       throw new ForbiddenException('The employee is not assigned to the selected workspace.');
@@ -131,6 +132,7 @@ export class LeaveService {
       membership.affiliationId,
       startsOn,
       endsOn,
+      membership.employee.positionGroup ?? 'UNKNOWN',
     );
 
     const created = await this.prisma.$transaction(async (tx) => {
