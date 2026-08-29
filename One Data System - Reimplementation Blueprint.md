@@ -2,7 +2,7 @@
 
 เอกสารวิเคราะห์ระบบเพื่อการสร้างใหม่แบบ Clean-Room
 
-- เวอร์ชันเอกสาร: 1.9 — Reference Audit, NestJS/NextJS Target Baseline & Foundation Checkpoint
+- เวอร์ชันเอกสาร: 1.10 — Reference Audit, NestJS/NextJS Target Baseline & Portal Session Checkpoint
 - แก้ไขล่าสุด: 29 สิงหาคม 2569 (2026)
 - วันที่สำรวจ: 10–11 สิงหาคม และ 29 สิงหาคม 2569 (2026)
 - ขอบเขตที่สำรวจ: หน่วยงาน รพ.สต. 1 แห่ง และสังกัดระดับองค์การบริหารส่วนจังหวัดที่เชื่อมกัน
@@ -24,6 +24,7 @@
 | 1.7     | 29 ส.ค. 2569 | สำรวจซ้ำแบบละเอียดทั้งสอง workspace และ workflow ที่เข้าถึงได้, ยืนยัน UX/UI เป้าหมายและ cleanup baseline; ล็อก target stack เป็น NestJS + Next.js, แยก current Laravel/Vue baseline ออกจาก migration target และเพิ่มแผนย้ายระบบแบบ incremental |
 | 1.8     | 29 ส.ค. 2569 | ล็อก workflow ใบลาแบบ Paper-first: `DRAFT → SUBMITTED → PAPER_APPROVED/PAPER_REJECTED`, ใช้ `PAPER_APPROVED` เป็นสถานะมีผลเพียงสถานะเดียว, เลิกใช้ `CONFIRMED` เป็นสถานะปฏิบัติการ และปรับเอกสาร/สัญญา integration ให้สอดคล้องกัน |
 | 1.9     | 29 ส.ค. 2569 | เริ่ม implementation target workspace แบบ coexistence: เพิ่ม shared contracts v1.1, NestJS API/Next.js web foundation, SSO verifier, API envelope, request-id, tenant-context boundary, audit sink, Docker Compose แยก และ automated smoke tests โดยคง Laravel/Vue เดิมไว้ |
+| 1.10    | 29 ส.ค. 2569 | เพิ่ม Portal launch-token exchange, local session แบบ opaque/hash, session guard, logout, Next.js launch bridge และทดสอบการ map external identity → employee → active workspace โดยยังไม่เปิดใช้ข้อมูลจริง |
 
 ## วิธีอ่านระดับความมั่นใจ
 
@@ -43,9 +44,9 @@
 
 > เอกสารนี้สกัด “ความต้องการทางธุรกิจ” จากระบบอ้างอิง ไม่ใช่คำสั่งให้คัดลอกหน้าจอ โค้ด เทคโนโลยี หรือข้อจำกัดของระบบเดิมแบบ 1:1
 
-> **Effective implementation baseline:** ส่วน `Implementation Addendum v1.8` ท้ายเอกสารเป็นคำตัดสินล่าสุดของเจ้าของโครงการ; supersede ข้อความ workflow/source ของใบลาใน revision ก่อนหน้า. `Implementation Addendum v1.7`, `v1.6` และ revision ก่อนหน้าเก็บไว้เพื่อ traceability โดย Laravel/Vue หมายถึง current implementation baseline ส่วน NestJS/NextJS หมายถึง target architecture.
+> **Effective implementation baseline:** ส่วน `Implementation Addendum v1.10` ท้ายเอกสารเป็น checkpoint/decision ล่าสุดของเจ้าของโครงการ; supersede ข้อความ workflow/source ของใบลาใน revision ก่อนหน้า. `Implementation Addendum v1.8`, `v1.7`, `v1.6` และ revision ก่อนหน้าเก็บไว้เพื่อ traceability โดย Laravel/Vue หมายถึง current implementation baseline ส่วน NestJS/NextJS หมายถึง target architecture.
 
-> **Implementation checkpoint 29 สิงหาคม 2569:** target workspace เริ่มทำงานแบบแยกจาก Laravel/Vue แล้วที่ `apps/api`, `apps/web` และ `packages/contracts`. API foundation มี health/readiness, request-id, API envelope, problem-details, deny-by-default development auth boundary, tenant-context helper และ HS256 Portal launch-token verifier; web foundation มี Next.js dashboard shell ที่อ่าน health จาก API ตอน runtime. Docker Compose target ใช้พอร์ต `3100/3101` และมี MySQL development แยกบน `13307` พร้อม Prisma schema/seed สังเคราะห์. People/Leave vertical slice มี read/create/state-transition API และ audit/outbox ในฐานข้อมูลทดสอบแล้ว แต่ production migration/backup, Portal session exchange, Special adapter, worker, permission matrix และ real-data import ยังไม่พร้อม production และเป็นงานถัดไปตาม release plan.
+> **Implementation checkpoint 29 สิงหาคม 2569:** target workspace เริ่มทำงานแบบแยกจาก Laravel/Vue แล้วที่ `apps/api`, `apps/web` และ `packages/contracts`. API foundation มี health/readiness, request-id, API envelope, problem-details, deny-by-default development auth boundary, tenant-context helper, HS256 Portal launch-token verifier/exchange, hashed local session และ logout; web foundation มี Next.js dashboard shell, `/auth/portal/launch` bridge และอ่าน current user จาก API ตอน runtime. Docker Compose target ใช้พอร์ต `3100/3101` และมี MySQL development แยกบน `13307` พร้อม Prisma schema/seed สังเคราะห์. People/Leave vertical slice มี read/create/state-transition API และ audit/outbox ในฐานข้อมูลทดสอบแล้ว แต่ production migration/backup, permission matrix/role guard, Special adapter, worker และ real-data import ยังไม่พร้อม production และเป็นงานถัดไปตาม release plan.
 
 ## Target Product Baseline
 
@@ -2906,3 +2907,33 @@ PAPER_APPROVED → VOIDED
 ## 4. ผลต่อการพัฒนา
 
 ลำดับ implementation คือ schema/state transition และ audit ก่อน จากนั้นทำ UI สำหรับ `DRAFT/SUBMITTED`, หน้าบันทึกผลกระดาษสำหรับผู้รับผิดชอบ, quota projection และ snapshot/reconciliation. Document/DOCX module ทำเป็น boundary ที่เสียบเพิ่มภายหลังโดยไม่เปลี่ยนสถานะหรือ contract หลัก.
+
+---
+
+# Implementation Addendum v1.10 — Portal session foundation (29 สิงหาคม 2569)
+
+ภาคผนวกนี้บันทึกผลการทำ Phase 1 ต่อจาก foundation checkpoint โดยยังคง coexistence กับ Laravel/Vue และยังไม่แตะข้อมูลจริงของ Portal, Special-Allowances หรือ One Data เดิม.
+
+## 1. Contract ที่ลงมือทำ
+
+- Portal ส่ง HS256 launch token อายุสั้นไปยัง One Data; NestJS ตรวจ signature, `iss`, `aud`, `iat`, `exp`, `sub`, `jti` และ replay ภายใน process.
+- `POST /api/v1/auth/portal/exchange` ตรวจ external identity mapping ก่อนสร้าง session; บัญชีที่ยัง map ไม่ถึง employee ที่ active หรือไม่มี active membership จะไม่ถูกสร้าง session.
+- Session เป็น opaque random token; ฐานข้อมูลเก็บเพียง SHA-256 hash, external subject, role snapshot, เวลาออก/หมดอายุ/ยกเลิก และข้อมูลแสดงผลที่จำเป็น. Raw token ไม่อยู่ใน JSON response และไม่ถูกเก็บใน source/database.
+- Cookie เป็น `httpOnly`, `sameSite` และเลือก `secure` ตาม environment/config. `POST /api/v1/auth/logout` ทำ soft revoke และล้าง cookie.
+- `AuthGuard` ใช้ session เป็นทางหลัก; development identity เป็น fallback เฉพาะเมื่อ `ONEDATA_DEV_AUTH_ENABLED=true` และ `NODE_ENV` ไม่ใช่ production.
+- Scope ของ session derive จาก active `EmploymentMembership` และไม่เชื่อ `tenant_id` จาก browser เพียงอย่างเดียว. Workspace tenant ถูกเรียงเป็นค่าเริ่มต้นก่อน affiliation เพื่อให้ flow ใบลาทำงานในหน่วยบริการได้.
+- Next.js มี `/auth/portal/launch` เป็น bridge รับ query token, ส่งต่อให้ API ฝั่ง server และ forward เฉพาะ `Set-Cookie` ไปยัง browser ก่อน redirect ไป dashboard; ไม่เก็บ launch token ใน localStorage.
+
+## 2. สิ่งที่ยังไม่ถือว่า production-ready
+
+- ต้องเปลี่ยน in-memory replay guard เป็นกลไก durable/distributed เมื่อมี API หลาย replica.
+- ต้องเพิ่ม session rotation, idle timeout, CSRF policy, cleanup job, session listing/revoke รายอุปกรณ์ และ audit event สำหรับ login/logout ตาม operational policy.
+- ต้องทำ permission matrix ที่แยก role/capability ระหว่าง affiliation, tenant, self และ paper-result recorder; ตอนนี้ guard ตรวจ authentication และ scope membership เป็นหลัก.
+- ต้องตั้งค่า Portal launch URL/secret และ external identity mapping ของบัญชีจริงใน environment แยก พร้อมทดสอบ cutover/rollback.
+- ต้องสร้าง same-origin reverse-proxy/BFF policy ใน deployment จริง และเพิ่ม E2E `Portal launch → session → dashboard → workspace` ก่อนเปิดให้ผู้ใช้จริง.
+
+## 3. Acceptance ของ checkpoint นี้
+
+- target typecheck, API tests และ web build ผ่าน.
+- มี unit tests สำหรับ session creation, raw-token non-persistence, cookie session resolution, revoke และ unmapped-account rejection.
+- Docker target ต้อง `db:push` schema ใหม่ได้ และยังแยก volume/container จาก Laravel compose เดิม.

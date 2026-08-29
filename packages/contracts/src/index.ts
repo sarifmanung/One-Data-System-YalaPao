@@ -53,6 +53,16 @@ export interface CurrentUser {
   employeeId?: string;
 }
 
+export interface AuthSessionResponse {
+  authenticated: true;
+  user: CurrentUser;
+  expiresAt: string;
+}
+
+export interface LogoutResponse {
+  authenticated: false;
+}
+
 export interface TargetContractMetadata {
   contractVersion: typeof API_CONTRACT_VERSION;
   leaveEffectiveStatus: typeof EFFECTIVE_LEAVE_STATUS;

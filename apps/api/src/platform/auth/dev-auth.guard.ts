@@ -9,14 +9,22 @@ export class DevAuthGuard implements CanActivate {
   constructor(private readonly config: ConfigService) {}
 
   canActivate(context: ExecutionContext): boolean {
+    const request = context.switchToHttp().getRequest<RequestWithContext>();
+    if (!this.tryAttach(request)) {
+      throw new UnauthorizedException('Authentication is required.');
+    }
+
+    return true;
+  }
+
+  tryAttach(request: RequestWithContext): boolean {
     const enabled = this.config.get<string>('ONEDATA_DEV_AUTH_ENABLED', 'false') === 'true';
     const environment = this.config.get<string>('NODE_ENV', process.env.NODE_ENV ?? 'development');
 
     if (!enabled || environment === 'production') {
-      throw new UnauthorizedException('Authentication is required.');
+      return false;
     }
 
-    const request = context.switchToHttp().getRequest<RequestWithContext>();
     const workspace: WorkspaceSummary = {
       id: this.config.get<string>('ONEDATA_DEV_WORKSPACE_ID', 'tenant-dev'),
       kind: 'tenant',

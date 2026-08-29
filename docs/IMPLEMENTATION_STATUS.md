@@ -11,9 +11,9 @@
 | Shared contract | เสร็จระดับ foundation | `packages/contracts`, contract version `1.1`, `PAPER_APPROVED` effective status, fixture ที่ไม่มี `CONFIRMED` |
 | NestJS API | เสร็จระดับ foundation | `apps/api`, `/api/health/live`, `/api/health/ready`, `/api/v1/system/contract` |
 | HTTP boundary | เสร็จระดับ foundation | request-id, API envelope, problem-details, validation configuration |
-| Auth boundary | verifier เสร็จ; session ยังไม่เสร็จ | Portal HS256 token verification, issuer/audience/expiry/jti replay checks, development auth ปิดเป็นค่าเริ่มต้น |
-| Tenant boundary | helper เสร็จ; persistence/guard ยังไม่เสร็จ | identity workspace selection ต้องมาจาก workspace ของ identity ไม่รับ tenant header เป็นสิทธิ์โดยลำพัง |
-| Next.js web | เสร็จระดับ shell | `/tenant-dashboard`, runtime API health, responsive visual shell ตาม reference direction |
+| Auth boundary | เสร็จระดับ local integration foundation | Portal HS256 token verification/exchange, issuer/audience/expiry/jti replay checks, opaque session token ที่เก็บเฉพาะ SHA-256 hash, secure httpOnly cookie และ development fallback ที่ปิดเป็นค่าเริ่มต้น |
+| Tenant boundary | guard เสร็จระดับ session foundation | session workspace derive จาก active employee membership; `x-tenant-id` เลือกได้เฉพาะ workspace ที่ identity มีสิทธิ์ |
+| Next.js web | เสร็จระดับ shell + launch bridge | `/tenant-dashboard`, `/auth/portal/launch`, runtime API health/current user, responsive visual shell ตาม reference direction |
 | Docker | เสร็จระดับ local foundation | `docker-compose.target.yml`, API `3100`, web `3101`, แยกจาก Laravel compose |
 | Prisma/People/Leave vertical slice | เสร็จระดับ local development | schema + synthetic seed, People read, Leave `DRAFT → SUBMITTED → PAPER_APPROVED/PAPER_REJECTED`, `CANCELLED/VOIDED`, durable audit/outbox |
 | Regression checks | ผ่าน | target typecheck, target build, API 5 tests, legacy Vite build, local และ Docker smoke test |
@@ -21,8 +21,8 @@
 ## ยังไม่เสร็จและห้ามตีความว่า production-ready
 
 - production Prisma migration/backup/restore policy (local schema + database แยกมีแล้ว)
-- durable local session และ Portal launch-token exchange ที่สร้าง session แบบ secure httpOnly
 - permission matrix/role guard จริงสำหรับ affiliation, tenant, self และ paper-result recorder
+- production session hardening เช่น distributed replay/revocation strategy, CSRF policy, session rotation และ operational cleanup
 - People import/reconciliation จาก Special-Allowances, real-data mapping และการ map Portal user กับ employee
 - Leave quota/policy engine, complete snapshot และ production acceptance rules (state machine/revision/audit/outbox foundation มีแล้ว)
 - Special-Allowances adapter, retry/outbox, monthly cutoff/locked-period adjustment และ reconciliation UI
@@ -39,7 +39,7 @@ npm run build
 docker compose -f docker-compose.target.yml up --build -d
 ```
 
-การทดสอบรอบนี้ใช้เฉพาะข้อมูลที่สร้างจาก fixture และ health/contract endpoints ไม่อ่านหรือส่งข้อมูลลับ และไม่เปลี่ยนแปลงฐานข้อมูลของ Laravel, Portal หรือ Special-Allowances.
+การทดสอบรอบนี้ใช้เฉพาะข้อมูลที่สร้างจาก fixture และ health/contract/session unit endpoints ไม่อ่านหรือส่งข้อมูลลับ และไม่เปลี่ยนแปลงฐานข้อมูลของ Laravel, Portal หรือ Special-Allowances. Session เก็บเฉพาะ hash ในฐานข้อมูลและไม่คืน raw token ใน JSON response.
 
 ## Security note
 

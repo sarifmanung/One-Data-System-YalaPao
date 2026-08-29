@@ -13,14 +13,14 @@ import type { Request } from 'express';
 import { toApiEnvelope } from '../common/http/api-envelope';
 import { tenantContextFromRequest } from '../common/tenant/tenant-context';
 import type { RequestWithContext } from '../common/http/request-context.middleware';
-import { DevAuthGuard } from '../platform/auth/dev-auth.guard';
+import { AuthGuard } from '../platform/auth/auth.guard';
 import { CreateLeaveRequestDto } from './dto/create-leave-request.dto';
 import { PaperResultDto } from './dto/paper-result.dto';
 import { VoidLeaveDto } from './dto/void-leave.dto';
 import { LeaveService } from './leave.service';
 
 @Controller('v1/leave')
-@UseGuards(DevAuthGuard)
+@UseGuards(AuthGuard)
 export class LeaveController {
   constructor(private readonly leaveService: LeaveService) {}
 

@@ -28,7 +28,7 @@ npm run target:build
 docker compose -f docker-compose.target.yml up --build -d
 ```
 
-เปิด dashboard preview ที่ `http://localhost:3101/tenant-dashboard` และ API ที่ `http://localhost:3100/api/health/live`. Compose target มีฐานข้อมูล development แยกที่ `13307` และ seed สังเคราะห์สำหรับทดสอบเท่านั้น; ไม่มีข้อมูลบุคลากรจริง และ authentication จะปฏิเสธโดยค่าเริ่มต้นจนกว่าจะตั้งค่า SSO/session ตามแผน.
+เปิด dashboard preview ที่ `http://localhost:3101/tenant-dashboard`, Portal launch bridge ที่ `http://localhost:3101/auth/portal/launch?token=...` และ API ที่ `http://localhost:3100/api/health/live`. Compose target มีฐานข้อมูล development แยกที่ `13307` และ seed สังเคราะห์สำหรับทดสอบเท่านั้น; ไม่มีข้อมูลบุคลากรจริง และ authentication จะปฏิเสธโดยค่าเริ่มต้นจนกว่าจะตั้งค่า Portal secret และ launch token ตามแผน.
 
 ## เริ่มรันในเครื่อง
 

@@ -1,11 +1,16 @@
-import { getApiHealth } from '../../lib/api';
+import { cookies } from 'next/headers';
+import { getApiHealth, getCurrentUser } from '../../lib/api';
 
 const navItems = ['ภาพรวม', 'ระบบการลา', 'บุคลากร'];
 
 export const dynamic = 'force-dynamic';
 
 export default async function TenantDashboardPage() {
-  const apiHealth = await getApiHealth();
+  const cookieHeader = (await cookies()).toString();
+  const [apiHealth, currentUser] = await Promise.all([
+    getApiHealth(),
+    getCurrentUser(cookieHeader),
+  ]);
   const isConnected = apiHealth.reachable && apiHealth.status === 'ok';
 
   return (
@@ -21,8 +26,8 @@ export default async function TenantDashboardPage() {
         </nav>
         <div className="account-area">
           <div className="account-copy">
-            <span className="account-name">One Data Preview</span>
-            <span className="account-role">TARGET_STACK_PREVIEW</span>
+            <span className="account-name">{currentUser?.displayName ?? 'One Data Preview'}</span>
+            <span className="account-role">{currentUser?.roles[0] ?? 'TARGET_STACK_PREVIEW'}</span>
           </div>
           <button className="outline-button" type="button">ออกจากระบบ</button>
         </div>

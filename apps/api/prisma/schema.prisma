@@ -124,6 +124,25 @@ model ExternalIdentityMapping {
   @@index([employeeId])
 }
 
+model AuthSession {
+  id              String    @id @db.VarChar(36)
+  tokenHash       String    @unique @db.Char(64)
+  externalSystem  String    @db.VarChar(64)
+  externalSubject String    @db.VarChar(255)
+  username        String    @db.VarChar(255)
+  displayName     String    @db.VarChar(255)
+  roles           Json
+  issuedAt        DateTime  @default(now())
+  expiresAt       DateTime
+  lastSeenAt      DateTime  @default(now())
+  revokedAt       DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([externalSystem, externalSubject, revokedAt])
+  @@index([expiresAt, revokedAt])
+}
+
 model LeaveType {
   id                  String                  @id @db.VarChar(36)
   code                String                  @unique @db.VarChar(64)
