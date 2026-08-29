@@ -1,0 +1,71 @@
+name: onedata-target
+
+services:
+  onedata-target-db:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: one_data_target
+      MYSQL_USER: onedata
+      MYSQL_PASSWORD: ${TARGET_DB_PASSWORD:-onedata_dev_password}
+      MYSQL_ROOT_PASSWORD: ${TARGET_DB_ROOT_PASSWORD:-onedata_dev_root_password}
+    ports:
+      - "${TARGET_DB_PORT:-13307}:3306"
+    volumes:
+      - onedata-target-mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uonedata", "-p${TARGET_DB_PASSWORD:-onedata_dev_password}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  onedata-target-api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: 3100
+      APP_VERSION: ${APP_VERSION:-0.1.0}
+      DATABASE_URL: mysql://onedata:${TARGET_DB_PASSWORD:-onedata_dev_password}@onedata-target-db:3306/one_data_target
+      CORS_ORIGIN: http://localhost:${TARGET_WEB_PORT:-3101}
+      PORTAL_TOKEN_ISSUER: ${PORTAL_TOKEN_ISSUER:-yala-pao-health-portal}
+      PORTAL_TOKEN_AUDIENCE: ${ONEDATA_PORTAL_AUDIENCE:-one_data}
+      PORTAL_SHARED_SECRET: ${PORTAL_SHARED_SECRET:-}
+      ONEDATA_DEV_AUTH_ENABLED: ${ONEDATA_DEV_AUTH_ENABLED:-false}
+      ONEDATA_DEV_ROLE: ${ONEDATA_DEV_ROLE:-DEVELOPMENT_ONLY}
+      ONEDATA_DEV_USER_ID: ${ONEDATA_DEV_USER_ID:-dev-user}
+      ONEDATA_DEV_USERNAME: ${ONEDATA_DEV_USERNAME:-developer}
+      ONEDATA_DEV_DISPLAY_NAME: ${ONEDATA_DEV_DISPLAY_NAME:-Local Developer}
+      ONEDATA_DEV_EMPLOYEE_ID: ${ONEDATA_DEV_EMPLOYEE_ID:-}
+    ports:
+      - "${TARGET_API_PORT:-3100}:3100"
+    depends_on:
+      onedata-target-db:
+        condition: service_healthy
+    command: ["sh", "-c", "npm run db:push -w @onedata/api && npm run db:seed -w @onedata/api && npm run start -w @onedata/api"]
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3100/api/health/live').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  onedata-target-web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      ONEDATA_API_URL: http://onedata-target-api:3100
+    depends_on:
+      onedata-target-api:
+        condition: service_healthy
+    ports:
+      - "${TARGET_WEB_PORT:-3101}:3000"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/tenant-dashboard').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  onedata-target-mysql-data:

@@ -2,7 +2,7 @@
 
 เอกสารวิเคราะห์ระบบเพื่อการสร้างใหม่แบบ Clean-Room
 
-- เวอร์ชันเอกสาร: 1.7 — Reference Audit & NestJS/NextJS Target Baseline
+- เวอร์ชันเอกสาร: 1.9 — Reference Audit, NestJS/NextJS Target Baseline & Foundation Checkpoint
 - แก้ไขล่าสุด: 29 สิงหาคม 2569 (2026)
 - วันที่สำรวจ: 10–11 สิงหาคม และ 29 สิงหาคม 2569 (2026)
 - ขอบเขตที่สำรวจ: หน่วยงาน รพ.สต. 1 แห่ง และสังกัดระดับองค์การบริหารส่วนจังหวัดที่เชื่อมกัน
@@ -23,6 +23,7 @@
 | 1.6     | 29 ส.ค. 2569 | ปรับ implementation baseline ตามคำตัดสินล่าสุด: People/Organization + ระบบลาแบบเรียบง่าย + Special API ก่อน; เลื่อน Word/paper-result และ online approval; กำหนด `CONFIRMED` เป็นสถานะที่มีผล, complete reset snapshot, API master-data และ One Data เป็นผู้ส่ง snapshot |
 | 1.7     | 29 ส.ค. 2569 | สำรวจซ้ำแบบละเอียดทั้งสอง workspace และ workflow ที่เข้าถึงได้, ยืนยัน UX/UI เป้าหมายและ cleanup baseline; ล็อก target stack เป็น NestJS + Next.js, แยก current Laravel/Vue baseline ออกจาก migration target และเพิ่มแผนย้ายระบบแบบ incremental |
 | 1.8     | 29 ส.ค. 2569 | ล็อก workflow ใบลาแบบ Paper-first: `DRAFT → SUBMITTED → PAPER_APPROVED/PAPER_REJECTED`, ใช้ `PAPER_APPROVED` เป็นสถานะมีผลเพียงสถานะเดียว, เลิกใช้ `CONFIRMED` เป็นสถานะปฏิบัติการ และปรับเอกสาร/สัญญา integration ให้สอดคล้องกัน |
+| 1.9     | 29 ส.ค. 2569 | เริ่ม implementation target workspace แบบ coexistence: เพิ่ม shared contracts v1.1, NestJS API/Next.js web foundation, SSO verifier, API envelope, request-id, tenant-context boundary, audit sink, Docker Compose แยก และ automated smoke tests โดยคง Laravel/Vue เดิมไว้ |
 
 ## วิธีอ่านระดับความมั่นใจ
 
@@ -43,6 +44,8 @@
 > เอกสารนี้สกัด “ความต้องการทางธุรกิจ” จากระบบอ้างอิง ไม่ใช่คำสั่งให้คัดลอกหน้าจอ โค้ด เทคโนโลยี หรือข้อจำกัดของระบบเดิมแบบ 1:1
 
 > **Effective implementation baseline:** ส่วน `Implementation Addendum v1.8` ท้ายเอกสารเป็นคำตัดสินล่าสุดของเจ้าของโครงการ; supersede ข้อความ workflow/source ของใบลาใน revision ก่อนหน้า. `Implementation Addendum v1.7`, `v1.6` และ revision ก่อนหน้าเก็บไว้เพื่อ traceability โดย Laravel/Vue หมายถึง current implementation baseline ส่วน NestJS/NextJS หมายถึง target architecture.
+
+> **Implementation checkpoint 29 สิงหาคม 2569:** target workspace เริ่มทำงานแบบแยกจาก Laravel/Vue แล้วที่ `apps/api`, `apps/web` และ `packages/contracts`. API foundation มี health/readiness, request-id, API envelope, problem-details, deny-by-default development auth boundary, tenant-context helper และ HS256 Portal launch-token verifier; web foundation มี Next.js dashboard shell ที่อ่าน health จาก API ตอน runtime. Docker Compose target ใช้พอร์ต `3100/3101` และมี MySQL development แยกบน `13307` พร้อม Prisma schema/seed สังเคราะห์. People/Leave vertical slice มี read/create/state-transition API และ audit/outbox ในฐานข้อมูลทดสอบแล้ว แต่ production migration/backup, Portal session exchange, Special adapter, worker, permission matrix และ real-data import ยังไม่พร้อม production และเป็นงานถัดไปตาม release plan.
 
 ## Target Product Baseline
 

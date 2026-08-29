@@ -1,0 +1,273 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Affiliation {
+  id                  String                @id @db.VarChar(36)
+  code                String                @unique @db.VarChar(64)
+  name                String                @db.VarChar(255)
+  status              String                @default("ACTIVE") @db.VarChar(32)
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  tenants             Tenant[]
+  memberships         EmploymentMembership[]
+  policyProfiles      LeavePolicyProfile[]
+  holidays            Holiday[]
+}
+
+model Tenant {
+  id                  String                @id @db.VarChar(36)
+  affiliationId       String                @db.VarChar(36)
+  code                String                @db.VarChar(64)
+  name                String                @db.VarChar(255)
+  status              String                @default("ACTIVE") @db.VarChar(32)
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  affiliation         Affiliation           @relation(fields: [affiliationId], references: [id])
+  memberships         EmploymentMembership[]
+  leaveRequests       LeaveRequest[]
+
+  @@unique([affiliationId, code])
+  @@index([affiliationId, status])
+}
+
+model Person {
+  id                  String                  @id @db.VarChar(36)
+  firstName           String                  @db.VarChar(150)
+  lastName            String                  @db.VarChar(150)
+  prefix              String?                 @db.VarChar(50)
+  email               String?                 @db.VarChar(255)
+  phone               String?                 @db.VarChar(50)
+  createdAt           DateTime                @default(now())
+  updatedAt           DateTime                @updatedAt
+  employees           Employee[]
+  identityMappings    ExternalIdentityMapping[]
+}
+
+model Employee {
+  id                  String                  @id @db.VarChar(36)
+  personId            String                  @db.VarChar(36)
+  sourceSystem        String?                 @db.VarChar(64)
+  sourceId            String?                 @db.VarChar(128)
+  positionGroup       String?                 @db.VarChar(100)
+  positionName        String?                 @db.VarChar(150)
+  startDate           DateTime?               @db.Date
+  isActive            Boolean                 @default(true)
+  sourceUpdatedAt     DateTime?
+  createdAt           DateTime                @default(now())
+  updatedAt           DateTime                @updatedAt
+  person              Person                  @relation(fields: [personId], references: [id])
+  memberships         EmploymentMembership[]
+  leaveRequests       LeaveRequest[]
+  identityMappings    ExternalIdentityMapping[]
+  revisions           EmployeeRevision[]
+
+  @@unique([sourceSystem, sourceId])
+  @@index([personId])
+  @@index([isActive])
+}
+
+model EmployeeRevision {
+  id                  String                  @id @db.VarChar(36)
+  employeeId          String                  @db.VarChar(36)
+  revision            Int
+  changeType          String                  @db.VarChar(32)
+  effectiveAt         DateTime?
+  payload             Json
+  createdBy           String?                 @db.VarChar(128)
+  createdAt           DateTime                @default(now())
+  employee            Employee                @relation(fields: [employeeId], references: [id])
+
+  @@unique([employeeId, revision])
+  @@index([employeeId, effectiveAt])
+}
+
+model EmploymentMembership {
+  id                  String                  @id @db.VarChar(36)
+  employeeId          String                  @db.VarChar(36)
+  affiliationId       String                  @db.VarChar(36)
+  tenantId            String                  @db.VarChar(36)
+  membershipType      String                  @default("PRIMARY") @db.VarChar(32)
+  isPrimary            Boolean                 @default(true)
+  effectiveFrom       DateTime                @db.Date
+  effectiveTo         DateTime?               @db.Date
+  createdAt           DateTime                @default(now())
+  updatedAt           DateTime                @updatedAt
+  employee            Employee                @relation(fields: [employeeId], references: [id])
+  affiliation         Affiliation             @relation(fields: [affiliationId], references: [id])
+  tenant              Tenant                  @relation(fields: [tenantId], references: [id])
+
+  @@index([employeeId, effectiveFrom, effectiveTo])
+  @@index([tenantId, effectiveFrom, effectiveTo])
+  @@index([affiliationId, effectiveFrom, effectiveTo])
+}
+
+model ExternalIdentityMapping {
+  id                  String                  @id @db.VarChar(36)
+  externalSystem      String                  @db.VarChar(64)
+  externalSubject     String                  @db.VarChar(255)
+  personId            String?                 @db.VarChar(36)
+  employeeId          String?                 @db.VarChar(36)
+  isActive            Boolean                 @default(true)
+  createdAt           DateTime                @default(now())
+  updatedAt           DateTime                @updatedAt
+  person              Person?                 @relation(fields: [personId], references: [id])
+  employee            Employee?               @relation(fields: [employeeId], references: [id])
+
+  @@unique([externalSystem, externalSubject])
+  @@index([personId])
+  @@index([employeeId])
+}
+
+model LeaveType {
+  id                  String                  @id @db.VarChar(36)
+  code                String                  @unique @db.VarChar(64)
+  name                String                  @db.VarChar(150)
+  isActive            Boolean                 @default(true)
+  createdAt           DateTime                @default(now())
+  updatedAt           DateTime                @updatedAt
+  requests            LeaveRequest[]
+}
+
+model LeavePolicyProfile {
+  id                  String                  @id @db.VarChar(36)
+  affiliationId       String                  @db.VarChar(36)
+  code                String                  @db.VarChar(64)
+  name                String                  @db.VarChar(150)
+  employeeTypeScope   String                  @db.VarChar(100)
+  legalBasis          String?                 @db.VarChar(255)
+  effectiveFrom       DateTime                @db.Date
+  effectiveTo         DateTime?               @db.Date
+  status              String                  @default("DRAFT") @db.VarChar(32)
+  createdAt           DateTime                @default(now())
+  updatedAt           DateTime                @updatedAt
+  affiliation         Affiliation             @relation(fields: [affiliationId], references: [id])
+
+  @@unique([affiliationId, code, effectiveFrom])
+  @@index([affiliationId, status, effectiveFrom])
+}
+
+model Holiday {
+  id                  String                  @id @db.VarChar(36)
+  affiliationId       String                  @db.VarChar(36)
+  holidayDate         DateTime                @db.Date
+  name                String                  @db.VarChar(255)
+  createdAt           DateTime                @default(now())
+  affiliation         Affiliation             @relation(fields: [affiliationId], references: [id])
+
+  @@unique([affiliationId, holidayDate])
+  @@index([holidayDate])
+}
+
+model LeaveRequest {
+  id                  String                  @id @db.VarChar(36)
+  tenantId            String                  @db.VarChar(36)
+  employeeId          String                  @db.VarChar(36)
+  leaveTypeId         String                  @db.VarChar(36)
+  status              String                  @default("DRAFT") @db.VarChar(32)
+  startsOn            DateTime                @db.Date
+  endsOn              DateTime                @db.Date
+  requestedDays       Decimal?                @db.Decimal(8, 2)
+  approvedDays        Decimal?                @db.Decimal(8, 2)
+  reason              String?                 @db.Text
+  submittedAt         DateTime?
+  effectiveAt         DateTime?
+  voidedAt            DateTime?
+  version             Int                     @default(1)
+  createdAt           DateTime                @default(now())
+  updatedAt           DateTime                @updatedAt
+  tenant              Tenant                  @relation(fields: [tenantId], references: [id])
+  employee            Employee                @relation(fields: [employeeId], references: [id])
+  leaveType           LeaveType               @relation(fields: [leaveTypeId], references: [id])
+  revisions           LeaveRequestRevision[]
+  paperResults        LeavePaperResult[]
+  quotaEntries        LeaveQuotaLedger[]
+  outboxEvents        OutboxEvent[]
+
+  @@index([tenantId, status, startsOn])
+  @@index([employeeId, startsOn, endsOn])
+  @@index([leaveTypeId, status])
+}
+
+model LeaveRequestRevision {
+  id                  String                  @id @db.VarChar(36)
+  leaveRequestId      String                  @db.VarChar(36)
+  revision            Int
+  status              String                  @db.VarChar(32)
+  payload             Json
+  createdBy           String?                 @db.VarChar(128)
+  createdAt           DateTime                @default(now())
+  leaveRequest        LeaveRequest            @relation(fields: [leaveRequestId], references: [id])
+
+  @@unique([leaveRequestId, revision])
+  @@index([leaveRequestId, createdAt])
+}
+
+model LeavePaperResult {
+  id                  String                  @id @db.VarChar(36)
+  leaveRequestId      String                  @db.VarChar(36)
+  result              String                  @db.VarChar(32)
+  approvedDays        Decimal?                @db.Decimal(8, 2)
+  documentNumber      String?                 @db.VarChar(100)
+  documentDate        DateTime?               @db.Date
+  reason              String?                 @db.Text
+  recordedBy          String                  @db.VarChar(128)
+  recordedAt          DateTime                @default(now())
+  leaveRequest        LeaveRequest            @relation(fields: [leaveRequestId], references: [id])
+
+  @@index([leaveRequestId, recordedAt])
+}
+
+model LeaveQuotaLedger {
+  id                  String                  @id @db.VarChar(36)
+  employeeId          String                  @db.VarChar(36)
+  leaveRequestId      String?                 @db.VarChar(36)
+  leaveTypeId         String                  @db.VarChar(36)
+  fiscalYear          Int
+  deltaDays           Decimal                 @db.Decimal(8, 2)
+  reason              String                  @db.VarChar(100)
+  createdAt           DateTime                @default(now())
+  leaveRequest        LeaveRequest?           @relation(fields: [leaveRequestId], references: [id])
+
+  @@index([employeeId, leaveTypeId, fiscalYear])
+  @@index([leaveRequestId])
+}
+
+model AuditEvent {
+  id                  String                  @id @db.VarChar(36)
+  action              String                  @db.VarChar(100)
+  actorId             String?                 @db.VarChar(128)
+  resourceType        String                  @db.VarChar(100)
+  resourceId          String?                 @db.VarChar(128)
+  tenantId            String?                 @db.VarChar(36)
+  metadata            Json?
+  createdAt           DateTime                @default(now())
+
+  @@index([resourceType, resourceId, createdAt])
+  @@index([tenantId, createdAt])
+  @@index([actorId, createdAt])
+}
+
+model OutboxEvent {
+  id                  String                  @id @db.VarChar(36)
+  eventType           String                  @db.VarChar(100)
+  aggregateType       String                  @db.VarChar(100)
+  aggregateId         String                  @db.VarChar(128)
+  leaveRequestId      String?
+  payload             Json
+  status              String                  @default("PENDING") @db.VarChar(32)
+  attempts            Int                     @default(0)
+  availableAt         DateTime                @default(now())
+  processedAt         DateTime?
+  lastError           String?                 @db.Text
+  createdAt           DateTime                @default(now())
+  leaveRequest        LeaveRequest?           @relation(fields: [leaveRequestId], references: [id])
+
+  @@index([status, availableAt])
+  @@index([aggregateType, aggregateId])
+}

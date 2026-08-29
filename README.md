@@ -17,6 +17,19 @@
 
 Target contract กำหนดให้เฉพาะใบลา `PAPER_APPROVED` ที่ยังมีผลเท่านั้นถูกนำไปสร้าง snapshot ให้ระบบ ฉ. ระบบ Special ยังเป็นเจ้าของสูตร การคำนวณ period ผลลัพธ์ และรายงาน ส่วนการสร้าง Word/DOCX ถูกเลื่อนไปหลังจากมีแบบฟอร์มมาตรฐานและกฎที่ฝ่ายบุคคลรับรอง
 
+## Target workspace foundation (NestJS + Next.js)
+
+Laravel/Vue เดิมยังทำงานแยกตามปกติ ส่วน target workspace อยู่ใน `apps/api`, `apps/web` และ `packages/contracts`:
+
+```bash
+npm run target:typecheck
+npm run target:test
+npm run target:build
+docker compose -f docker-compose.target.yml up --build -d
+```
+
+เปิด dashboard preview ที่ `http://localhost:3101/tenant-dashboard` และ API ที่ `http://localhost:3100/api/health/live`. Compose target มีฐานข้อมูล development แยกที่ `13307` และ seed สังเคราะห์สำหรับทดสอบเท่านั้น; ไม่มีข้อมูลบุคลากรจริง และ authentication จะปฏิเสธโดยค่าเริ่มต้นจนกว่าจะตั้งค่า SSO/session ตามแผน.
+
 ## เริ่มรันในเครื่อง
 
 ```bash

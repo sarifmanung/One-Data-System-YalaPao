@@ -1,0 +1,46 @@
+# One Data Implementation Status
+
+อัปเดตล่าสุด: 29 สิงหาคม 2569 (2026)
+
+เอกสารนี้เป็น checkpoint ของการลงมือทำตาม [Blueprint](../One%20Data%20System%20-%20Reimplementation%20Blueprint.md) และ [Architecture](../ARCHITECTURE.md) โดยแยกสิ่งที่ build/test แล้วออกจากสิ่งที่ยังไม่ควรนำไปใช้จริง
+
+## ทำแล้วในรอบ Foundation
+
+| Area | สถานะ | หลักฐาน |
+| --- | --- | --- |
+| Shared contract | เสร็จระดับ foundation | `packages/contracts`, contract version `1.1`, `PAPER_APPROVED` effective status, fixture ที่ไม่มี `CONFIRMED` |
+| NestJS API | เสร็จระดับ foundation | `apps/api`, `/api/health/live`, `/api/health/ready`, `/api/v1/system/contract` |
+| HTTP boundary | เสร็จระดับ foundation | request-id, API envelope, problem-details, validation configuration |
+| Auth boundary | verifier เสร็จ; session ยังไม่เสร็จ | Portal HS256 token verification, issuer/audience/expiry/jti replay checks, development auth ปิดเป็นค่าเริ่มต้น |
+| Tenant boundary | helper เสร็จ; persistence/guard ยังไม่เสร็จ | identity workspace selection ต้องมาจาก workspace ของ identity ไม่รับ tenant header เป็นสิทธิ์โดยลำพัง |
+| Next.js web | เสร็จระดับ shell | `/tenant-dashboard`, runtime API health, responsive visual shell ตาม reference direction |
+| Docker | เสร็จระดับ local foundation | `docker-compose.target.yml`, API `3100`, web `3101`, แยกจาก Laravel compose |
+| Prisma/People/Leave vertical slice | เสร็จระดับ local development | schema + synthetic seed, People read, Leave `DRAFT → SUBMITTED → PAPER_APPROVED/PAPER_REJECTED`, `CANCELLED/VOIDED`, durable audit/outbox |
+| Regression checks | ผ่าน | target typecheck, target build, API 5 tests, legacy Vite build, local และ Docker smoke test |
+
+## ยังไม่เสร็จและห้ามตีความว่า production-ready
+
+- production Prisma migration/backup/restore policy (local schema + database แยกมีแล้ว)
+- durable local session และ Portal launch-token exchange ที่สร้าง session แบบ secure httpOnly
+- permission matrix/role guard จริงสำหรับ affiliation, tenant, self และ paper-result recorder
+- People import/reconciliation จาก Special-Allowances, real-data mapping และการ map Portal user กับ employee
+- Leave quota/policy engine, complete snapshot และ production acceptance rules (state machine/revision/audit/outbox foundation มีแล้ว)
+- Special-Allowances adapter, retry/outbox, monthly cutoff/locked-period adjustment และ reconciliation UI
+- worker process, document/DOCX, report access, backup/restore และ operational observability
+- UAT กับข้อมูล/บัญชีจริงและ pilot 3 รพ.สต.
+
+## คำสั่งตรวจซ้ำ
+
+```bash
+npm run target:typecheck
+npm run target:test
+npm run target:build
+npm run build
+docker compose -f docker-compose.target.yml up --build -d
+```
+
+การทดสอบรอบนี้ใช้เฉพาะข้อมูลที่สร้างจาก fixture และ health/contract endpoints ไม่อ่านหรือส่งข้อมูลลับ และไม่เปลี่ยนแปลงฐานข้อมูลของ Laravel, Portal หรือ Special-Allowances.
+
+## Security note
+
+`npm audit --omit=dev --audit-level=high` รายงาน 6 high-severity advisories ใน Prisma config dependency และ Next.js transitive dependencies (PostCSS/sharp). คำสั่งแก้แบบอัตโนมัติเป็น `--force` และเสนอการเปลี่ยน major/minor version นอก baseline จึงยังไม่รันโดยอัตโนมัติ; ต้องวาง upgrade/compatibility test ก่อน production.

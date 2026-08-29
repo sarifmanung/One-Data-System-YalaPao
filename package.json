@@ -1,9 +1,17 @@
 {
     "private": true,
     "type": "module",
+    "workspaces": [
+        "apps/*",
+        "packages/*"
+    ],
     "scripts": {
         "build": "vite build",
-        "dev": "vite"
+        "dev": "vite",
+        "target:build": "npm run build -w @onedata/contracts && npm run db:generate -w @onedata/api && npm run build -w @onedata/api && npm run build -w @onedata/web",
+        "target:typecheck": "npm run build -w @onedata/contracts && npm run db:generate -w @onedata/api && npm run typecheck -w @onedata/api && npm run typecheck -w @onedata/web",
+        "target:test": "npm run build -w @onedata/contracts && npm run db:generate -w @onedata/api && npm run test -w @onedata/api",
+        "target:dev": "concurrently -k \"npm run start:dev -w @onedata/api\" \"npm run dev -w @onedata/web\""
     },
     "devDependencies": {
         "@inertiajs/vue3": "^1.3.0",

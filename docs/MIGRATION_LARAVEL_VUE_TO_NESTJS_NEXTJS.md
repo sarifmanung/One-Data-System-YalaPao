@@ -2,12 +2,24 @@
 
 ## Laravel + Vue/Inertia → NestJS + Next.js
 
-- สถานะ: Target migration plan — ยังไม่เริ่มย้าย source code
+- สถานะ: Target migration plan — Phase 0/1 foundation เริ่มใช้งานแบบ coexistence แล้ว; domain migration ยังไม่เริ่ม cutover
 - วันที่: 29 สิงหาคม 2569 (2026)
 - เจ้าของระบบ: One Data System / Yala PAO
 - เอกสารที่เกี่ยวข้อง: [Blueprint](../One%20Data%20System%20-%20Reimplementation%20Blueprint.md), [Architecture](../ARCHITECTURE.md), [Integration Contract](INTEGRATION_CONTRACT.md)
 
 เอกสารนี้กำหนดวิธีเปลี่ยน stack ของ One Data จาก current implementation ที่เป็น Laravel 11 + Vue 3/TypeScript/Inertia ไปเป็น target architecture ที่เป็น NestJS + Next.js/TypeScript โดยรักษา business boundary, ข้อมูลที่ตรวจสอบย้อนหลังได้ และการเชื่อมกับ Portal/Special-Allowances ให้ต่อเนื่อง
+
+## Implementation checkpoint — 29 สิงหาคม 2569
+
+มี target workspace ที่ build และรันได้แยกจากระบบเดิมแล้ว:
+
+- `apps/api` และ `apps/web` ใช้ NestJS/Next.js ตาม target stack โดยยังไม่เปลี่ยน route ownership ของ Laravel
+- `packages/contracts` ล็อก API/leave status metadata v1.1
+- API smoke tests ตรวจ health, contract metadata, request-id และ deny-by-default `/api/v1/me`
+- Portal launch-token verifier ตรวจ HS256 signature, issuer, audience, expiry, required claims และ replay ภายใน process สำหรับ foundation test; ยังไม่ใช่ production session exchange
+- `docker-compose.target.yml` สร้าง API/web image แยกที่พอร์ต `3100/3101`; ยังไม่ผูกฐานข้อมูลจริง
+
+จุดนี้เป็นการสร้างทางเดิน migration ไม่ใช่การประกาศว่า People/Leave พร้อม cutover. Prisma schema, local development database, synthetic seed, People read/create และ Leave Paper-first state-transition slice เริ่มทำแล้ว; ขั้นถัดไปคือ production migration/backup, durable Portal session/permission guard, real People import projection และ Special snapshot adapter ก่อนเปิด write endpoint ให้ผู้ใช้จริง.
 
 ## 1. คำตัดสินหลัก
 

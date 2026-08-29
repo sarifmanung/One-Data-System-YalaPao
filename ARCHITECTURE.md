@@ -2,12 +2,24 @@
 
 เอกสารคำแนะนำด้านสถาปัตยกรรมก่อนเริ่มพัฒนาระบบ One Data System สำหรับองค์การบริหารส่วนจังหวัดยะลา
 
-- สถานะ: Target architecture baseline — NestJS/Next.js migration planned; current Laravel/Vue implementation remains the migration baseline
+- สถานะ: Target architecture baseline — NestJS/Next.js foundation implemented in coexistence; current Laravel/Vue implementation remains the migration baseline
 - วันที่จัดทำ: 29 สิงหาคม 2569 (2026)
 - ขอบเขตรุ่นแรก: Organization & People Core, ระบบลาขั้นพื้นฐาน และเชื่อมระบบ Special-Allowances เดิม; Word/document module เป็นระยะถัดไป
 - ระบบที่เกี่ยวข้อง: `yala-pao-public-health-portal`, `Special-Allowances`, `shared-infra` และ `carbooking-yala-pao`
 
 เอกสารนี้ใช้ประกอบกับ `One Data System - Reimplementation Blueprint.md` โดยมุ่งตอบคำถามว่า One Data ควรสร้างและเชื่อมกับระบบที่มีอยู่ด้วยสถาปัตยกรรมแบบใด ไม่ได้แทนที่ business requirements ใน Blueprint. แผนย้ายจาก current stack อยู่ที่ [docs/MIGRATION_LARAVEL_VUE_TO_NESTJS_NEXTJS.md](docs/MIGRATION_LARAVEL_VUE_TO_NESTJS_NEXTJS.md)
+
+## Implementation checkpoint — 29 สิงหาคม 2569
+
+การลงมือรอบแรกสร้าง target workspace แบบ coexistence แล้ว โดยไม่ย้ายหรือเขียนทับ Laravel/Vue เดิม:
+
+- `apps/api`: NestJS foundation, versioned API prefix, health/readiness, request-id, problem-details, development-only auth boundary และ Portal HS256 launch-token verifier
+- `apps/web`: Next.js App Router dashboard shell ที่อ่าน API health ตอน runtime และมี visual direction ตาม tenant dashboard ของระบบอ้างอิง
+- `packages/contracts`: shared TypeScript contract v1.1 และ leave snapshot fixture ที่ห้ามส่ง `CONFIRMED`
+- `docker-compose.target.yml`: API/web แยกจาก compose เดิมบนพอร์ต `3100/3101`
+- automated checks: contracts/API/web typecheck, API unit/e2e smoke tests, target production build และ legacy Vite build
+
+สิ่งที่ยังไม่เปิดใช้จริงใน checkpoint นี้คือ production migration/backup policy, local session exchange, real-data People import, permission guard จริง, Special-Allowances adapter และ worker. Prisma schema, local development database, synthetic seed, People/Leave write/state-transition slice และ durable audit/outbox สำหรับ target database มีแล้ว แต่ยังไม่ใช้ข้อมูลหรือ identity จริง.
 
 ## 1. Architecture Decision
 

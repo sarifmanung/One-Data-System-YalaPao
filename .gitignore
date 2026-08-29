@@ -1,5 +1,9 @@
 /.phpunit.cache
 /node_modules
+**/node_modules/
+**/dist/
+**/.next/
+**/*.tsbuildinfo
 /public/build
 /public/hot
 /public/storage
