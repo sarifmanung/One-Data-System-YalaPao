@@ -15,11 +15,11 @@
 
 - `apps/api`: NestJS foundation, versioned API prefix, health/readiness, request-id, problem-details, Portal HS256 launch-token exchange, hashed local session/session guard และ Special master-data projection service
 - `apps/web`: Next.js App Router dashboard shell, Paper-first leave page/server actions, Portal launch bridge ที่ `/auth/portal/launch`, และการอ่าน current user จาก API ตอน runtime
-- `packages/contracts`: shared TypeScript contract v1.2, capability permissions และ leave snapshot fixture ที่ห้ามส่ง `CONFIRMED`
+- `packages/contracts`: shared TypeScript contract v1.3, capability permissions และ leave snapshot fixture ที่ห้ามส่ง `CONFIRMED`
 - `docker-compose.target.yml`: API/web แยกจาก compose เดิมบนพอร์ต `3100/3101`
 - automated checks: contracts/API/web typecheck, API unit/e2e smoke tests, target production build และ legacy Vite build
 
-สิ่งที่ยังไม่เปิดใช้จริงใน checkpoint นี้คือ production migration/backup policy, real-data People import (มี client/sync boundary แต่ยังไม่ตั้งค่า source จริง), permission scope matrix แบบละเอียดครบทุกโมดูล, Special-Allowances leave adapter และ worker. Local session exchange, session guard, Portal-to-One Data capability mapping, route permission guard และ master-data projection boundary มีแล้วในระดับ development/integration foundation; Prisma schema, local development database, synthetic seed, People/Leave write/state-transition slice และ durable audit/outbox สำหรับ target database มีแล้ว แต่ยังไม่ใช้ข้อมูลหรือ identity จริง.
+สิ่งที่ยังไม่เปิดใช้จริงใน checkpoint นี้คือ production migration/backup policy, real-data People import (มี client/sync boundary แต่ยังไม่ตั้งค่า source จริง), permission scope matrix แบบละเอียดครบทุกโมดูล และ worker. Special-Allowances leave adapter รุ่นแรกมีแล้วในระดับ local integration foundation: prepare complete snapshot, เก็บ immutable batch, ส่งผ่าน service token, idempotency/source hash, delivery history และ retry metadata; ยังไม่เปิด scheduled delivery หรือ real-data cutover. Local session exchange, session guard, Portal-to-One Data capability mapping, route permission guard และ master-data projection boundary มีแล้วในระดับ development/integration foundation; Prisma schema, local development database, synthetic seed, People/Leave write/state-transition slice และ durable audit/outbox สำหรับ target database มีแล้ว แต่ยังไม่ใช้ข้อมูลหรือ identity จริง.
 
 ## 1. Architecture Decision
 
@@ -213,6 +213,9 @@ contract รุ่นแรกที่ implement แล้ว:
 - `POST /internal/api/v1/periods/{YYYY-MM}/leave-snapshot`
 - ใช้ `Authorization: Bearer <ONEDATA_INTEGRATION_TOKEN>` สำหรับ service-to-service call
 - snapshot มี `contract_version`, `snapshot_version`, `idempotency_key`, `source_hash`, `source_cutoff` และรายการลาแยกบุคลากร
+- One Data มี `POST /api/v1/integrations/special/leave-snapshots/prepare`, `POST /api/v1/integrations/special/leave-snapshots/:id/deliver` และ `GET /api/v1/integrations/special/leave-snapshots/:id` สำหรับเตรียม/ส่ง/ตรวจ batch
+- batch และ delivery ถูกเก็บแยกกัน; failure ที่เป็น network/HTTP 408/429/5xx จะถูกทำเครื่องหมาย retryable พร้อม exponential backoff สูงสุด 5 ครั้ง ส่วน configuration/validation failure จะหยุดเพื่อให้ผู้ดูแลแก้ไขก่อน
+- adapter รองรับ compatibility mode กับ source code ปัจจุบันของ Special ซึ่ง DTO ยังรับ `contract_version=1.0` และยังไม่รับ field metadata `status`/`paper_decision_recorded_at`; เมื่อประสาน upstream เป็น v1.1 แล้วจึงเปิด field additive เหล่านี้ผ่าน configuration
 
 ทิศทาง sync ที่เลือกคือ One Data เป็นผู้ส่ง leave snapshot รายเดือน และ Special เป็นเจ้าของการรับข้อมูล/คำนวณ/รายงาน ส่วน master data เป็นการดึงจาก Special เข้ามา One Data ผ่าน API; export/import จะใช้เป็น fallback หรือเครื่องมือ migration เท่านั้น
 

@@ -8,7 +8,7 @@
 
 | Area | สถานะ | หลักฐาน |
 | --- | --- | --- |
-| Shared contract | เสร็จระดับ foundation | `packages/contracts`, contract version `1.2`, typed One Data capabilities, `PAPER_APPROVED` effective status, fixture ที่ไม่มี `CONFIRMED` |
+| Shared contract | เสร็จระดับ foundation | `packages/contracts`, contract version `1.3`, typed One Data capabilities, `PAPER_APPROVED` effective status, fixture ที่ไม่มี `CONFIRMED` |
 | NestJS API | เสร็จระดับ foundation | `apps/api`, `/api/health/live`, `/api/health/ready`, `/api/v1/system/contract` |
 | HTTP boundary | เสร็จระดับ foundation | request-id, API envelope, problem-details, validation configuration |
 | Auth boundary | เสร็จระดับ local integration foundation | Portal HS256 token verification/exchange, issuer/audience/expiry/jti replay checks, opaque session token ที่เก็บเฉพาะ SHA-256 hash, secure httpOnly cookie และ development fallback ที่ปิดเป็นค่าเริ่มต้น |
@@ -17,8 +17,9 @@
 | Docker | เสร็จระดับ local foundation | `docker-compose.target.yml`, API `3100`, web `3101`, แยกจาก Laravel compose |
 | People master-data projection | เสร็จระดับ local integration foundation | `SpecialMasterDataClient`, transaction/idempotent upsert ด้วย source ID, effective membership, soft-inactivate และ `MasterDataSyncRun`; endpoint `POST /api/v1/people/sync/special` ยังรอ token/URL จริง |
 | Authorization | เสร็จระดับ local integration foundation | Portal role/position → One Data capability allowlist, session permission snapshot, server-side route guard และ self/requester paper-result separation |
+| Special leave snapshot adapter | เสร็จระดับ local integration foundation | prepare complete snapshot จาก `PAPER_APPROVED`, source hash/idempotency, immutable batch, service-token client, delivery history, retry metadata และ period/version acknowledgement guard; ยังไม่เปิด scheduled worker หรือ real-data delivery |
 | Prisma/People/Leave vertical slice | เสร็จระดับ local development | schema + synthetic seed, People read, Leave `DRAFT → SUBMITTED → PAPER_APPROVED/PAPER_REJECTED`, `CANCELLED/VOIDED`, provisional server-side day calculation, fixed-decimal requested days, holiday exclusion, active-request overlap guard, Paper-first UI/server actions และ durable audit/outbox |
-| Regression checks | ผ่าน | target typecheck, target build, API 7 suites/21 tests, legacy Vite build, Docker health smoke และ browser workflow smoke ด้วยข้อมูลสังเคราะห์ |
+| Regression checks | ผ่าน | target typecheck, target build, API 9 suites/29 tests, legacy Vite build, Docker health smoke และ browser workflow smoke ด้วยข้อมูลสังเคราะห์ |
 
 ## ยังไม่เสร็จและห้ามตีความว่า production-ready
 
@@ -27,7 +28,7 @@
 - production session hardening เช่น distributed replay/revocation strategy, CSRF policy, session rotation และ operational cleanup
 - People import/reconciliation จาก Special-Allowances ด้วย URL/token จริง, real-data mapping และการ map Portal user กับ employee
 - HR-approved leave Rulebook, quota/balance engine, half-day policy, complete snapshot และ production acceptance rules (provisional day calculation/state machine/revision/audit/outbox foundation มีแล้ว; ห้ามถือ provisional rule เป็นกฎสิทธิ์จริง)
-- Special-Allowances adapter, retry/outbox, monthly cutoff/locked-period adjustment และ reconciliation UI
+- scheduled worker สำหรับ retry/monthly cutoff, locked-period adjustment และ reconciliation UI (adapter รุ่น manual prepare/deliver มีแล้ว)
 - worker process, document/DOCX, report access, backup/restore และ operational observability (leave UI เป็น form workflow แล้ว แต่ยังไม่มีการสร้าง Word/DOCX)
 - UAT กับข้อมูล/บัญชีจริงและ pilot 3 รพ.สต.
 

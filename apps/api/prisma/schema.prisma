@@ -20,6 +20,7 @@ model Affiliation {
   memberships         EmploymentMembership[]
   policyProfiles      LeavePolicyProfile[]
   holidays            Holiday[]
+  leaveExportBatches  LeaveExportBatch[]
 
   @@unique([sourceSystem, sourceId])
 }
@@ -248,6 +249,52 @@ model LeaveRequest {
   @@index([tenantId, status, startsOn])
   @@index([employeeId, startsOn, endsOn])
   @@index([leaveTypeId, status])
+}
+
+model LeaveExportBatch {
+  id                   String                 @id @db.VarChar(36)
+  affiliationId        String                 @db.VarChar(36)
+  period               String                 @db.Char(7)
+  periodYear           Int
+  periodMonth          Int
+  snapshotVersion      Int
+  contractVersion      String                 @db.VarChar(16)
+  sourceCutoff         DateTime
+  sourceHash           String                 @db.Char(64)
+  idempotencyKey       String                 @unique @db.VarChar(255)
+  payload              Json
+  status               String                 @default("PREPARED") @db.VarChar(32)
+  processedEmployees   Int                    @default(0)
+  processedLeaveEntries Int                   @default(0)
+  lastError            String?                @db.Text
+  createdBy            String                 @db.VarChar(128)
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+  affiliation          Affiliation            @relation(fields: [affiliationId], references: [id])
+  deliveries           LeaveExportDelivery[]
+
+  @@unique([affiliationId, period, snapshotVersion])
+  @@unique([affiliationId, period, sourceHash])
+  @@index([affiliationId, period, status])
+}
+
+model LeaveExportDelivery {
+  id             String           @id @db.VarChar(36)
+  batchId        String           @db.VarChar(36)
+  attempt        Int
+  status         String           @default("PENDING") @db.VarChar(32)
+  httpStatus     Int?
+  retryable      Boolean          @default(false)
+  nextAttemptAt  DateTime?
+  sentAt         DateTime?
+  lastError      String?          @db.Text
+  response       Json?
+  createdAt      DateTime         @default(now())
+  batch          LeaveExportBatch @relation(fields: [batchId], references: [id])
+
+  @@unique([batchId, attempt])
+  @@index([status, nextAttemptAt])
+  @@index([batchId, createdAt])
 }
 
 model LeaveRequestRevision {

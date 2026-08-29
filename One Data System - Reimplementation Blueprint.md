@@ -2,7 +2,7 @@
 
 เอกสารวิเคราะห์ระบบเพื่อการสร้างใหม่แบบ Clean-Room
 
-- เวอร์ชันเอกสาร: 1.14 — Reference Audit, NestJS/NextJS Target Baseline & Paper-first Leave UI Checkpoint
+- เวอร์ชันเอกสาร: 1.15 — Special-Allowances Leave Snapshot Adapter Checkpoint
 - แก้ไขล่าสุด: 29 สิงหาคม 2569 (2026)
 - วันที่สำรวจ: 10–11 สิงหาคม และ 29 สิงหาคม 2569 (2026)
 - ขอบเขตที่สำรวจ: หน่วยงาน รพ.สต. 1 แห่ง และสังกัดระดับองค์การบริหารส่วนจังหวัดที่เชื่อมกัน
@@ -29,6 +29,7 @@
 | 1.12    | 29 ส.ค. 2569 | เพิ่ม One Data capability permission allowlist จาก Portal role/position, session permission snapshot, server-side route guard สำหรับ People/Leave และบังคับ SoD สำหรับผู้บันทึกผลใบลากระดาษ; เพิ่ม contract version 1.2 |
 | 1.13    | 29 ส.ค. 2569 | เพิ่ม provisional server-side leave calculation: working/calendar-day mode, holiday exclusion, fixed two-decimal requested days, date-range validation, active-request overlap guard และ calculation basis; ย้ำว่ายังไม่ใช่ HR Rulebook หรือ quota engine ที่รับรองแล้ว |
 | 1.14    | 29 ส.ค. 2569 | เพิ่ม Next.js Paper-first leave page และ server actions สำหรับสร้าง/ส่ง/ยกเลิกใบลา บันทึกผลเอกสารกระดาษ และ void; เพิ่ม automated workflow tests และ browser smoke test บน Docker target โดย cleanup ข้อมูลสังเคราะห์แล้ว |
+| 1.15    | 29 ส.ค. 2569 | เพิ่ม Special-Allowances leave snapshot adapter รุ่นแรก: prepare complete snapshot จาก `PAPER_APPROVED`, immutable batch, SHA-256/idempotency, service-token delivery, response period/version guard และ retry/delivery history; ตรวจพบ source DTO ปัจจุบันยังรับ v1.0 จึงเพิ่ม compatibility mode ก่อนประสาน contract v1.1 |
 
 ## วิธีอ่านระดับความมั่นใจ
 
@@ -48,9 +49,9 @@
 
 > เอกสารนี้สกัด “ความต้องการทางธุรกิจ” จากระบบอ้างอิง ไม่ใช่คำสั่งให้คัดลอกหน้าจอ โค้ด เทคโนโลยี หรือข้อจำกัดของระบบเดิมแบบ 1:1
 
-> **Effective implementation baseline:** ส่วน `Implementation Addendum v1.14` ท้ายเอกสารเป็น checkpoint/decision ล่าสุดของเจ้าของโครงการ; supersede เฉพาะรายละเอียด implementation/UI ของ leave ที่เกี่ยวข้องใน revision ก่อนหน้า และใช้ร่วมกับ authorization ของ `Implementation Addendum v1.12`, provisional calculation ของ `Implementation Addendum v1.13` และ workflow ใบลาของ `Implementation Addendum v1.8`. `Implementation Addendum v1.13`, `v1.12`, `v1.11`, `v1.10`, `v1.8`, `v1.7`, `v1.6` และ revision ก่อนหน้าเก็บไว้เพื่อ traceability โดย Laravel/Vue หมายถึง current implementation baseline ส่วน NestJS/NextJS หมายถึง target architecture.
+> **Effective implementation baseline:** ส่วน `Implementation Addendum v1.15` ท้ายเอกสารเป็น checkpoint/decision ล่าสุดของเจ้าของโครงการ; supersede เฉพาะรายละเอียด implementation/integration ของ leave ที่เกี่ยวข้องใน revision ก่อนหน้า และใช้ร่วมกับ UI ของ `Implementation Addendum v1.14`, authorization ของ `Implementation Addendum v1.12`, provisional calculation ของ `Implementation Addendum v1.13` และ workflow ใบลาของ `Implementation Addendum v1.8`. `Implementation Addendum v1.14`, `v1.13`, `v1.12`, `v1.11`, `v1.10`, `v1.8`, `v1.7`, `v1.6` และ revision ก่อนหน้าเก็บไว้เพื่อ traceability โดย Laravel/Vue หมายถึง current implementation baseline ส่วน NestJS/NextJS หมายถึง target architecture.
 
-> **Implementation checkpoint 29 สิงหาคม 2569:** target workspace เริ่มทำงานแบบแยกจาก Laravel/Vue แล้วที่ `apps/api`, `apps/web` และ `packages/contracts`. API foundation มี health/readiness, request-id, API envelope, problem-details, deny-by-default development auth boundary, tenant-context helper, HS256 Portal launch-token verifier/exchange, hashed local session/logout, Portal role/position → One Data capability mapping, server-side permission guard และ Special master-data projection boundary; web foundation มี Next.js dashboard shell, `/auth/portal/launch` bridge, runtime current-user read และ Paper-first leave page/server actions สำหรับสร้าง ส่ง ยกเลิก บันทึกผลกระดาษ และ void ตาม capability. Docker Compose target ใช้พอร์ต `3100/3101` และมี MySQL development แยกบน `13307` พร้อม Prisma schema/seed สังเคราะห์. People/Leave vertical slice มี read/create/state-transition API, capability checks และ audit/outbox ในฐานข้อมูลทดสอบแล้ว; leave draft คำนวณจำนวนวันฝั่ง server ด้วย provisional working/calendar-day rule, ตัดวันหยุดที่มีข้อมูล, เก็บค่าทศนิยมแบบ fixed-decimal และป้องกัน active-request overlap. กติกานี้เป็น development foundation เท่านั้น ยังต้องผูกกับ HR Rulebook/สิทธิ์โควตาที่รับรองก่อน production. Browser smoke ยืนยัน flow สร้าง → ส่ง → บันทึก `PAPER_APPROVED` โดยผู้ตรวจแยกบัญชี → `VOIDED` และคืนข้อมูลทดลองเป็นสถานะที่ไม่มีผลแล้ว. Master-data sync มี validated source-ID upsert, effective membership, soft-inactivate และ sync report แต่ยังไม่ตั้งค่า source/token จริง. Production migration/backup, permission scope/delegation แบบละเอียด, Special leave adapter, worker, DOCX และ real-data import ยังไม่พร้อม production และเป็นงานถัดไปตาม release plan.
+> **Implementation checkpoint 29 สิงหาคม 2569:** target workspace เริ่มทำงานแบบแยกจาก Laravel/Vue แล้วที่ `apps/api`, `apps/web` และ `packages/contracts`. API foundation มี health/readiness, request-id, API envelope, problem-details, deny-by-default development auth boundary, tenant-context helper, HS256 Portal launch-token verifier/exchange, hashed local session/logout, Portal role/position → One Data capability mapping, server-side permission guard และ Special master-data projection boundary; web foundation มี Next.js dashboard shell, `/auth/portal/launch` bridge, runtime current-user read และ Paper-first leave page/server actions สำหรับสร้าง ส่ง ยกเลิก บันทึกผลกระดาษ และ void ตาม capability. Docker Compose target ใช้พอร์ต `3100/3101` และมี MySQL development แยกบน `13307` พร้อม Prisma schema/seed สังเคราะห์. People/Leave vertical slice มี read/create/state-transition API, capability checks และ audit/outbox ในฐานข้อมูลทดสอบแล้ว; leave draft คำนวณจำนวนวันฝั่ง server ด้วย provisional working/calendar-day rule, ตัดวันหยุดที่มีข้อมูล, เก็บค่าทศนิยมแบบ fixed-decimal และป้องกัน active-request overlap. กติกานี้เป็น development foundation เท่านั้น ยังต้องผูกกับ HR Rulebook/สิทธิ์โควตาที่รับรองก่อน production. Browser smoke ยืนยัน flow สร้าง → ส่ง → บันทึก `PAPER_APPROVED` โดยผู้ตรวจแยกบัญชี → `VOIDED` และคืนข้อมูลทดลองเป็นสถานะที่ไม่มีผลแล้ว. Master-data sync มี validated source-ID upsert, effective membership, soft-inactivate และ sync report แต่ยังไม่ตั้งค่า source/token จริง. Special leave snapshot adapter มี prepare/deliver แบบ immutable batch, source hash/idempotency, service-token client, response guard และ retry metadata แล้ว; source code ปัจจุบันของ Special รับ contract v1.0 จึงยังอยู่ใน compatibility mode และยังไม่มี scheduled worker/reconciliation UI. Production migration/backup, permission scope/delegation แบบละเอียด, worker, DOCX และ real-data import ยังไม่พร้อม production และเป็นงานถัดไปตาม release plan.
 
 ## Target Product Baseline
 
@@ -2993,6 +2994,7 @@ PAPER_APPROVED → VOIDED
 | `leave.request.cancel` | ยกเลิก DRAFT/SUBMITTED ของตนเอง |
 | `leave.paper-decision.record` | บันทึก PAPER_APPROVED/PAPER_REJECTED โดยผู้รับผิดชอบ |
 | `leave.request.void` | ทำให้ใบลาที่มีผลเป็น VOIDED โดยผู้มีอำนาจ |
+| `leave.snapshot.manage` | เตรียม/ส่ง/ตรวจ complete leave snapshot ไป Special-Allowances |
 
 ## 3. Mapping หลักจาก Portal
 
@@ -3081,3 +3083,39 @@ PAPER_APPROVED → VOIDED
 - ยังไม่มี quota/balance, HR Rulebook, delegated approver configuration, half-day policy และการเลือก workspace หลายแห่งผ่าน UI.
 - ยังไม่มี Special snapshot prepare/send/retry/reconciliation UI; `PAPER_APPROVED` เป็นเพียงผลภายใน One Data จนกว่าจะผ่าน integration adapter และ period protocol.
 - ก่อน production ต้องเพิ่ม CSRF/same-origin deployment policy, session hardening, rate limit, observability, production migration/backup และ UAT กับบัญชีจริงที่ได้รับอนุญาต.
+
+---
+
+# Implementation Addendum v1.15 — Special-Allowances leave snapshot adapter (29 สิงหาคม 2569)
+
+ภาคผนวกนี้บันทึก integration boundary รุ่นแรกระหว่าง Leave ของ One Data กับระบบ ฉ.10/11 โดยไม่ย้ายสูตรหรือ calculation engine มาไว้ใน One Data.
+
+## 1. สิ่งที่ลงมือทำแล้ว
+
+- เพิ่ม capability `leave.snapshot.manage` และ server-side guard สำหรับผู้ดูแล snapshot ใน affiliation workspace.
+- เพิ่ม `LeaveExportBatch` และ `LeaveExportDelivery` เป็น integration aggregate แยกจาก `LeaveRequest`; payload ที่เตรียมแล้วไม่ถูกแก้ทับ หากข้อมูลเปลี่ยนให้สร้าง snapshot version ใหม่.
+- `POST /api/v1/integrations/special/leave-snapshots/prepare` เลือกเฉพาะใบลา `PAPER_APPROVED` ที่มีผลก่อน `source_cutoff`, อยู่ในช่วงเดือนที่ระบุ, มี external employee mapping ที่มาจาก Special และมี leave type mapping ที่รู้จัก.
+- สร้าง complete monthly snapshot ที่มี `period`, `snapshot_version`, `source_cutoff`, SHA-256 `source_hash`, `idempotency_key`, employee/leave counts และรายการวันที่ที่ตัดตามขอบเขตเดือน.
+- `POST /api/v1/integrations/special/leave-snapshots/{batchId}/deliver` ส่งผ่าน service-to-service Bearer token ไป endpoint ของ Special, ส่ง `idempotency-key`, เก็บ response และตรวจว่า period/version ที่ตอบกลับตรงกับ batch ก่อน mark ว่าสำเร็จ.
+- เก็บ delivery attempt และ audit ทุกครั้ง; network/408/429/5xx เป็น retryable พร้อม exponential backoff สูงสุด 5 ครั้ง ส่วน credential/configuration/validation error จะไม่ retry อัตโนมัติ.
+- การตอบ `duplicate` จาก Special ถือว่าส่งสำเร็จเชิง idempotency และบันทึกสถานะ `DUPLICATE` แยกจาก `APPLIED`.
+
+## 2. Compatibility ที่พบจาก source จริง
+
+source code ของ `Special-Allowances` ที่ตรวจในรอบนี้ยัง validate `contract_version` เป็น `1.0` และ DTO ของ leave entry ยังไม่รับ field `status` กับ `paper_decision_recorded_at`. One Data จึงตั้งค่า `SPECIAL_ALLOWANCES_LEAVE_CONTRACT_VERSION=1.0` เป็นค่าเริ่มต้นและตัด field additive สองตัวออกจาก wire payload ในโหมดนี้ แต่ยังบังคับภายในว่า source records ต้องเป็น `PAPER_APPROVED` และต้องมี paper decision record.
+
+เมื่อ source upstream ประสานเป็น contract v1.1 แล้วจึงเปลี่ยน configuration เป็น `1.1` เพื่อส่ง metadata สอง field นี้เพิ่มแบบ additive. ห้ามเปลี่ยนค่าใน production เพียงฝั่งเดียว เพราะ source ปัจจุบันจะปฏิเสธ payload version 1.1.
+
+## 3. สิ่งที่ยังไม่เสร็จ
+
+- scheduled worker สำหรับเลือก batch ที่ถึงเวลาส่ง/ลองใหม่ และ monthly cutoff orchestration.
+- reconciliation UI/read model ที่แสดง mapping conflict, row-count/hash mismatch, period state และ locked-period response.
+- locked-period adjustment/correction contract ของ Special; adapter รุ่นนี้หยุดที่ period protocol และไม่พยายามแก้ผลรอบที่ lock แล้ว.
+- real-data contract test กับ endpoint และ token ของ environment ที่จะใช้งานจริง; local smoke ที่ทำแล้วใช้ missing-configuration/failure path และข้อมูลสังเคราะห์.
+- production Prisma migration, backup/restore, secret manager, distributed job lock และ operational alerting.
+
+## 4. Acceptance ของ checkpoint นี้
+
+- target API test ผ่าน 9 suites/29 tests รวม client URL/auth/idempotency/error mapping, snapshot hash/idempotency, v1.0/v1.1 compatibility, delivery success/duplicate และ retryable failure.
+- target typecheck/build ต้องผ่านหลัง regenerate Prisma client.
+- Docker target ต้อง start ได้ด้วย auth ปิดเป็นค่าเริ่มต้น, health/readiness ผ่าน และไม่มี batch ทดสอบค้างในสถานะที่มีผล.

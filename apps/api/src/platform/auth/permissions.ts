@@ -13,6 +13,7 @@ export const ONE_DATA_PERMISSION_GRANTS = [
   'leave.request.cancel',
   'leave.paper-decision.record',
   'leave.request.void',
+  'leave.snapshot.manage',
 ] as const satisfies readonly OneDataPermission[];
 
 export type OneDataPermissionGrant =
@@ -51,6 +52,7 @@ const PEOPLE_ADMIN_PERMISSIONS: readonly OneDataPermission[] = [
   ...MANAGER_PERMISSIONS,
   'employee.master-data.sync',
   'employee.identity-mapping.manage',
+  'leave.snapshot.manage',
 ];
 
 const ROLE_PERMISSIONS: Readonly<Record<string, readonly OneDataPermission[] | typeof ONE_DATA_ALL_PERMISSION>> = {
@@ -74,6 +76,11 @@ const ROLE_PERMISSIONS: Readonly<Record<string, readonly OneDataPermission[] | t
     'employee.profile.read',
     'employee.master-data.sync',
     'employee.identity-mapping.manage',
+  ],
+  SPECIAL_SNAPSHOT_ADMIN: [
+    'dashboard.view',
+    'leave.request.read',
+    'leave.snapshot.manage',
   ],
 };
 

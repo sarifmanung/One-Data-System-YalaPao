@@ -1,9 +1,11 @@
 # One Data ↔ Special-Allowances Integration Contract
 
-สถานะ: MVP contract v1.1
+สถานะ: Target contract v1.1; compatibility adapter ปัจจุบันส่ง v1.0 ให้ source ที่ checkout อยู่
 วันที่: 29 สิงหาคม 2569 (2026)
 
 เอกสารนี้เป็น target contract สำหรับ implementation รอบแรกของ One Data และ `Special-Allowances` โดยยึด ownership ตาม [ARCHITECTURE.md](../ARCHITECTURE.md) และ decision ล่าสุดใน [One Data System - Reimplementation Blueprint.md](../One%20Data%20System%20-%20Reimplementation%20Blueprint.md). Laravel/Vue spike ปัจจุบันอาจยังใช้สถานะ legacy `CONFIRMED` จนกว่าจะย้าย Leave module และห้ามนำ legacy payload ไปปะปนกับ contract v1.1
+
+การตรวจ source code ของ `Special-Allowances` รอบ implementation พบว่า `LeaveSnapshotDto` ใน checkout ปัจจุบัน validate `contract_version` เป็น `1.0` และ `LeaveSnapshotEntryDto` ยังไม่ whitelist `status` กับ `paper_decision_recorded_at`. ดังนั้น One Data adapter ใช้ `SPECIAL_ALLOWANCES_LEAVE_CONTRACT_VERSION=1.0` เป็นค่าเริ่มต้นและตัดสอง field additive นี้ออกเมื่อส่ง v1.0; เมื่อแก้/ประสาน source upstream ให้รับ v1.1 แล้วจึงเปลี่ยน configuration เป็น `1.1`. ข้อมูลภายใน One Data ยังเก็บผล `PAPER_APPROVED` และเวลาบันทึกผลไว้ครบ ไม่ได้ลดทอน state ภายใน.
 
 ## Boundary และทิศทางข้อมูล
 
@@ -12,6 +14,16 @@
 - One Data เป็นผู้ส่ง complete monthly leave snapshot
 - Special เป็นเจ้าของการคำนวณ ฉ.10/11, period, lock/adjustment และรายงาน
 - ห้ามอ่านหรือเขียนฐานข้อมูลของอีกระบบโดยตรง แม้อยู่ server เดียวกัน
+
+### One Data snapshot control API
+
+ผู้ดูแลที่มี capability `leave.snapshot.manage` ใช้ API ฝั่ง One Data ดังนี้:
+
+- `POST /api/v1/integrations/special/leave-snapshots/prepare` — สร้าง immutable batch จากใบลา `PAPER_APPROVED` ที่เข้าเงื่อนไข period/cutoff หรือคืน batch เดิมเมื่อ source hash ซ้ำ
+- `POST /api/v1/integrations/special/leave-snapshots/{batchId}/deliver` — ส่ง payload ที่เก็บไว้ไป Special และบันทึก delivery attempt/acknowledgement
+- `GET /api/v1/integrations/special/leave-snapshots/{batchId}` — ตรวจ batch, source hash, จำนวนรายการ และประวัติ delivery
+
+สถานะ batch คือ `PREPARED`, `DELIVERING`, `APPLIED`, `DUPLICATE`, `RETRYABLE_FAILURE` และ `FAILED`. Network/HTTP 408/429/5xx จะเก็บ retry metadata และเปิดให้ worker retry ได้ภายหลัง; configuration หรือ validation failure จะหยุดเป็น `FAILED` เพื่อให้แก้สาเหตุก่อน. Payload ของ batch immutable หากข้อมูลเปลี่ยนต้องสร้าง snapshot version ใหม่.
 
 ## Effective leave status rule
 
@@ -166,6 +178,7 @@ One Data ส่งเฉพาะใบลาสถานะ `PAPER_APPROVED` �
 - `period` ใน path และ body ต้องตรงกับ `period_year`/`period_month`
 - `snapshot_version` ต้องมากกว่า version ล่าสุดของ period
 - ทุก `leave_entry.status` ต้องเป็น `PAPER_APPROVED`; หากพบสถานะอื่นรวมถึง `CONFIRMED` ให้ตอบ validation error และไม่ apply snapshot
+- ใน compatibility mode v1.0 source จะไม่รับ field `status`/`paper_decision_recorded_at` แต่ One Data จะ query เฉพาะ `PAPER_APPROVED` และเก็บ paper decision timestamp ในฐานข้อมูล/audit ของตนเอง; v1.1 จึงค่อยส่ง metadata สอง field นี้ไปด้วย
 - ถ้า `idempotency_key` และ `source_hash` ซ้ำ จะตอบ `status: duplicate` โดยไม่เขียนข้อมูลซ้ำ
 - การ `CANCELLED`/`VOIDED` ใบลาใน One Data จะไม่ถูกส่งเป็นรายการใหม่; complete snapshot ครั้งถัดไปทำให้ Special คำนวณค่าปัจจุบันใหม่
 - หลัง Special lock period แล้ว ห้าม overwrite ด้วย leave snapshot v1.1; ต้องใช้ adjustment/correction contract ที่จะกำหนดเพิ่ม

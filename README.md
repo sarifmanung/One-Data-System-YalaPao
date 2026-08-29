@@ -12,7 +12,7 @@
 - ใบลาใน Laravel/Vue spike ปัจจุบันยังใช้ `DRAFT → CONFIRMED → CANCELLED/VOID` (legacy เท่านั้น; ไม่ใช่ target state machine)
 - Target leave workflow สำหรับ NestJS/Next.js คือ Paper-first `DRAFT → SUBMITTED → PAPER_APPROVED/PAPER_REJECTED` พร้อม `CANCELLED/VOIDED`, revision, audit และ outbox; draft คำนวณวันแบบ provisional ฝั่ง server ด้วย fixed-decimal/holiday/overlap guard และยังรอ HR Rulebook ก่อนใช้งานจริง
 - Target web มีหน้า `/leave` และ server actions สำหรับสร้าง/ส่ง/ยกเลิกใบลา บันทึกผลจากเอกสารกระดาษ และ void ตาม capability; ยังไม่สร้าง Word/DOCX จนกว่าจะมีแบบฟอร์มมาตรฐาน
-- monthly leave snapshot แบบเต็มงวด มี version, SHA-256 source hash, idempotency และ delivery history
+- monthly leave snapshot แบบเต็มงวด มี version, SHA-256 source hash, idempotency, complete-reset payload และ delivery history; target API มีคำสั่ง prepare/deliver แบบ manual แล้ว
 - Special-Allowances internal API สำหรับอ่าน master data และรับ leave snapshot
 - Docker Compose สำหรับการพัฒนาแบบมี MySQL แยกฐานข้อมูล
 
@@ -75,7 +75,7 @@ SPECIAL_ALLOWANCES_DRY_RUN=true
 ONEDATA_INTEGRATION_TOKEN=<random-long-token>
 ```
 
-หลังจากทดสอบ dry-run แล้วจึงเปลี่ยน `SPECIAL_ALLOWANCES_DRY_RUN=false` โดยต้องมี period แบบ `NORMAL` และสถานะ `OPEN` ใน Special ก่อนรับ snapshot
+ก่อนส่งจริงต้องมี period แบบ `NORMAL` และสถานะ `OPEN` ใน Special. Target NestJS ใช้ `SPECIAL_ALLOWANCES_LEAVE_CONTRACT_VERSION=1.0` เป็นค่าเริ่มต้นเพื่อเข้ากับ DTO ปัจจุบันของ Special; เปลี่ยนเป็น `1.1` ได้เมื่อ source upstream รองรับ field additive ตาม Integration Contract แล้ว. ตัวแปร `SPECIAL_ALLOWANCES_DRY_RUN` เป็นของ Laravel/Vue baseline เดิม ไม่ใช่สวิตช์ของ target adapter.
 
 API contract ที่เปิดให้ One Data เรียกใช้:
 
@@ -85,6 +85,14 @@ API contract ที่เปิดให้ One Data เรียกใช้:
 - `POST /internal/api/v1/periods/{YYYY-MM}/leave-snapshot`
 
 การ sync master data เป็นการดึงจาก Special เข้ามา One Data ส่วน leave snapshot เป็นการส่งจาก One Data ไป Special แบบ complete snapshot รายเดือน การ retry ใช้ idempotency key และ source hash ไม่ใช้การเขียนฐานข้อมูลข้ามระบบ
+
+Target One Data API สำหรับ snapshot:
+
+- `POST /api/v1/integrations/special/leave-snapshots/prepare` — สร้างหรือคืน batch เดิมจาก period/cutoff/source hash
+- `POST /api/v1/integrations/special/leave-snapshots/{batchId}/deliver` — ส่ง batch ที่เตรียมไว้และบันทึกผลการส่ง
+- `GET /api/v1/integrations/special/leave-snapshots/{batchId}` — อ่านสถานะ batch/delivery สำหรับผู้ดูแล
+
+การส่งจริงยังเป็นคำสั่ง manual ใน checkpoint นี้; scheduled worker และ reconciliation UI เป็นงานถัดไป.
 
 Target API มีคำสั่ง sync สำหรับผู้ดูแลที่มี capability `employee.master-data.sync` (Portal role/position จะถูก map เป็น allowlist ฝั่ง One Data; `PEOPLE_SYNC_ADMIN` หรือ role development ใช้ใน local test ได้):
 
@@ -113,5 +121,5 @@ npm run build
 - เชื่อม Portal module manifest/launch URL และจับคู่ organization code จริง
 - ทดสอบข้อมูลจริง 38 รพ.สต. และแก้ mapping บัญชี Portal ↔ บุคลากรให้ครบ
 - ตัดสินใจ/รับรองกฎวันลาและแบบ Word จริงก่อนสร้าง document module
-- เพิ่ม scheduled monthly sync, reconciliation UI และ retry worker ที่ใช้จริง
+- เพิ่ม scheduled monthly snapshot, reconciliation UI และ retry worker ที่ใช้จริง (adapter รุ่นแรกมี manual prepare/deliver และบันทึก retry metadata แล้ว)
 - เพิ่ม module อื่นภายหลัง เช่น จองรถ โดยรักษา module boundary และ data ownership เดิม

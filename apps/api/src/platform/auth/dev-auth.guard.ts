@@ -35,11 +35,23 @@ export class DevAuthGuard implements CanActivate {
       ? configuredPermissions
       : permissionsFromPortalClaims({ roles: [role] });
 
+    const workspaceKind = this.config.get<string>('ONEDATA_DEV_WORKSPACE_KIND', 'tenant') === 'affiliation'
+      ? 'affiliation'
+      : 'tenant';
     const workspace: WorkspaceSummary = {
-      id: this.config.get<string>('ONEDATA_DEV_WORKSPACE_ID', 'tenant-dev'),
-      kind: 'tenant',
-      code: this.config.get<string>('ONEDATA_DEV_WORKSPACE_CODE', 'DEV-TENANT'),
-      name: this.config.get<string>('ONEDATA_DEV_WORKSPACE_NAME', 'Development Health Center'),
+      id: this.config.get<string>(
+        'ONEDATA_DEV_WORKSPACE_ID',
+        workspaceKind === 'affiliation' ? 'affiliation-dev' : 'tenant-dev',
+      ),
+      kind: workspaceKind,
+      code: this.config.get<string>(
+        'ONEDATA_DEV_WORKSPACE_CODE',
+        workspaceKind === 'affiliation' ? 'DEV-AFFILIATION' : 'DEV-TENANT',
+      ),
+      name: this.config.get<string>(
+        'ONEDATA_DEV_WORKSPACE_NAME',
+        workspaceKind === 'affiliation' ? 'One Data Development Affiliation' : 'Development Health Center',
+      ),
       role: 'DEVELOPMENT_ONLY',
     };
 

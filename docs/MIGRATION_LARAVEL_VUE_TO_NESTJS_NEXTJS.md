@@ -14,12 +14,12 @@
 มี target workspace ที่ build และรันได้แยกจากระบบเดิมแล้ว:
 
 - `apps/api` และ `apps/web` ใช้ NestJS/Next.js ตาม target stack โดยยังไม่เปลี่ยน route ownership ของ Laravel
-- `packages/contracts` ล็อก API/permission/leave status metadata v1.2
+- `packages/contracts` ล็อก API/permission/leave status metadata v1.3
 - API smoke tests ตรวจ health, contract metadata, request-id และ deny-by-default `/api/v1/me`
 - Portal launch-token verifier/exchange ตรวจ HS256 signature, issuer, audience, expiry, required claims และ replay ภายใน process แล้วสร้าง local session แบบ opaque ที่เก็บเฉพาะ hash พร้อม permission snapshot จาก role/position allowlist; Next.js มี launch bridge ที่ `/auth/portal/launch` สำหรับ local integration แต่ยังไม่ใช่ production cutover
 - `docker-compose.target.yml` สร้าง API/web image แยกที่พอร์ต `3100/3101`; ใช้ฐานข้อมูล development แยกและยังไม่ผูกข้อมูลจริง
 
-จุดนี้เป็นการสร้างทางเดิน migration ไม่ใช่การประกาศว่า People/Leave พร้อม cutover. Prisma schema, local development database, synthetic seed, People read/create, Leave Paper-first state-transition slice, provisional server-side day calculation/overlap guard, Next.js leave page/server actions, local Portal session exchange, capability guard และ Special master-data projection boundary เริ่มทำแล้ว; provisional rule ยังไม่ใช่ HR Rulebook และยังไม่มี quota engine. ขั้นถัดไปคือ production migration/backup, permission scope/delegation ที่ละเอียดขึ้น, ตั้งค่าและ dry-run real People import และ Special snapshot adapter ก่อนเปิด write endpoint ให้ผู้ใช้จริง.
+จุดนี้เป็นการสร้างทางเดิน migration ไม่ใช่การประกาศว่า People/Leave พร้อม cutover. Prisma schema, local development database, synthetic seed, People read/create, Leave Paper-first state-transition slice, provisional server-side day calculation/overlap guard, Next.js leave page/server actions, local Portal session exchange, capability guard, Special master-data projection boundary และ Special leave snapshot adapter รุ่นแรกเริ่มทำแล้ว; adapter ทำ prepare/deliver แบบเก็บ batch immutable, idempotency/source hash และ retry metadata แต่ยังไม่มี scheduled worker, reconciliation UI หรือ real-data cutover. Provisional rule ยังไม่ใช่ HR Rulebook และยังไม่มี quota engine. ขั้นถัดไปคือ production migration/backup, permission scope/delegation ที่ละเอียดขึ้น, ตั้งค่าและ dry-run real People import, worker และ contract test กับ Special ก่อนเปิด write endpoint ให้ผู้ใช้จริง.
 
 ## 1. คำตัดสินหลัก
 

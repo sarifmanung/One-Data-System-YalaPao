@@ -51,7 +51,7 @@ describe('One Data API foundation', () => {
       .expect(200);
 
     expect(response.body.data).toEqual({
-      contractVersion: '1.2',
+      contractVersion: '1.3',
       leaveEffectiveStatus: 'PAPER_APPROVED',
       deprecatedLeaveStatuses: ['CONFIRMED'],
       targetStack: { api: 'NestJS', web: 'Next.js' },
