@@ -28,6 +28,13 @@ services:
       APP_VERSION: ${APP_VERSION:-0.1.0}
       DATABASE_URL: mysql://onedata:${TARGET_DB_PASSWORD:-onedata_dev_password}@onedata-target-db:3306/one_data_target
       CORS_ORIGIN: http://localhost:${TARGET_WEB_PORT:-3101}
+      SPECIAL_ALLOWANCES_BASE_URL: ${SPECIAL_ALLOWANCES_BASE_URL:-}
+      SPECIAL_ALLOWANCES_INTEGRATION_TOKEN: ${SPECIAL_ALLOWANCES_INTEGRATION_TOKEN:-}
+      SPECIAL_ALLOWANCES_TIMEOUT_MS: ${SPECIAL_ALLOWANCES_TIMEOUT_MS:-10000}
+      ONEDATA_AFFILIATION_ID: ${ONEDATA_AFFILIATION_ID:-affiliation-yala-pao}
+      ONEDATA_AFFILIATION_SOURCE_ID: ${ONEDATA_AFFILIATION_SOURCE_ID:-yala-pao}
+      ONEDATA_AFFILIATION_CODE: ${ONEDATA_AFFILIATION_CODE:-YALA-PAO}
+      ONEDATA_AFFILIATION_NAME: ${ONEDATA_AFFILIATION_NAME:-องค์การบริหารส่วนจังหวัดยะลา}
       PORTAL_TOKEN_ISSUER: ${PORTAL_TOKEN_ISSUER:-yala-pao-health-portal}
       PORTAL_TOKEN_AUDIENCE: ${ONEDATA_PORTAL_AUDIENCE:-one_data}
       PORTAL_SHARED_SECRET: ${PORTAL_SHARED_SECRET:-}
@@ -47,7 +54,9 @@ services:
     depends_on:
       onedata-target-db:
         condition: service_healthy
-    command: ["sh", "-c", "npm run db:push -w @onedata/api && npm run db:seed -w @onedata/api && npm run start -w @onedata/api"]
+    # This compose file is the disposable/local target environment. Production
+    # must use a reviewed Prisma migration instead of db push.
+    command: ["sh", "-c", "npm run db:push -w @onedata/api -- --accept-data-loss && npm run db:seed -w @onedata/api && npm run start -w @onedata/api"]
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3100/api/health/live').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
       interval: 5s

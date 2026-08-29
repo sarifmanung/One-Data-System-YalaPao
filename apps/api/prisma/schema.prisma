@@ -11,6 +11,8 @@ model Affiliation {
   id                  String                @id @db.VarChar(36)
   code                String                @unique @db.VarChar(64)
   name                String                @db.VarChar(255)
+  sourceSystem        String?               @db.VarChar(64)
+  sourceId            String?               @db.VarChar(128)
   status              String                @default("ACTIVE") @db.VarChar(32)
   createdAt           DateTime              @default(now())
   updatedAt           DateTime              @updatedAt
@@ -18,6 +20,8 @@ model Affiliation {
   memberships         EmploymentMembership[]
   policyProfiles      LeavePolicyProfile[]
   holidays            Holiday[]
+
+  @@unique([sourceSystem, sourceId])
 }
 
 model Tenant {
@@ -25,6 +29,9 @@ model Tenant {
   affiliationId       String                @db.VarChar(36)
   code                String                @db.VarChar(64)
   name                String                @db.VarChar(255)
+  sourceSystem        String?               @db.VarChar(64)
+  sourceId            String?               @db.VarChar(128)
+  areaKey             String?               @db.VarChar(64)
   status              String                @default("ACTIVE") @db.VarChar(32)
   createdAt           DateTime              @default(now())
   updatedAt           DateTime              @updatedAt
@@ -33,6 +40,7 @@ model Tenant {
   leaveRequests       LeaveRequest[]
 
   @@unique([affiliationId, code])
+  @@unique([sourceSystem, sourceId])
   @@index([affiliationId, status])
 }
 
@@ -57,6 +65,8 @@ model Employee {
   positionGroup       String?                 @db.VarChar(100)
   positionName        String?                 @db.VarChar(150)
   startDate           DateTime?               @db.Date
+  governmentServiceStartDate DateTime?        @db.Date
+  healthCenterStartDate DateTime?             @db.Date
   isActive            Boolean                 @default(true)
   sourceUpdatedAt     DateTime?
   createdAt           DateTime                @default(now())
@@ -141,6 +151,31 @@ model AuthSession {
 
   @@index([externalSystem, externalSubject, revokedAt])
   @@index([expiresAt, revokedAt])
+}
+
+model MasterDataSyncRun {
+  id                       String    @id @db.VarChar(36)
+  sourceSystem             String    @db.VarChar(64)
+  status                   String    @db.VarChar(32)
+  initiatedBy              String?   @db.VarChar(128)
+  sourceStartedAt          DateTime?
+  sourceCompletedAt        DateTime?
+  healthCentersFetched     Int       @default(0)
+  employeesFetched         Int       @default(0)
+  usersFetched             Int       @default(0)
+  usersWithEmployeeMapping Int       @default(0)
+  tenantsUpserted          Int       @default(0)
+  employeesUpserted        Int       @default(0)
+  employeesDeactivated     Int       @default(0)
+  membershipsCreated       Int       @default(0)
+  membershipsClosed        Int       @default(0)
+  errorCode                String?   @db.VarChar(64)
+  errorMessage             String?   @db.Text
+  createdAt                DateTime  @default(now())
+  completedAt              DateTime?
+
+  @@index([sourceSystem, createdAt])
+  @@index([status, createdAt])
 }
 
 model LeaveType {

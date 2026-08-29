@@ -15,6 +15,7 @@
 | Tenant boundary | guard เสร็จระดับ session foundation | session workspace derive จาก active employee membership; `x-tenant-id` เลือกได้เฉพาะ workspace ที่ identity มีสิทธิ์ |
 | Next.js web | เสร็จระดับ shell + launch bridge | `/tenant-dashboard`, `/auth/portal/launch`, runtime API health/current user, responsive visual shell ตาม reference direction |
 | Docker | เสร็จระดับ local foundation | `docker-compose.target.yml`, API `3100`, web `3101`, แยกจาก Laravel compose |
+| People master-data projection | เสร็จระดับ local integration foundation | `SpecialMasterDataClient`, transaction/idempotent upsert ด้วย source ID, effective membership, soft-inactivate และ `MasterDataSyncRun`; endpoint `POST /api/v1/people/sync/special` ยังรอ token/URL จริง |
 | Prisma/People/Leave vertical slice | เสร็จระดับ local development | schema + synthetic seed, People read, Leave `DRAFT → SUBMITTED → PAPER_APPROVED/PAPER_REJECTED`, `CANCELLED/VOIDED`, durable audit/outbox |
 | Regression checks | ผ่าน | target typecheck, target build, API 5 tests, legacy Vite build, local และ Docker smoke test |
 
@@ -23,7 +24,7 @@
 - production Prisma migration/backup/restore policy (local schema + database แยกมีแล้ว)
 - permission matrix/role guard จริงสำหรับ affiliation, tenant, self และ paper-result recorder
 - production session hardening เช่น distributed replay/revocation strategy, CSRF policy, session rotation และ operational cleanup
-- People import/reconciliation จาก Special-Allowances, real-data mapping และการ map Portal user กับ employee
+- People import/reconciliation จาก Special-Allowances ด้วย URL/token จริง, real-data mapping และการ map Portal user กับ employee
 - Leave quota/policy engine, complete snapshot และ production acceptance rules (state machine/revision/audit/outbox foundation มีแล้ว)
 - Special-Allowances adapter, retry/outbox, monthly cutoff/locked-period adjustment และ reconciliation UI
 - worker process, document/DOCX, report access, backup/restore และ operational observability
@@ -39,7 +40,7 @@ npm run build
 docker compose -f docker-compose.target.yml up --build -d
 ```
 
-การทดสอบรอบนี้ใช้เฉพาะข้อมูลที่สร้างจาก fixture และ health/contract/session unit endpoints ไม่อ่านหรือส่งข้อมูลลับ และไม่เปลี่ยนแปลงฐานข้อมูลของ Laravel, Portal หรือ Special-Allowances. Session เก็บเฉพาะ hash ในฐานข้อมูลและไม่คืน raw token ใน JSON response.
+การทดสอบรอบนี้ใช้เฉพาะข้อมูลที่สร้างจาก fixture และ health/contract/session/master-data unit endpoints ไม่อ่านหรือส่งข้อมูลลับ และไม่เปลี่ยนแปลงฐานข้อมูลของ Laravel, Portal หรือ Special-Allowances. Sync endpoint จะปฏิเสธเมื่อยังไม่ตั้งค่า Special URL/token; session เก็บเฉพาะ hash ในฐานข้อมูลและไม่คืน raw token ใน JSON response.
 
 ## Security note
 

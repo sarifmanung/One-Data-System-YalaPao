@@ -2,7 +2,7 @@
 
 เอกสารวิเคราะห์ระบบเพื่อการสร้างใหม่แบบ Clean-Room
 
-- เวอร์ชันเอกสาร: 1.10 — Reference Audit, NestJS/NextJS Target Baseline & Portal Session Checkpoint
+- เวอร์ชันเอกสาร: 1.11 — Reference Audit, NestJS/NextJS Target Baseline & Master-data Projection Checkpoint
 - แก้ไขล่าสุด: 29 สิงหาคม 2569 (2026)
 - วันที่สำรวจ: 10–11 สิงหาคม และ 29 สิงหาคม 2569 (2026)
 - ขอบเขตที่สำรวจ: หน่วยงาน รพ.สต. 1 แห่ง และสังกัดระดับองค์การบริหารส่วนจังหวัดที่เชื่อมกัน
@@ -25,6 +25,7 @@
 | 1.8     | 29 ส.ค. 2569 | ล็อก workflow ใบลาแบบ Paper-first: `DRAFT → SUBMITTED → PAPER_APPROVED/PAPER_REJECTED`, ใช้ `PAPER_APPROVED` เป็นสถานะมีผลเพียงสถานะเดียว, เลิกใช้ `CONFIRMED` เป็นสถานะปฏิบัติการ และปรับเอกสาร/สัญญา integration ให้สอดคล้องกัน |
 | 1.9     | 29 ส.ค. 2569 | เริ่ม implementation target workspace แบบ coexistence: เพิ่ม shared contracts v1.1, NestJS API/Next.js web foundation, SSO verifier, API envelope, request-id, tenant-context boundary, audit sink, Docker Compose แยก และ automated smoke tests โดยคง Laravel/Vue เดิมไว้ |
 | 1.10    | 29 ส.ค. 2569 | เพิ่ม Portal launch-token exchange, local session แบบ opaque/hash, session guard, logout, Next.js launch bridge และทดสอบการ map external identity → employee → active workspace โดยยังไม่เปิดใช้ข้อมูลจริง |
+| 1.11    | 29 ส.ค. 2569 | เพิ่ม Special-Allowances master-data projection boundary: validated client, source-ID upsert, effective membership, soft-inactivate, durable sync run และ admin sync endpoint โดยยังไม่ตั้งค่า source/token จริง |
 
 ## วิธีอ่านระดับความมั่นใจ
 
@@ -46,7 +47,7 @@
 
 > **Effective implementation baseline:** ส่วน `Implementation Addendum v1.10` ท้ายเอกสารเป็น checkpoint/decision ล่าสุดของเจ้าของโครงการ; supersede ข้อความ workflow/source ของใบลาใน revision ก่อนหน้า. `Implementation Addendum v1.8`, `v1.7`, `v1.6` และ revision ก่อนหน้าเก็บไว้เพื่อ traceability โดย Laravel/Vue หมายถึง current implementation baseline ส่วน NestJS/NextJS หมายถึง target architecture.
 
-> **Implementation checkpoint 29 สิงหาคม 2569:** target workspace เริ่มทำงานแบบแยกจาก Laravel/Vue แล้วที่ `apps/api`, `apps/web` และ `packages/contracts`. API foundation มี health/readiness, request-id, API envelope, problem-details, deny-by-default development auth boundary, tenant-context helper, HS256 Portal launch-token verifier/exchange, hashed local session และ logout; web foundation มี Next.js dashboard shell, `/auth/portal/launch` bridge และอ่าน current user จาก API ตอน runtime. Docker Compose target ใช้พอร์ต `3100/3101` และมี MySQL development แยกบน `13307` พร้อม Prisma schema/seed สังเคราะห์. People/Leave vertical slice มี read/create/state-transition API และ audit/outbox ในฐานข้อมูลทดสอบแล้ว แต่ production migration/backup, permission matrix/role guard, Special adapter, worker และ real-data import ยังไม่พร้อม production และเป็นงานถัดไปตาม release plan.
+> **Implementation checkpoint 29 สิงหาคม 2569:** target workspace เริ่มทำงานแบบแยกจาก Laravel/Vue แล้วที่ `apps/api`, `apps/web` และ `packages/contracts`. API foundation มี health/readiness, request-id, API envelope, problem-details, deny-by-default development auth boundary, tenant-context helper, HS256 Portal launch-token verifier/exchange, hashed local session/logout และ Special master-data projection boundary; web foundation มี Next.js dashboard shell, `/auth/portal/launch` bridge และอ่าน current user จาก API ตอน runtime. Docker Compose target ใช้พอร์ต `3100/3101` และมี MySQL development แยกบน `13307` พร้อม Prisma schema/seed สังเคราะห์. People/Leave vertical slice มี read/create/state-transition API และ audit/outbox ในฐานข้อมูลทดสอบแล้ว; master-data sync มี validated source-ID upsert, effective membership, soft-inactivate และ sync report แต่ยังไม่ตั้งค่า source/token จริง. Production migration/backup, permission matrix/role guard, Special leave adapter, worker และ real-data import ยังไม่พร้อม production และเป็นงานถัดไปตาม release plan.
 
 ## Target Product Baseline
 
@@ -2937,3 +2938,26 @@ PAPER_APPROVED → VOIDED
 - target typecheck, API tests และ web build ผ่าน.
 - มี unit tests สำหรับ session creation, raw-token non-persistence, cookie session resolution, revoke และ unmapped-account rejection.
 - Docker target ต้อง `db:push` schema ใหม่ได้ และยังแยก volume/container จาก Laravel compose เดิม.
+
+---
+
+# Implementation Addendum v1.11 — Special master-data projection (29 สิงหาคม 2569)
+
+ภาคผนวกนี้บันทึกการทำงานกลุ่ม People/Organization projection จาก `Special-Allowances` โดยยังไม่เปิดใช้ข้อมูลจริงและไม่อ่านฐานข้อมูลของระบบต้นทางโดยตรง.
+
+## 1. ขอบเขตที่ทำแล้ว
+
+- `SpecialMasterDataClient` เรียก `GET /internal/api/v1/master-data/health-centers`, `employees` และ `users` ด้วย service token แยกจาก Portal session.
+- ตรวจ response shape, required fields, date, duplicate source ID, duplicate health-center area key และ employee ที่อ้าง health center ไม่พบ ก่อนเริ่มเขียนข้อมูล.
+- เขียนข้อมูลด้วย transaction เดียว: affiliation/tenant/employee/person/membership ใช้ source ID เป็นตัวจับคู่ซ้ำ.
+- เก็บ `sourceSystem`, `sourceId`, `areaKey`, วันเริ่มงาน/เริ่มสังกัด และ `sourceUpdatedAt`; การย้ายหน่วยงานสร้าง membership ใหม่และปิด membership เดิมตาม effective date.
+- ไม่ hard delete ข้อมูลที่หายจาก snapshot; tenant ที่ไม่ปรากฏจะถูก `INACTIVE` และ employee ที่ไม่ปรากฏจะถูก `isActive=false` พร้อมเก็บประวัติเดิม.
+- บันทึก `MasterDataSyncRun` พร้อมจำนวนที่อ่าน/เขียน/ปิดใช้งาน/ผู้ใช้ที่ยังไม่มี employee mapping.
+- เปิด development/admin command ผ่าน `POST /api/v1/people/sync/special`; ต้องมี role สำหรับ sync และต้องตั้งค่า `SPECIAL_ALLOWANCES_BASE_URL` กับ `SPECIAL_ALLOWANCES_INTEGRATION_TOKEN`.
+
+## 2. ข้อจำกัดและงานต่อเนื่อง
+
+- Contract ของ Special รุ่นปัจจุบันยังส่ง `employeeId: null` ใน master-data users; จึงยังไม่เดาหรือสร้าง Portal mapping จาก username/ชื่อ. การจับคู่ Portal → employee ต้องมาจาก mapping ที่ยืนยันได้ในขั้นถัดไป.
+- ยังไม่มี scheduled worker, retry policy, reconciliation UI และ approval/permission matrix เต็มรูปแบบ.
+- ต้องทำ dry-run ด้วยข้อมูลจริงหรือสำเนาที่ได้รับอนุญาต ตรวจ count/hash/missing/extra/conflict แล้วจึงเปิด source URL/token ใน environment ที่ใช้งานจริง.
+- หาก source ส่งข้อมูลว่างหรือ schema ผิด ระบบจะ refuse ทั้ง sync และบันทึกสถานะ `FAILED`; ไม่ทำ partial apply.

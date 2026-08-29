@@ -84,6 +84,33 @@ export interface PersonListItem {
   isActive: boolean;
 }
 
+export interface MasterDataSyncReport {
+  syncRunId: string;
+  sourceSystem: string;
+  status: 'SUCCEEDED';
+  sourceStartedAt: string;
+  sourceCompletedAt: string;
+  healthCentersFetched: number;
+  employeesFetched: number;
+  usersFetched: number;
+  usersWithEmployeeMapping: number;
+  usersWithoutEmployeeMapping: number;
+  tenantsUpserted: number;
+  employeesUpserted: number;
+  employeesDeactivated: number;
+  membershipsCreated: number;
+  membershipsClosed: number;
+}
+
+export interface IdentityMappingSummary {
+  id: string;
+  externalSystem: string;
+  externalSubject: string;
+  employeeId: string;
+  personId: string;
+  isActive: boolean;
+}
+
 export interface LeaveTypeSummary {
   id: string;
   code: string;
