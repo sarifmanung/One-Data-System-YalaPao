@@ -139,6 +139,21 @@ cd ../Special-Allowances/backend
 npm run build
 ```
 
+Target operations tooling:
+
+```bash
+DATABASE_URL="$ONEDATA_TARGET_DATABASE_URL" npm run target:schema:check
+ONEDATA_BACKUP_DIR=/private/backup/onedata \
+  ONEDATA_DB_HOST="$ONEDATA_DB_HOST" ONEDATA_DB_PORT="$ONEDATA_DB_PORT" \
+  ONEDATA_DB_USER="$ONEDATA_DB_USER" ONEDATA_DB_NAME="$ONEDATA_DB_NAME" \
+  npm run target:backup
+ONEDATA_UAT_BASE_URL=http://localhost:3100 \
+  ONEDATA_UAT_WEB_URL=http://localhost:3101 \
+  ./scripts/target-uat-smoke.sh
+```
+
+`target:schema:check` ต้องรันกับฐานที่มี migration history ใน staging/production; local `db push` ใช้ `ONEDATA_SCHEMA_CHECK_ALLOW_UNAPPLIED=true` ได้เฉพาะ disposable database. `target:backup` สร้าง SQL backup พร้อม sidecar SHA-256 โดยไม่ overwrite ไฟล์เดิม และ `target:restore:verify` restore ได้เฉพาะฐานใหม่ที่ตั้งชื่อ `onedata_restore_<name>` พร้อม confirmation ที่ชัดเจน. Metrics แบบ aggregate ที่ไม่เก็บ path/IP/identity/payload อยู่ที่ `/api/health/metrics` และควรเปิดให้เฉพาะเครือข่าย monitoring.
+
 ## ขอบเขตที่ยังต้องทำต่อ
 
 - เชื่อม Portal module manifest/launch URL และจับคู่ organization code จริง

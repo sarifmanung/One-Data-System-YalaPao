@@ -1,7 +1,9 @@
-import { Controller, Get, Req } from '@nestjs/common';
+import { Controller, Get, NotFoundException, Req } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import type { Request } from 'express';
 import { toApiEnvelope } from '../common/http/api-envelope';
 import { PrismaService } from '../database/prisma.service';
+import { OperationalMetricsService } from '../observability/operational-metrics.service';
 
 type HealthStatus = 'ok' | 'degraded';
 
@@ -21,7 +23,11 @@ type HealthResponse = {
 
 @Controller('health')
 export class HealthController {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly config: ConfigService,
+    private readonly metrics: OperationalMetricsService,
+  ) {}
 
   @Get('live')
   live(@Req() request: Request) {
@@ -60,5 +66,13 @@ export class HealthController {
     };
 
     return toApiEnvelope(response, request);
+  }
+
+  @Get('metrics')
+  metricsSnapshot(@Req() request: Request) {
+    if (this.config.get<string>('ONEDATA_METRICS_ENABLED', 'true') !== 'true') {
+      throw new NotFoundException('Operational metrics are disabled.');
+    }
+    return toApiEnvelope(this.metrics.snapshot(), request);
   }
 }

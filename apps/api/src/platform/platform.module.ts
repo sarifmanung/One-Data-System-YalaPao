@@ -6,6 +6,8 @@ import {
   RateLimitMiddleware,
   SecurityHeadersMiddleware,
 } from '../common/http/security.middleware';
+import { ObservabilityModule } from '../observability/observability.module';
+import { RequestMetricsMiddleware } from '../observability/request-metrics.middleware';
 import { AuthGuard } from './auth/auth.guard';
 import { AuthMaintenanceService } from './auth/auth-maintenance.service';
 import { AuthSessionService } from './auth/auth-session.service';
@@ -24,6 +26,7 @@ import {
 } from './sso/portal-launch-token.service';
 
 @Module({
+  imports: [ObservabilityModule],
   controllers: [AuthController, AuthorizationController, MeController, WorkspacesController],
   providers: [
     AuditLogService,
@@ -59,7 +62,7 @@ export class PlatformModule implements NestModule {
       .apply(RequestContextMiddleware)
       .forRoutes({ path: '{*path}', method: RequestMethod.ALL });
     consumer
-      .apply(SecurityHeadersMiddleware, CsrfOriginMiddleware, RateLimitMiddleware)
+      .apply(RequestMetricsMiddleware, SecurityHeadersMiddleware, CsrfOriginMiddleware, RateLimitMiddleware)
       .forRoutes({ path: '{*path}', method: RequestMethod.ALL });
   }
 }

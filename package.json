@@ -10,6 +10,9 @@
         "dev": "vite",
         "target:build": "npm run build -w @onedata/contracts && npm run db:generate -w @onedata/api && npm run build -w @onedata/api && npm run build -w @onedata/web",
         "target:db:migrate": "npm run db:migrate -w @onedata/api",
+        "target:schema:check": "scripts/target-schema-check.sh",
+        "target:backup": "scripts/target-backup.sh",
+        "target:restore:verify": "scripts/target-restore-verify.sh",
         "target:typecheck": "npm run build -w @onedata/contracts && npm run db:generate -w @onedata/api && npm run typecheck -w @onedata/api && npm run typecheck -w @onedata/web",
         "target:test": "npm run build -w @onedata/contracts && npm run db:generate -w @onedata/api && npm run test -w @onedata/api",
         "target:dev": "concurrently -k \"npm run start:dev -w @onedata/api\" \"npm run dev -w @onedata/web\""

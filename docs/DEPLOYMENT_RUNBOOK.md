@@ -48,6 +48,13 @@ mysqldump --single-transaction --routines --triggers \
 
 ตรวจ restore ลงฐานข้อมูลใหม่ที่ไม่ใช่ production, รัน `prisma migrate status`, health/readiness และ query count/hash ที่ไม่เปิด PII ใน log. เก็บ checksum ของไฟล์ backup และผล restore ตาม retention policy.
 
+เครื่องมือใน repository:
+
+- `DATABASE_URL="$ONEDATA_TARGET_DATABASE_URL" npm run target:schema:check` ตรวจ migration status และ schema drift; production/staging ห้ามตั้ง `ONEDATA_SCHEMA_CHECK_ALLOW_UNAPPLIED`.
+- `ONEDATA_BACKUP_DIR=/private/backup/onedata npm run target:backup` สร้าง SQL backup และ SHA-256 sidecar โดยไม่ overwrite ไฟล์เดิม.
+- `ONEDATA_BACKUP_FILE=... ONEDATA_RESTORE_DATABASE=onedata_restore_<run-id> ONEDATA_RESTORE_CONFIRM=RESTORE_TO_NEW_DATABASE npm run target:restore:verify` ตรวจ checksum และ restore ลง database ใหม่เท่านั้น; script ไม่ drop database ที่ restore แล้ว.
+- ตรวจ aggregate API metrics ที่ `/api/health/metrics` จากเครือข่าย monitoring เท่านั้น และส่ง status/error/latency metrics ต่อไปยังระบบ monitoring กลางโดยไม่ส่ง path parameter, cookie, token หรือ payload.
+
 ## 4. Deploy/rollback order
 
 1. backup + migration dry run + maintenance/cutover window

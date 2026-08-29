@@ -68,4 +68,18 @@ describe('One Data API foundation', () => {
       detail: 'Authentication is required.',
     });
   });
+
+  it('exposes aggregate operational metrics without identity or payload fields', async () => {
+    const response = await request(app.getHttpServer())
+      .get('/api/health/metrics')
+      .expect(200);
+
+    expect(response.body.data).toMatchObject({
+      service: 'onedata-api',
+      requestsTotal: expect.any(Number),
+      responsesByClass: expect.any(Object),
+    });
+    expect(JSON.stringify(response.body.data)).not.toContain('cookie');
+    expect(JSON.stringify(response.body.data)).not.toContain('token');
+  });
 });

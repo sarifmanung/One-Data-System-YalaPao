@@ -7,6 +7,7 @@ import { IntegrationModule } from './integration/integration.module';
 import { LeaveModule } from './leave/leave.module';
 import { PeopleModule } from './people/people.module';
 import { PlatformModule } from './platform/platform.module';
+import { ObservabilityModule } from './observability/observability.module';
 import { SystemModule } from './system/system.module';
 import { WorkerModule } from './worker/worker.module';
 
@@ -18,6 +19,7 @@ import { WorkerModule } from './worker/worker.module';
     IntegrationModule,
     PeopleModule,
     LeaveModule,
+    ObservabilityModule,
     PlatformModule,
     SystemModule,
     WorkerModule,
