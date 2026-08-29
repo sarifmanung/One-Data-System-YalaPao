@@ -13,11 +13,16 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
   const apiUrl = process.env.ONEDATA_API_URL ?? 'http://localhost:3100';
   let exchange: Response;
+  const webOrigin = process.env.ONEDATA_PUBLIC_WEB_URL?.trim();
 
   try {
     exchange = await fetch(`${apiUrl}/api/v1/auth/portal/exchange`, {
       method: 'POST',
-      headers: { 'content-type': 'application/json', accept: 'application/json' },
+      headers: {
+        'content-type': 'application/json',
+        accept: 'application/json',
+        ...(webOrigin ? { origin: webOrigin } : {}),
+      },
       body: JSON.stringify({ token }),
       cache: 'no-store',
     });

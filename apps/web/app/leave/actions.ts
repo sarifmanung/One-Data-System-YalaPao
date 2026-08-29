@@ -39,6 +39,7 @@ async function callApi(
   body?: Record<string, unknown>,
 ): Promise<void> {
   const apiUrl = process.env.ONEDATA_API_URL ?? 'http://localhost:3100';
+  const webOrigin = process.env.ONEDATA_PUBLIC_WEB_URL?.trim();
   const cookieHeader = (await cookies()).toString();
   const response = await fetch(`${apiUrl}${path}`, {
     method,
@@ -46,6 +47,7 @@ async function callApi(
       accept: 'application/json',
       'content-type': 'application/json',
       'x-tenant-id': tenantId,
+      ...(webOrigin ? { origin: webOrigin } : {}),
       ...(cookieHeader ? { cookie: cookieHeader } : {}),
     },
     body: body ? JSON.stringify(body) : undefined,

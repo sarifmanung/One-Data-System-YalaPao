@@ -106,6 +106,7 @@ describe('AuthSessionService', () => {
       roles: ['pcu_staff'],
       permissions: ['dashboard.view', 'leave.request.read'],
       expiresAt,
+      lastSeenAt: new Date(Date.now() - 60_000),
       revokedAt: null,
     });
     fixture.authSession.update.mockResolvedValue({});
@@ -128,6 +129,34 @@ describe('AuthSessionService', () => {
     expect(revokeCall.where).toMatchObject({ tokenHash: expect.stringMatching(/^[a-f0-9]{64}$/) });
     expect(revokeCall.where.tokenHash).not.toBe('raw-session-token');
     expect(revokeCall.data.revokedAt).toEqual(expect.any(Date));
+  });
+
+  it('revokes an idle session before rebuilding its current user', async () => {
+    const fixture = createFixture();
+    fixture.authSession.findUnique.mockResolvedValue({
+      id: 'idle-session-1',
+      externalSubject: 'portal-user-1',
+      username: 'portal.user',
+      displayName: 'Portal User',
+      roles: ['pcu_staff'],
+      permissions: ['dashboard.view'],
+      expiresAt: new Date(Date.now() + 3_600_000),
+      lastSeenAt: new Date(Date.now() - 3_601_000),
+      revokedAt: null,
+    });
+    fixture.authSession.updateMany.mockResolvedValue({ count: 1 });
+
+    const request = {
+      cookies: { onedata_session: 'idle-session-token' },
+      get: jest.fn().mockReturnValue(undefined),
+    } as unknown as Request;
+
+    await expect(fixture.service.userFromRequest(request)).resolves.toBeNull();
+    expect(fixture.authSession.updateMany).toHaveBeenCalledWith({
+      where: { id: 'idle-session-1', revokedAt: null },
+      data: { revokedAt: expect.any(Date) },
+    });
+    expect(fixture.externalIdentityMapping.findFirst).not.toHaveBeenCalled();
   });
 
   it('does not create a session for an unmapped Portal account', async () => {

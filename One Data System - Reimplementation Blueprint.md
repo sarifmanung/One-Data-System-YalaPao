@@ -2,7 +2,7 @@
 
 เอกสารวิเคราะห์ระบบเพื่อการสร้างใหม่แบบ Clean-Room
 
-- เวอร์ชันเอกสาร: 1.16 — Leave Snapshot Worker & Monthly Orchestration Checkpoint
+- เวอร์ชันเอกสาร: 1.17 — Production Security Guard Foundation Checkpoint
 - แก้ไขล่าสุด: 29 สิงหาคม 2569 (2026)
 - วันที่สำรวจ: 10–11 สิงหาคม และ 29 สิงหาคม 2569 (2026)
 - ขอบเขตที่สำรวจ: หน่วยงาน รพ.สต. 1 แห่ง และสังกัดระดับองค์การบริหารส่วนจังหวัดที่เชื่อมกัน
@@ -31,6 +31,7 @@
 | 1.14    | 29 ส.ค. 2569 | เพิ่ม Next.js Paper-first leave page และ server actions สำหรับสร้าง/ส่ง/ยกเลิกใบลา บันทึกผลเอกสารกระดาษ และ void; เพิ่ม automated workflow tests และ browser smoke test บน Docker target โดย cleanup ข้อมูลสังเคราะห์แล้ว |
 | 1.15    | 29 ส.ค. 2569 | เพิ่ม Special-Allowances leave snapshot adapter รุ่นแรก: prepare complete snapshot จาก `PAPER_APPROVED`, immutable batch, SHA-256/idempotency, service-token delivery, response period/version guard และ retry/delivery history; ตรวจพบ source DTO ปัจจุบันยังรับ v1.0 จึงเพิ่ม compatibility mode ก่อนประสาน contract v1.1 |
 | 1.16    | 29 ส.ค. 2569 | เพิ่ม worker foundation ใน API image สำหรับ retry delivery ที่ถึงกำหนด, optional monthly previous-month prepare/deliver, affiliation-scoped system identity, MySQL named lock และ worker/once commands; ปิด scheduled execution เป็นค่าเริ่มต้นและเพิ่ม Docker worker profile |
+| 1.17    | 29 ส.ค. 2569 | เพิ่ม production security guard foundation: fail-fast environment validation, idle session timeout, secure-cookie checks, CSRF origin policy, security headers และ auth/mutation rate limit; เพิ่ม security test coverage และระบุ distributed replay/session revocation กับ edge limiter เป็นงานก่อน production sign-off |
 
 ## วิธีอ่านระดับความมั่นใจ
 
@@ -50,9 +51,9 @@
 
 > เอกสารนี้สกัด “ความต้องการทางธุรกิจ” จากระบบอ้างอิง ไม่ใช่คำสั่งให้คัดลอกหน้าจอ โค้ด เทคโนโลยี หรือข้อจำกัดของระบบเดิมแบบ 1:1
 
-> **Effective implementation baseline:** ส่วน `Implementation Addendum v1.16` ท้ายเอกสารเป็น checkpoint/decision ล่าสุดของเจ้าของโครงการ; supersede เฉพาะรายละเอียด implementation/worker ของ leave ที่เกี่ยวข้องใน revision ก่อนหน้า และใช้ร่วมกับ integration ของ `Implementation Addendum v1.15`, UI ของ `Implementation Addendum v1.14`, authorization ของ `Implementation Addendum v1.12`, provisional calculation ของ `Implementation Addendum v1.13` และ workflow ใบลาของ `Implementation Addendum v1.8`. `Implementation Addendum v1.15`, `v1.14`, `v1.13`, `v1.12`, `v1.11`, `v1.10`, `v1.8`, `v1.7`, `v1.6` และ revision ก่อนหน้าเก็บไว้เพื่อ traceability โดย Laravel/Vue หมายถึง current implementation baseline ส่วน NestJS/NextJS หมายถึง target architecture.
+> **Effective implementation baseline:** ส่วน `Implementation Addendum v1.17` ท้ายเอกสารเป็น checkpoint/decision ล่าสุดของเจ้าของโครงการ; supersede เฉพาะรายละเอียด security/deployment guard ของ revision ก่อนหน้า และใช้ร่วมกับ worker ของ `Implementation Addendum v1.16`, integration ของ `Implementation Addendum v1.15`, UI ของ `Implementation Addendum v1.14`, authorization ของ `Implementation Addendum v1.12`, provisional calculation ของ `Implementation Addendum v1.13` และ workflow ใบลาของ `Implementation Addendum v1.8`. `Implementation Addendum v1.16`, `v1.15`, `v1.14`, `v1.13`, `v1.12`, `v1.11`, `v1.10`, `v1.8`, `v1.7`, `v1.6` และ revision ก่อนหน้าเก็บไว้เพื่อ traceability โดย Laravel/Vue หมายถึง current implementation baseline ส่วน NestJS/NextJS หมายถึง target architecture.
 
-> **Implementation checkpoint 29 สิงหาคม 2569:** target workspace เริ่มทำงานแบบแยกจาก Laravel/Vue แล้วที่ `apps/api`, `apps/web` และ `packages/contracts`. API foundation มี health/readiness, request-id, API envelope, problem-details, deny-by-default development auth boundary, tenant-context helper, HS256 Portal launch-token verifier/exchange, hashed local session/logout, Portal role/position → One Data capability mapping, server-side permission guard และ Special master-data projection boundary; web foundation มี Next.js dashboard shell, `/auth/portal/launch` bridge, runtime current-user read และ Paper-first leave page/server actions สำหรับสร้าง ส่ง ยกเลิก บันทึกผลกระดาษ และ void ตาม capability. Docker Compose target ใช้พอร์ต `3100/3101` และมี MySQL development แยกบน `13307` พร้อม Prisma schema/seed สังเคราะห์. People/Leave vertical slice มี read/create/state-transition API, capability checks และ audit/outbox ในฐานข้อมูลทดสอบแล้ว; leave draft คำนวณจำนวนวันฝั่ง server ด้วย provisional working/calendar-day rule, ตัดวันหยุดที่มีข้อมูล, เก็บค่าทศนิยมแบบ fixed-decimal และป้องกัน active-request overlap. กติกานี้เป็น development foundation เท่านั้น ยังต้องผูกกับ HR Rulebook/สิทธิ์โควตาที่รับรองก่อน production. Browser smoke ยืนยัน flow สร้าง → ส่ง → บันทึก `PAPER_APPROVED` โดยผู้ตรวจแยกบัญชี → `VOIDED` และคืนข้อมูลทดลองเป็นสถานะที่ไม่มีผลแล้ว. Master-data sync มี validated source-ID upsert, effective membership, soft-inactivate และ sync report แต่ยังไม่ตั้งค่า source/token จริง. Special leave snapshot adapter มี prepare/deliver แบบ immutable batch, source hash/idempotency, service-token client, response guard และ retry metadata แล้ว; worker foundation มี retry due delivery, optional monthly orchestration และ MySQL named lock โดยยังปิด scheduled execution เป็นค่าเริ่มต้น. source code ปัจจุบันของ Special รับ contract v1.0 จึงยังอยู่ใน compatibility mode และยังไม่มี reconciliation UI. Production migration/backup, permission scope/delegation แบบละเอียด, schedule approval, reconciliation, DOCX และ real-data import ยังไม่พร้อม production และเป็นงานถัดไปตาม release plan.
+> **Implementation checkpoint 29 สิงหาคม 2569:** target workspace เริ่มทำงานแบบแยกจาก Laravel/Vue แล้วที่ `apps/api`, `apps/web` และ `packages/contracts`. API foundation มี health/readiness, request-id, API envelope, problem-details, deny-by-default development auth boundary, tenant-context helper, HS256 Portal launch-token verifier/exchange, hashed local session/logout, Portal role/position → One Data capability mapping, server-side permission guard และ Special master-data projection boundary; web foundation มี Next.js dashboard shell, `/auth/portal/launch` bridge, runtime current-user read และ Paper-first leave page/server actions สำหรับสร้าง ส่ง ยกเลิก บันทึกผลกระดาษ และ void ตาม capability. Docker Compose target ใช้พอร์ต `3100/3101` และมี MySQL development แยกบน `13307` พร้อม Prisma schema/seed สังเคราะห์. People/Leave vertical slice มี read/create/state-transition API, capability checks และ audit/outbox ในฐานข้อมูลทดสอบแล้ว; leave draft คำนวณจำนวนวันฝั่ง server ด้วย provisional working/calendar-day rule, ตัดวันหยุดที่มีข้อมูล, เก็บค่าทศนิยมแบบ fixed-decimal และป้องกัน active-request overlap. กติกานี้เป็น development foundation เท่านั้น ยังต้องผูกกับ HR Rulebook/สิทธิ์โควตาที่รับรองก่อน production. Browser smoke ยืนยัน flow สร้าง → ส่ง → บันทึก `PAPER_APPROVED` โดยผู้ตรวจแยกบัญชี → `VOIDED` และคืนข้อมูลทดลองเป็นสถานะที่ไม่มีผลแล้ว. Master-data sync มี validated source-ID upsert, effective membership, soft-inactivate และ sync report แต่ยังไม่ตั้งค่า source/token จริง. Special leave snapshot adapter มี prepare/deliver แบบ immutable batch, source hash/idempotency, service-token client, response guard และ retry metadata แล้ว; worker foundation มี retry due delivery, optional monthly orchestration และ MySQL named lock โดยยังปิด scheduled execution เป็นค่าเริ่มต้น. Production security guard foundation มี fail-fast config, idle session timeout, secure-cookie check, CSRF origin policy, security headers และ per-process rate limit แล้ว แต่ distributed replay/session revocation, edge rate limit, production migration/backup, permission scope/delegation แบบละเอียด, schedule approval, reconciliation, DOCX และ real-data import ยังไม่พร้อม production และเป็นงานถัดไปตาม release plan.
 
 ## Target Product Baseline
 
@@ -3154,3 +3155,30 @@ source code ของ `Special-Allowances` ที่ตรวจในรอบ�
 - target API test ผ่าน 10 suites/32 tests รวม lock skip, retry due delivery, monthly cutoff/duplicate prevention และ affiliation-scoped system identity.
 - target typecheck/build ผ่าน และ `docker compose -f docker-compose.target.yml config --profiles` แสดง worker profile.
 - worker once/HTTP target ใช้ database development ได้ โดยไม่เปิด external delivery หรือทิ้งข้อมูลทดสอบที่มีผล.
+
+---
+
+# Implementation Addendum v1.17 — Production security guard foundation (29 สิงหาคม 2569)
+
+ภาคผนวกนี้บันทึกชั้นป้องกันที่เพิ่มก่อนนำ target NestJS/Next.js ไป UAT/production โดยไม่ถือว่าเป็น security sign-off เต็มรูปแบบ.
+
+## 1. สิ่งที่ลงมือทำแล้ว
+
+- `ConfigModule` ตรวจ environment ตอน startup; เมื่อ `NODE_ENV=production` จะหยุดทันทีหากขาด `DATABASE_URL`, Portal issuer/audience/secret, `CORS_ORIGIN`, ใช้ wildcard CORS, เปิด development auth หรือใช้ insecure session cookie.
+- session มี absolute TTL เดิมและเพิ่ม idle timeout จาก `lastSeenAt`; session ที่หมดอายุจาก inactivity จะถูก revoke ก่อนสร้าง current-user context.
+- cookie-authenticated mutation ตรวจ `Origin`/`Referer` กับ allowed `CORS_ORIGIN` ใน production; Next.js server actions และ Portal launch bridge ส่ง public web origin ให้ API เพื่อให้ flow ที่เป็นเจ้าของระบบผ่าน policy.
+- API ส่ง `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy` และ HSTS ใน production.
+- เพิ่ม per-process rate limit สำหรับ Portal exchange และ mutation พร้อม `Retry-After`; ตั้งค่าเปิดเป็น default แต่ต้องวาง distributed limit ที่ reverse proxy/WAF ก่อนหลาย replica.
+- เพิ่ม unit tests ของ environment validation, idle session, CSRF origin และ security middleware.
+
+## 2. สิ่งที่ยังไม่เสร็จและห้ามตีความว่า production-ready
+
+- replay guard ของ Portal ยังเป็น in-memory; ต้องใช้ shared/distributed store หรือ one-time exchange service ก่อน scale-out.
+- rate limit ใน API เป็น defense-in-depth ต่อ process; production ต้องกำหนด trusted proxy/IP policy และ limiter ที่ gateway/WAF/Redis.
+- ยังต้องทำ session rotation, revocation propagation เมื่อ Portal role/membership เปลี่ยน, CSRF deployment rehearsal, secret rotation และ log redaction review.
+- ยังต้องสร้าง/ตรวจ controlled Prisma migrations, backup/restore, alerting, vulnerability upgrade plan และ penetration/UAT checks.
+
+## 3. Acceptance ของ checkpoint นี้
+
+- target API test ผ่าน 12 suites/42 tests รวม production validation, idle session และ HTTP security middleware.
+- target typecheck ผ่าน และ local Docker health/readiness ยังทำงานได้โดย auth ปิดเป็นค่าเริ่มต้น.

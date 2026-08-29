@@ -17,16 +17,17 @@
 | Docker | เสร็จระดับ local foundation | `docker-compose.target.yml`, API `3100`, web `3101`, แยกจาก Laravel compose |
 | People master-data projection | เสร็จระดับ local integration foundation | `SpecialMasterDataClient`, transaction/idempotent upsert ด้วย source ID, effective membership, soft-inactivate และ `MasterDataSyncRun`; endpoint `POST /api/v1/people/sync/special` ยังรอ token/URL จริง |
 | Authorization | เสร็จระดับ local integration foundation | Portal role/position → One Data capability allowlist, session permission snapshot, server-side route guard และ self/requester paper-result separation |
+| Production security guard foundation | เสร็จระดับ local integration foundation | production config fail-fast, idle session timeout, secure-cookie validation, CSRF origin policy, security headers และ auth/mutation rate limit; distributed replay/revocation/edge limiter ยังไม่เสร็จ |
 | Special leave snapshot adapter | เสร็จระดับ local integration foundation | prepare complete snapshot จาก `PAPER_APPROVED`, source hash/idempotency, immutable batch, service-token client, delivery history, retry metadata และ period/version acknowledgement guard; ยังไม่เปิด real-data delivery |
 | Leave snapshot worker | เสร็จระดับ local integration foundation | API image มี `worker`/`worker:once`, MySQL named lock, retry due deliveries, optional previous-month cutoff orchestration และ affiliation-scoped system identity; ปิดด้วย `ONEDATA_WORKER_ENABLED=false` เป็นค่าเริ่มต้น |
 | Prisma/People/Leave vertical slice | เสร็จระดับ local development | schema + synthetic seed, People read, Leave `DRAFT → SUBMITTED → PAPER_APPROVED/PAPER_REJECTED`, `CANCELLED/VOIDED`, provisional server-side day calculation, fixed-decimal requested days, holiday exclusion, active-request overlap guard, Paper-first UI/server actions และ durable audit/outbox |
-| Regression checks | ผ่าน | target typecheck, target build, API 9 suites/29 tests, legacy Vite build, Docker health smoke และ browser workflow smoke ด้วยข้อมูลสังเคราะห์ |
+| Regression checks | ผ่าน | target typecheck, target build, API 12 suites/42 tests, legacy Vite build, Docker health smoke และ browser workflow smoke ด้วยข้อมูลสังเคราะห์ |
 
 ## ยังไม่เสร็จและห้ามตีความว่า production-ready
 
 - production Prisma migration/backup/restore policy (local schema + database แยกมีแล้ว)
 - permission scope matrix แบบละเอียดครบทุกโมดูลและ delegated approver configuration (People/Leave capability guard รุ่นแรกทำแล้ว)
-- production session hardening เช่น distributed replay/revocation strategy, CSRF policy, session rotation และ operational cleanup
+- production session hardening ที่ยังเหลือ เช่น distributed replay/revocation strategy, session rotation, proxy trust policy และ operational cleanup (idle timeout/CSRF origin/security headers/rate-limit foundation มีแล้ว)
 - People import/reconciliation จาก Special-Allowances ด้วย URL/token จริง, real-data mapping และการ map Portal user กับ employee
 - HR-approved leave Rulebook, quota/balance engine, half-day policy, complete snapshot และ production acceptance rules (provisional day calculation/state machine/revision/audit/outbox foundation มีแล้ว; ห้ามถือ provisional rule เป็นกฎสิทธิ์จริง)
 - reconciliation UI, locked-period adjustment/correction contract และ production schedule approval (worker retry/monthly foundation มีแล้ว แต่ยังปิด scheduled delivery)

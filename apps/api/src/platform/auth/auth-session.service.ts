@@ -94,6 +94,14 @@ export class AuthSessionService {
       return null;
     }
 
+    if (session.lastSeenAt.getTime() + this.sessionIdleTimeoutSeconds() * 1_000 <= now.getTime()) {
+      await this.prisma.authSession.updateMany({
+        where: { id: session.id, revokedAt: null },
+        data: { revokedAt: now },
+      });
+      return null;
+    }
+
     try {
       const user = await this.buildCurrentUser({
         externalSubject: session.externalSubject,
@@ -260,6 +268,14 @@ export class AuthSessionService {
       return 28_800;
     }
     return Math.min(Math.floor(configured), 604_800);
+  }
+
+  private sessionIdleTimeoutSeconds(): number {
+    const configured = Number(this.config.get<string>('ONEDATA_SESSION_IDLE_TIMEOUT_SECONDS', '1800'));
+    if (!Number.isFinite(configured) || configured < 300) {
+      return 1_800;
+    }
+    return Math.min(Math.floor(configured), 86_400);
   }
 
   private cookieName(): string {

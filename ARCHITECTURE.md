@@ -18,6 +18,7 @@
 - `packages/contracts`: shared TypeScript contract v1.3, capability permissions และ leave snapshot fixture ที่ห้ามส่ง `CONFIRMED`
 - `docker-compose.target.yml`: API/web แยกจาก compose เดิมบนพอร์ต `3100/3101`
 - worker command ใน API image: database lock, retry due delivery และ optional monthly prepare/deliver; target Compose เปิดผ่าน profile `worker` และปิดงานด้วย `ONEDATA_WORKER_ENABLED=false` เป็นค่าเริ่มต้น
+- production guard foundation: fail-fast environment validation, idle session timeout, secure cookie requirement, mutation origin check, API security headers และ in-memory rate limit; distributed replay/session revocation และ edge/shared rate limiting ยังต้องทำก่อนหลาย replica
 - automated checks: contracts/API/web typecheck, API unit/e2e smoke tests, target production build และ legacy Vite build
 
 สิ่งที่ยังไม่เปิดใช้จริงใน checkpoint นี้คือ production migration/backup policy, real-data People import (มี client/sync boundary แต่ยังไม่ตั้งค่า source จริง), permission scope matrix แบบละเอียดครบทุกโมดูล, reconciliation UI และ production schedule approval. Special-Allowances leave adapter และ worker รุ่นแรกมีแล้วในระดับ local integration foundation: prepare complete snapshot, เก็บ immutable batch, ส่งผ่าน service token, idempotency/source hash, delivery history, retry metadata, database lock และ optional monthly orchestration; ค่า worker และ monthly delivery ยังปิดเป็นค่าเริ่มต้นและยังไม่ทำ real-data cutover. Local session exchange, session guard, Portal-to-One Data capability mapping, route permission guard และ master-data projection boundary มีแล้วในระดับ development/integration foundation; Prisma schema, local development database, synthetic seed, People/Leave write/state-transition slice และ durable audit/outbox สำหรับ target database มีแล้ว แต่ยังไม่ใช้ข้อมูลหรือ identity จริง.
@@ -165,6 +166,8 @@ Portal เป็นผู้ยืนยันตัวตนและอนุ�
 - ไม่จับคู่ด้วยชื่อ เบอร์โทรศัพท์ หรือเลขประจำตัวประชาชนเพียงอย่างเดียว
 - Role จาก Portal ไม่ถูกใช้แทน permission ภายใน One Data โดยอัตโนมัติ ต้องมี explicit mapping
 - One Data ใช้ deny-by-default และตรวจ permission ฝั่ง Server
+- Cookie-authenticated mutation ต้องผ่าน allowed `Origin`/`Referer` ใน production; Next.js server actions ส่ง public web origin ให้ API เพื่อให้ same-origin server-to-server flow ผ่าน policy
+- API ใส่ baseline security headers และจำกัด auth/mutation request rate; in-memory limiter เป็น defense-in-depth ของแต่ละ process ไม่ใช่ตัวแทน distributed gateway/WAF
 
 ## 8. Leave Workflow for the First Release
 
