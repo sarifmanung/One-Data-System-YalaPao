@@ -299,6 +299,83 @@ describe('LeaveSnapshotService', () => {
     }));
   });
 
+  it('blocks a non-retryable upstream contract rejection without scheduling a retry', async () => {
+    const prepared = batch();
+    const tx = {
+      leaveExportDelivery: {
+        create: jest.fn().mockResolvedValue({ id: 'delivery-1' }),
+        update: jest.fn().mockResolvedValue({}),
+      },
+      leaveExportBatch: { update: jest.fn().mockResolvedValue({}) },
+      auditEvent: { create: jest.fn().mockResolvedValue({}) },
+    };
+    const prisma = {
+      leaveExportBatch: { findFirst: jest.fn().mockResolvedValue(prepared) },
+      $transaction: jest.fn().mockImplementation(
+        async (callback: (transaction: unknown) => unknown) => callback(tx),
+      ),
+    };
+    const client = {
+      send: jest.fn().mockRejectedValue(new SpecialLeaveSnapshotError('period is locked', 409, false)),
+    };
+
+    await expect(snapshotService(prisma, client).deliver(user(), context, 'batch-1'))
+      .rejects.toThrow(BadGatewayException);
+    expect(tx.leaveExportDelivery.update).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({
+        status: 'FAILED',
+        httpStatus: 409,
+        retryable: false,
+        nextAttemptAt: null,
+      }),
+    }));
+    expect(tx.leaveExportBatch.update).toHaveBeenLastCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ status: 'FAILED' }),
+    }));
+  });
+
+  it('blocks a successful acknowledgement when period or snapshot version differs', async () => {
+    const prepared = batch();
+    const tx = {
+      leaveExportDelivery: {
+        create: jest.fn().mockResolvedValue({ id: 'delivery-1' }),
+        update: jest.fn().mockResolvedValue({}),
+      },
+      leaveExportBatch: { update: jest.fn().mockResolvedValue({}) },
+      auditEvent: { create: jest.fn().mockResolvedValue({}) },
+    };
+    const prisma = {
+      leaveExportBatch: { findFirst: jest.fn().mockResolvedValue(prepared) },
+      $transaction: jest.fn().mockImplementation(
+        async (callback: (transaction: unknown) => unknown) => callback(tx),
+      ),
+    };
+    const client = {
+      send: jest.fn().mockResolvedValue({
+        status: 'applied',
+        periodId: 'special-period-1',
+        period: '2026-09',
+        snapshotVersion: 2,
+        processedEmployees: 1,
+        processedLeaveEntries: 1,
+      }),
+    };
+
+    await expect(snapshotService(prisma, client).deliver(user(), context, 'batch-1'))
+      .rejects.toThrow(BadGatewayException);
+    expect(tx.leaveExportDelivery.update).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({
+        status: 'FAILED',
+        httpStatus: 502,
+        retryable: false,
+        nextAttemptAt: null,
+      }),
+    }));
+    expect(tx.leaveExportBatch.update).toHaveBeenLastCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ status: 'FAILED' }),
+    }));
+  });
+
   it('marks a delivered batch as mismatched when the upstream counts differ', async () => {
     const stored = batch({
       status: 'APPLIED',

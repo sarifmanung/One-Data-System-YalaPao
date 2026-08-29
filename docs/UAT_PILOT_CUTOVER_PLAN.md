@@ -69,6 +69,7 @@
 | SPECIAL-002 | complete/idempotent delivery | ส่ง period เดิมซ้ำไม่เพิ่มผลซ้ำ; source hash, snapshot version และ acknowledgement ตรงกัน |
 | SPECIAL-003 | failure/retry/locked period | network/5xx retry ได้ตาม backoff; validation/locked period ไม่ retry วน; ผู้ดูแลเห็นสถานะและแก้ได้ |
 | SPECIAL-004 | reconciliation | จำนวนบุคลากร/ใบลา/วันลาและ period ตรงกับ snapshot ที่ One Data เตรียม และ Special รับจริง |
+| SPECIAL-005 | adapter contract negative suite | response ที่ผิดรูปแบบ/period/version ไม่ตรงกันถูกหยุดเป็น contract failure; 408/429/5xx retry ได้ ส่วน validation/locked-period 4xx ไม่ถูก retry และไม่เปิดเผย transport detail |
 | OPS-001 | migration/backup | migration ใช้ `migrate deploy`; schema check ผ่าน, backup มี checksum, restore verification ลงฐานใหม่ได้ และไม่มีการใช้ `db push` ใน production |
 | OPS-002 | security/observability | security headers, origin/trusted-proxy policy, durable replay/revocation, 401/403/429, request ID, aggregate metrics และ error log ที่ redacted ตรวจได้โดยไม่เปิด secret/PII; edge rate limit ต้องมีหลักฐานจาก gateway |
 | OPS-003 | rollback rehearsal | หยุด worker, ปิด write feature, rollback image และกลับไป flow เดิมได้ โดยข้อมูล audit ไม่หาย |
@@ -94,6 +95,7 @@
 - [ ] baseline People/membership และ leave ถูก export/reconcile พร้อมผู้อนุมัติ
 - [ ] Portal launch route, domain, cookie, CORS/CSRF และ reverse proxy ผ่าน staging
 - [ ] รัน SSO test double/negative suite ด้วย test identity และเก็บผล status โดยไม่เก็บ token
+- [ ] รัน `npm run target:special:contract` ใน CI/local และรัน request matrix กับ Special staging period/test credential ที่ owner อนุมัติ โดยไม่ใช้ period production
 - [ ] migration/backup/restore และ rollback window ถูกทดสอบ
 - [ ] เก็บ UAT evidence artifact แบบ aggregate-only พร้อม commit/build และผู้ทดสอบ
 - [ ] Special period, contract version, service token และ cutoff ถูกยืนยันโดย owner
@@ -137,7 +139,7 @@
 
 ## 8. สิ่งที่ยัง BLOCKED ใน checkpoint ปัจจุบัน
 
-- มี SSO test double และ negative runner ใน repository แล้ว แต่การทดสอบกับ Portal staging จริง/บัญชี Portal และข้อมูลบุคลากรจริงยังต้องมี owner อนุมัติและ mapping ที่ตรวจรับ
+- มี SSO test double และ negative runner ใน repository แล้ว และมี Special contract negative suite ใน CI/local แล้ว แต่การทดสอบกับ Portal/Special staging จริง/บัญชี Portal และข้อมูลบุคลากรจริงยังต้องมี owner อนุมัติและ mapping ที่ตรวจรับ
 - แบบ Word/DOCX ฉบับราชการและตัวอย่าง golden form ยังไม่มี จึงยังไม่ควรประกาศเอกสารจากระบบเป็นแบบทางการ
 - มี reconciliation UI foundation สำหรับ snapshot/schedule, durable session/replay foundation และ aggregate-only UAT evidence tooling แล้ว แต่ยังไม่มี alerting production และ distributed edge rate limit แบบหลาย replica; base permission scope/delegated assignment API มีแล้ว แต่ยังต้องทดสอบครบทุก role/workspace กับ owner sign-off
 - ยังไม่ได้ทำ backup/restore rehearsal กับ production-like infrastructure และยังไม่มี pilot จริง

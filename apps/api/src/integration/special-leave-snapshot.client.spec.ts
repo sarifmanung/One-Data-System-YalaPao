@@ -1,4 +1,4 @@
-import { ServiceUnavailableException } from '@nestjs/common';
+import { BadGatewayException, ServiceUnavailableException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
   SpecialLeaveSnapshotClient,
@@ -26,22 +26,27 @@ function response(body: unknown, status = 200): Response {
   } as unknown as Response;
 }
 
+function upstreamBody(overrides: Record<string, unknown> = {}): Record<string, unknown> {
+  return {
+    data: {
+      status: 'applied',
+      periodId: 'special-period-1',
+      period: '2026-08',
+      snapshotVersion: 1,
+      processedEmployees: 0,
+      processedLeaveEntries: 0,
+      ...overrides,
+    },
+  };
+}
+
 describe('SpecialLeaveSnapshotClient', () => {
   afterEach(() => {
     jest.restoreAllMocks();
   });
 
   it('sends the versioned snapshot to the upstream internal endpoint', async () => {
-    const fetchMock = jest.spyOn(global, 'fetch').mockResolvedValue(response({
-      data: {
-        status: 'applied',
-        periodId: 'special-period-1',
-        period: '2026-08',
-        snapshotVersion: 1,
-        processedEmployees: 0,
-        processedLeaveEntries: 0,
-      },
-    }));
+    const fetchMock = jest.spyOn(global, 'fetch').mockResolvedValue(response(upstreamBody()));
     const client = new SpecialLeaveSnapshotClient(new ConfigService({
       SPECIAL_ALLOWANCES_BASE_URL: 'http://special.test/',
       SPECIAL_ALLOWANCES_INTEGRATION_TOKEN: 'test-token',
@@ -63,22 +68,70 @@ describe('SpecialLeaveSnapshotClient', () => {
     });
   });
 
-  it('marks upstream 5xx as retryable and 4xx as non-retryable', async () => {
+  it.each([408, 429, 500, 502, 503, 504])(
+    'marks upstream HTTP %s as retryable',
+    async (status) => {
+      const client = new SpecialLeaveSnapshotClient(new ConfigService({
+        SPECIAL_ALLOWANCES_BASE_URL: 'http://special.test',
+        SPECIAL_ALLOWANCES_INTEGRATION_TOKEN: 'test-token',
+      }));
+      jest.spyOn(global, 'fetch').mockResolvedValueOnce(response({ message: 'transient failure' }, status));
+
+      await expect(client.send(payload)).rejects.toMatchObject({
+        httpStatus: status,
+        retryable: true,
+      } satisfies Partial<SpecialLeaveSnapshotError>);
+    },
+  );
+
+  it.each([400, 401, 403, 404, 409, 422])(
+    'marks upstream HTTP %s as non-retryable',
+    async (status) => {
+      const client = new SpecialLeaveSnapshotClient(new ConfigService({
+        SPECIAL_ALLOWANCES_BASE_URL: 'http://special.test',
+        SPECIAL_ALLOWANCES_INTEGRATION_TOKEN: 'test-token',
+      }));
+      jest.spyOn(global, 'fetch').mockResolvedValueOnce(response({ message: 'contract rejection' }, status));
+
+      await expect(client.send(payload)).rejects.toMatchObject({
+        httpStatus: status,
+        retryable: false,
+      } satisfies Partial<SpecialLeaveSnapshotError>);
+    },
+  );
+
+  it('marks a network or timeout failure as retryable without exposing transport details', async () => {
     const client = new SpecialLeaveSnapshotClient(new ConfigService({
       SPECIAL_ALLOWANCES_BASE_URL: 'http://special.test',
       SPECIAL_ALLOWANCES_INTEGRATION_TOKEN: 'test-token',
     }));
-    jest.spyOn(global, 'fetch').mockResolvedValueOnce(response({ message: 'busy' }, 503));
+
+    jest.spyOn(global, 'fetch').mockRejectedValueOnce(new Error('socket details must not escape'));
     await expect(client.send(payload)).rejects.toMatchObject({
-      httpStatus: 503,
+      message: 'Special-Allowances leave snapshot endpoint is unreachable.',
+      httpStatus: null,
       retryable: true,
     } satisfies Partial<SpecialLeaveSnapshotError>);
+  });
 
-    jest.spyOn(global, 'fetch').mockResolvedValueOnce(response({ message: 'invalid' }, 422));
-    await expect(client.send(payload)).rejects.toMatchObject({
-      httpStatus: 422,
-      retryable: false,
-    } satisfies Partial<SpecialLeaveSnapshotError>);
+  it.each([
+    ['missing data envelope', {}],
+    ['invalid status', upstreamBody({ status: 'pending' })],
+    ['blank period id', upstreamBody({ periodId: '   ' })],
+    ['invalid month', upstreamBody({ period: '2026-13' })],
+    ['missing snapshot version', upstreamBody({ snapshotVersion: undefined })],
+    ['non-integer snapshot version', upstreamBody({ snapshotVersion: 1.5 })],
+    ['zero snapshot version', upstreamBody({ snapshotVersion: 0 })],
+    ['negative employee count', upstreamBody({ processedEmployees: -1 })],
+    ['fractional leave-entry count', upstreamBody({ processedLeaveEntries: 0.5 })],
+  ])('rejects malformed successful response: %s', async (_scenario, body) => {
+    const client = new SpecialLeaveSnapshotClient(new ConfigService({
+      SPECIAL_ALLOWANCES_BASE_URL: 'http://special.test',
+      SPECIAL_ALLOWANCES_INTEGRATION_TOKEN: 'test-token',
+    }));
+    jest.spyOn(global, 'fetch').mockResolvedValueOnce(response(body));
+
+    await expect(client.send(payload)).rejects.toThrow(BadGatewayException);
   });
 
   it('fails closed when the integration credential is missing', async () => {

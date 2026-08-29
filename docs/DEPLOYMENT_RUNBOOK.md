@@ -12,6 +12,7 @@
 - ตรวจว่า `ONEDATA_DEV_AUTH_ENABLED=false`, `ONEDATA_PROCESS_ROLE=api` ใน API และ `ONEDATA_PROCESS_ROLE=worker` ใน worker.
 - Staging ต้องใช้ `docker-compose.target.production.yml` ร่วมกับ `docker-compose.target.staging.yml`; รัน `ONEDATA_STAGING_ENV_FILE=/private/path/onedata-staging.env npm run target:staging:preflight` ก่อน deploy เพื่อให้ตรวจค่าที่ resolve แล้วโดยไม่พิมพ์ secret. Preflight จะยืนยัน API hardened mode, HTTPS, secure cookie, CSRF origin, rate limit, metrics, explicit trusted proxy และปิด worker/monthly delivery.
 - หลัง deploy staging ให้รัน `npm run target:sso:negative` ด้วย SSO test double และ test identity ที่ map ไว้เฉพาะ staging; ต้องเห็น valid exchange/rotation/logout ผ่าน และ invalid/expired/replay token ได้ `401` ก่อนนับ AUTH gate ผ่าน.
+- ก่อนนับ SPECIAL contract gate ให้รัน `npm run target:special:contract` ใน CI/local; จากนั้นทดสอบ request matrix กับ Special staging โดยใช้ period/test credential ที่ owner อนุมัติเท่านั้น ตรวจ malformed response, period/version mismatch, retryable 408/429/5xx และ non-retryable validation/locked-period 4xx โดยไม่ใช้ period production.
 - backup และทดสอบ restore ล่าสุดผ่านเกณฑ์; ตรวจ migration status บน staging ก่อน production.
 - ยืนยันว่า `Special-Allowances` period ที่จะรับ snapshot เป็น `NORMAL/OPEN`, contract version ตรงกับ source และมี owner ของ cutoff/schedule; หากเปิด monthly worker ต้องมี schedule ของ affiliation สถานะ `APPROVED`.
 

@@ -1,6 +1,6 @@
 # One Data Implementation Status
 
-อัปเดตล่าสุด: 29 สิงหาคม 2569 (2026)
+อัปเดตล่าสุด: 30 สิงหาคม 2569 (2026)
 
 เอกสารนี้เป็น checkpoint ของการลงมือทำตาม [Blueprint](../One%20Data%20System%20-%20Reimplementation%20Blueprint.md) และ [Architecture](../ARCHITECTURE.md) โดยแยกสิ่งที่ build/test แล้วออกจากสิ่งที่ยังไม่ควรนำไปใช้จริง
 
@@ -18,13 +18,13 @@
 | People master-data projection | เสร็จระดับ local real-data shadow run | `SpecialMasterDataClient`, transaction/idempotent upsert ด้วย source ID, effective membership, soft-inactivate, `SourceUserProjection` และ `MasterDataSyncRun`; local contract test กับ Special จริงผ่าน: 38 หน่วยงาน, 267 บุคลากร, 43 users และ idempotent re-sync ผ่าน; มี endpoint รายงาน source-user/Portal mapping แล้ว แต่ยังไม่มี user-to-employee mapping ที่ยืนยันจาก source |
 | Authorization | เสร็จระดับ local scoped foundation | Portal role/position → One Data capability allowlist, operation scope matrix (`self`/`tenant`/`affiliation`), session permission snapshot, server-side route guard, delegated approver assignment API และ self/requester paper-result separation |
 | Production security guard foundation | เสร็จระดับ staging/local integration foundation | staging/production config fail-fast, idle session timeout, secure-cookie validation, CSRF origin policy, explicit trusted-proxy policy, security headers, database-backed replay/session revocation, session rotation, maintenance cleanup และ auth/mutation rate limit; edge/shared limiter ยังต้องทำที่ gateway |
-| Special leave snapshot adapter | เสร็จระดับ local integration foundation | prepare complete snapshot จาก `PAPER_APPROVED` พร้อม employee rows ครบ scope, source hash/idempotency, immutable batch, service-token client, delivery history, reconciliation summary, retry metadata และ period/version acknowledgement guard; ยังไม่เปิด real-data delivery |
+| Special leave snapshot adapter | เสร็จระดับ local integration foundation | prepare complete snapshot จาก `PAPER_APPROVED` พร้อม employee rows ครบ scope, source hash/idempotency, immutable batch, service-token client, delivery history, reconciliation summary, retry metadata, strict response-shape validation และ period/version acknowledgement guard; มี Special contract negative suite แล้ว แต่ยังไม่เปิด real-data delivery |
 | Leave snapshot worker | เสร็จระดับ local integration foundation | API image มี `worker`/`worker:once`, MySQL named lock, retry due deliveries, approved schedule gate, optional previous-month cutoff orchestration และ affiliation-scoped system identity; ปิดด้วย `ONEDATA_WORKER_ENABLED=false` เป็นค่าเริ่มต้น |
 | Prisma migration/deployment foundation | เสร็จระดับ local integration foundation | initial/forward migrations, `migrate deploy`, schema-drift check, production Compose template, backup/checksum และ restore-to-new-database verification scripts กับ [deployment runbook](DEPLOYMENT_RUNBOOK.md); ตรวจ tooling กับ MySQL ชั่วคราวแล้ว แต่ยังไม่ baseline ฐานข้อมูลเดิมหรือ production-like restore rehearsal |
 | UAT/pilot operating foundation | เสร็จระดับ planning + local evidence/shadow | [UAT/Pilot/Cutover Plan](UAT_PILOT_CUTOVER_PLAN.md), [Release Readiness](RELEASE_READINESS.md), test matrix, G0–G5 gate, reconciliation/rollback checklist, snapshot/schedule monitor, `scripts/target-uat-smoke.sh` และ aggregate-only `scripts/target-uat-evidence.sh`; local evidence ผ่านโดยใช้ dev-auth override แต่ยังไม่มี staging/real-data pilot |
 | Prisma/People/Leave vertical slice | เสร็จระดับ local development | schema + synthetic seed, People read, Leave `DRAFT → SUBMITTED → PAPER_APPROVED/PAPER_REJECTED`, `CANCELLED/VOIDED`, provisional server-side day calculation, fixed-decimal requested days, holiday exclusion, active-request overlap guard, Paper-first UI/server actions และ durable audit/outbox |
 | Leave Rulebook foundation | เสร็จระดับ local development | versioned/effective-dated `LeavePolicyProfile`/`LeavePolicyRule`, draft/publish API, legal-basis/approval audit, active leave-type validation และ production guard ที่ไม่อนุญาต provisional calculation |
-| Regression checks | ผ่าน | target typecheck, target build, API 19 suites/69 tests, shell syntax/tooling checks, staging Compose/preflight with dummy values, SSO test double/negative runner, UAT evidence script, legacy Vite build, Docker health smoke และ browser workflow smoke ด้วยข้อมูลสังเคราะห์ |
+| Regression checks | ผ่าน | target typecheck, target build, API 19 suites/92 tests, focused Special contract suite 32 tests, shell syntax/tooling checks, staging Compose/preflight with dummy values, SSO test double/negative runner, UAT evidence script, legacy Vite build, Docker health smoke และ browser workflow smoke ด้วยข้อมูลสังเคราะห์ |
 
 ## ยังไม่เสร็จและห้ามตีความว่า production-ready
 
@@ -55,8 +55,10 @@ ONEDATA_SSO_BASE_URL=https://onedata-staging.example.org \
   ONEDATA_SSO_TEST_SECRET="$STAGING_SSO_TEST_SECRET" \
   ONEDATA_SSO_TEST_ISSUER=yala-pao-health-portal-staging \
   ONEDATA_SSO_TEST_AUDIENCE=one_data_staging \
-  ONEDATA_SSO_ORIGIN=https://onedata-staging.example.org \
+ONEDATA_SSO_ORIGIN=https://onedata-staging.example.org \
   ONEDATA_SSO_EXPECT_SECURE_COOKIE=true npm run target:sso:negative
+# Special leave-snapshot contract negative checks (no upstream mutation)
+npm run target:special:contract
 # Read-only target smoke (set ONEDATA_UAT_WEB_URL for the web probe)
 ONEDATA_UAT_BASE_URL=http://localhost:3100 ONEDATA_UAT_WEB_URL=http://localhost:3101 ./scripts/target-uat-smoke.sh
 # Aggregate-only UAT evidence; local dev auth may require ONEDATA_UAT_EXPECT_ME_STATUS=200

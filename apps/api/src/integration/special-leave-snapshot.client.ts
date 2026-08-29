@@ -58,8 +58,8 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-function numberValue(value: unknown, field: string): number {
-  if (typeof value !== 'number' || !Number.isFinite(value)) {
+function integerValue(value: unknown, field: string, minimum: number): number {
+  if (typeof value !== 'number' || !Number.isInteger(value) || value < minimum) {
     throw new BadGatewayException(`Special leave snapshot response field is invalid: ${field}`);
   }
   return value;
@@ -122,10 +122,10 @@ export class SpecialLeaveSnapshotClient {
     if (data.status !== 'applied' && data.status !== 'duplicate') {
       throw new BadGatewayException('Special leave snapshot response status is invalid.');
     }
-    if (typeof data.periodId !== 'string' || data.periodId.length === 0) {
+    if (typeof data.periodId !== 'string' || data.periodId.trim().length === 0) {
       throw new BadGatewayException('Special leave snapshot response periodId is invalid.');
     }
-    if (typeof data.period !== 'string' || !/^\d{4}-\d{2}$/.test(data.period)) {
+    if (typeof data.period !== 'string' || !/^\d{4}-(0[1-9]|1[0-2])$/.test(data.period)) {
       throw new BadGatewayException('Special leave snapshot response period is invalid.');
     }
 
@@ -133,9 +133,9 @@ export class SpecialLeaveSnapshotClient {
       status: data.status,
       periodId: data.periodId,
       period: data.period,
-      snapshotVersion: numberValue(data.snapshotVersion, 'snapshotVersion'),
-      processedEmployees: numberValue(data.processedEmployees, 'processedEmployees'),
-      processedLeaveEntries: numberValue(data.processedLeaveEntries, 'processedLeaveEntries'),
+      snapshotVersion: integerValue(data.snapshotVersion, 'snapshotVersion', 1),
+      processedEmployees: integerValue(data.processedEmployees, 'processedEmployees', 0),
+      processedLeaveEntries: integerValue(data.processedLeaveEntries, 'processedLeaveEntries', 0),
     };
   }
 

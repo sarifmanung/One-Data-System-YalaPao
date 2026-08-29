@@ -37,6 +37,8 @@ Staging ใช้ `docker-compose.target.production.yml` ร่วมกับ `
 
 ทดสอบ Portal SSO บน staging ด้วย test double และ test identity ที่เตรียมไว้เท่านั้นได้ด้วย `npm run target:sso:negative`. Runner ตรวจ valid exchange, session `/me`, rotation, logout, invalid/expired/issuer/audience/signature/future token และ durable replay; secret, cookie และ response payload อยู่ใน runtime temporary files และไม่ถูกพิมพ์หรือ commit.
 
+ตรวจ Special-Allowances leave snapshot contract ใน CI/local ได้ด้วย `npm run target:special:contract`. ชุดนี้ครอบคลุม response ที่ผิดรูปแบบ, period/version acknowledgement ที่ไม่ตรงกัน, network/timeout, HTTP 408/429/5xx ที่ retry ได้ และ validation/locked-period 4xx ที่ต้องหยุดโดยไม่ retry; การทดสอบกับ Special staging จริงยังต้องใช้ period และ credential สำหรับทดสอบที่ owner อนุมัติ.
+
 แผน UAT/pilot/cutover และ test matrix อยู่ที่ [UAT/Pilot/Cutover Plan](docs/UAT_PILOT_CUTOVER_PLAN.md). ตรวจ target แบบ read-only ได้ด้วย `scripts/target-uat-smoke.sh` และสร้างหลักฐาน aggregate-only สำหรับ gate ได้ด้วย `scripts/target-uat-evidence.sh` โดยไม่เก็บ payload, cookie, token หรือ PII.
 
 เปิด dashboard preview ที่ `http://localhost:3101/tenant-dashboard`, Portal launch bridge ที่ `http://localhost:3101/auth/portal/launch?token=...` และ API ที่ `http://localhost:3100/api/health/live`. Compose target มีฐานข้อมูล development แยกที่ `13307` และ seed สังเคราะห์เป็นค่าเริ่มต้น; ใน local สามารถตั้งค่า Special URL/token แล้วสั่ง master-data sync เพื่อทำ real-data shadow run ได้ โดยข้อมูลจะถูกเขียนเฉพาะ target local database. Authentication จะปฏิเสธโดยค่าเริ่มต้นจนกว่าจะตั้งค่า Portal secret/launch token หรือเปิด development auth สำหรับ local test.
@@ -153,9 +155,10 @@ ONEDATA_SSO_BASE_URL=https://onedata-staging.example.org \
   ONEDATA_SSO_TEST_SECRET="$STAGING_SSO_TEST_SECRET" \
   ONEDATA_SSO_TEST_ISSUER=yala-pao-health-portal-staging \
   ONEDATA_SSO_TEST_AUDIENCE=one_data_staging \
-  ONEDATA_SSO_ORIGIN=https://onedata-staging.example.org \
+ONEDATA_SSO_ORIGIN=https://onedata-staging.example.org \
   ONEDATA_SSO_EXPECT_SECURE_COOKIE=true \
   npm run target:sso:negative
+npm run target:special:contract
 ONEDATA_BACKUP_DIR=/private/backup/onedata \
   ONEDATA_DB_HOST="$ONEDATA_DB_HOST" ONEDATA_DB_PORT="$ONEDATA_DB_PORT" \
   ONEDATA_DB_USER="$ONEDATA_DB_USER" ONEDATA_DB_NAME="$ONEDATA_DB_NAME" \
