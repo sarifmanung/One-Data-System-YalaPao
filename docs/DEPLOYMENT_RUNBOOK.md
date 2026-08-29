@@ -1,0 +1,65 @@
+# One Data target deployment runbook
+
+เอกสารนี้ใช้กับ target NestJS/Next.js เท่านั้น ไม่ใช่คำสั่ง deploy ของ Laravel/Vue เดิม. Production ต้องใช้ image ที่ tag ชัดเจน, secret store และฐานข้อมูล One Data แยกจาก Portal/Special.
+
+## 1. ก่อน deploy
+
+- มี `ONEDATA_TARGET_API_IMAGE`, `ONEDATA_TARGET_WEB_IMAGE` และ `APP_VERSION` ที่ระบุ commit เดียวกัน.
+- มี `ONEDATA_TARGET_DATABASE_URL` สำหรับฐานข้อมูล One Data และยืนยันว่าไม่มี application อื่นใช้ database user นี้.
+- ตั้ง Portal issuer/audience/secret, `CORS_ORIGIN`/`ONEDATA_PUBLIC_WEB_URL`, Special URL/token และ session cookie เป็น HTTPS/secure.
+- ตรวจว่า `ONEDATA_DEV_AUTH_ENABLED=false`, `ONEDATA_PROCESS_ROLE=api` ใน API และ `ONEDATA_PROCESS_ROLE=worker` ใน worker.
+- backup และทดสอบ restore ล่าสุดผ่านเกณฑ์; ตรวจ migration status บน staging ก่อน production.
+- ยืนยันว่า `Special-Allowances` period ที่จะรับ snapshot เป็น `NORMAL/OPEN`, contract version ตรงกับ source และมี owner ของ cutoff/schedule.
+
+## 2. Migration policy
+
+Local disposable target ใช้ `prisma db push --accept-data-loss` ได้เฉพาะใน `docker-compose.target.yml`. Production ห้ามใช้ `db push`, `--accept-data-loss` หรือ `prisma migrate dev`.
+
+ฐานข้อมูลใหม่:
+
+```bash
+DATABASE_URL="$ONEDATA_TARGET_DATABASE_URL" npm run target:db:migrate
+```
+
+ฐานข้อมูลเดิมที่สร้างจาก foundation เดิมด้วย `db push` ต้องทำ baseline อย่างมีการตรวจรับ:
+
+1. freeze write ชั่วคราวและ backup
+2. ใช้ `prisma migrate diff` เปรียบเทียบ schema จริงกับ `apps/api/prisma/schema.prisma`
+3. ตรวจ count/hash ของตารางและ foreign key/index สำคัญ
+4. ใช้ `prisma migrate resolve --applied 20260829210000_initial_target_schema` เฉพาะเมื่อ schema ตรงกับ migration จริงเท่านั้น
+5. รัน `prisma migrate status` และ deploy บน staging ก่อนเปิด application
+
+Migration เป็น forward-only. หาก release ใหม่มีปัญหา ให้ rollback image/application และทำ corrective migration ที่ review แล้ว; ห้ามลบ migration หรือเดา down migration กับข้อมูลราชการ.
+
+## 3. Backup/restore rehearsal
+
+ตัวอย่างคำสั่งต้องรันด้วย secret store/credential ที่เหมาะสม และเขียนไฟล์ backup ลง private path ที่กำหนดเท่านั้น:
+
+```bash
+mysqldump --single-transaction --routines --triggers \
+  --host="$ONEDATA_DB_HOST" --port="$ONEDATA_DB_PORT" \
+  --user="$ONEDATA_DB_USER" --password \
+  "$ONEDATA_DB_NAME" > onedata-<timestamp>.sql
+```
+
+ตรวจ restore ลงฐานข้อมูลใหม่ที่ไม่ใช่ production, รัน `prisma migrate status`, health/readiness และ query count/hash ที่ไม่เปิด PII ใน log. เก็บ checksum ของไฟล์ backup และผล restore ตาม retention policy.
+
+## 4. Deploy/rollback order
+
+1. backup + migration dry run + maintenance/cutover window
+2. รัน `migrate deploy` เป็น controlled step
+3. start API แล้วตรวจ `/api/health/live`, `/api/health/ready`, contract version และ log error rate
+4. start web และ worker profile (worker ต้องเปิดหลัง schedule approval เท่านั้น)
+5. ทดสอบ Portal launch, workspace scope, leave read/create และ integration health แบบ synthetic/staging
+6. หาก fail ให้หยุด worker, ปิด write feature flag, rollback web/API image และรักษา database migration/ข้อมูลที่ audit ได้
+
+Worker เปิดใช้งานด้วย `--profile worker` และ `ONEDATA_WORKER_ENABLED=true` เท่านั้น. Monthly mode ต้องเปิดแยกด้วย `ONEDATA_LEAVE_SNAPSHOT_MONTHLY_ENABLED=true`; เริ่มจาก retry/manual mode และเฝ้าดู delivery/audit ก่อน.
+
+## 5. Operational checks
+
+- API liveness/readiness, database connection และ container restart count
+- auth 401/403/429 rate, session revoke/idle expiry และ origin rejection
+- People sync run status, unmapped employee count และ leave snapshot batch status
+- delivery `RETRYABLE_FAILURE`/`FAILED`, locked-period responses, source hash/row-count mismatch
+- worker lock contention, run duration, last successful retry/monthly run และ alertเมื่อไม่มี successful run ตาม SLA
+- ห้าม log raw token, password, cookie, เลขบัตร, เบอร์โทรศัพท์ หรือ payload ใบลาครบชุด

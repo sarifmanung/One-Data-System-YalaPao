@@ -20,18 +20,19 @@
 | Production security guard foundation | เสร็จระดับ local integration foundation | production config fail-fast, idle session timeout, secure-cookie validation, CSRF origin policy, security headers และ auth/mutation rate limit; distributed replay/revocation/edge limiter ยังไม่เสร็จ |
 | Special leave snapshot adapter | เสร็จระดับ local integration foundation | prepare complete snapshot จาก `PAPER_APPROVED`, source hash/idempotency, immutable batch, service-token client, delivery history, retry metadata และ period/version acknowledgement guard; ยังไม่เปิด real-data delivery |
 | Leave snapshot worker | เสร็จระดับ local integration foundation | API image มี `worker`/`worker:once`, MySQL named lock, retry due deliveries, optional previous-month cutoff orchestration และ affiliation-scoped system identity; ปิดด้วย `ONEDATA_WORKER_ENABLED=false` เป็นค่าเริ่มต้น |
+| Prisma migration/deployment foundation | เสร็จระดับ local integration foundation | initial migration `20260829210000_initial_target_schema`, `migrate deploy`, production Compose template และ [deployment runbook](DEPLOYMENT_RUNBOOK.md); ตรวจ deploy/status กับ MySQL ชั่วคราวแล้ว แต่ยังไม่ baseline ฐานข้อมูลเดิมหรือ restore rehearsal |
 | Prisma/People/Leave vertical slice | เสร็จระดับ local development | schema + synthetic seed, People read, Leave `DRAFT → SUBMITTED → PAPER_APPROVED/PAPER_REJECTED`, `CANCELLED/VOIDED`, provisional server-side day calculation, fixed-decimal requested days, holiday exclusion, active-request overlap guard, Paper-first UI/server actions และ durable audit/outbox |
 | Regression checks | ผ่าน | target typecheck, target build, API 12 suites/42 tests, legacy Vite build, Docker health smoke และ browser workflow smoke ด้วยข้อมูลสังเคราะห์ |
 
 ## ยังไม่เสร็จและห้ามตีความว่า production-ready
 
-- production Prisma migration/backup/restore policy (local schema + database แยกมีแล้ว)
+- production backup/restore rehearsal และการอนุมัติ baseline ฐานข้อมูลเดิม (migration policy, initial migration และ runbook มีแล้ว)
 - permission scope matrix แบบละเอียดครบทุกโมดูลและ delegated approver configuration (People/Leave capability guard รุ่นแรกทำแล้ว)
 - production session hardening ที่ยังเหลือ เช่น distributed replay/revocation strategy, session rotation, proxy trust policy และ operational cleanup (idle timeout/CSRF origin/security headers/rate-limit foundation มีแล้ว)
 - People import/reconciliation จาก Special-Allowances ด้วย URL/token จริง, real-data mapping และการ map Portal user กับ employee
 - HR-approved leave Rulebook, quota/balance engine, half-day policy, complete snapshot และ production acceptance rules (provisional day calculation/state machine/revision/audit/outbox foundation มีแล้ว; ห้ามถือ provisional rule เป็นกฎสิทธิ์จริง)
 - reconciliation UI, locked-period adjustment/correction contract และ production schedule approval (worker retry/monthly foundation มีแล้ว แต่ยังปิด scheduled delivery)
-- worker process, document/DOCX, report access, backup/restore และ operational observability (leave UI เป็น form workflow แล้ว แต่ยังไม่มีการสร้าง Word/DOCX)
+- document/DOCX, report access และ operational observability (leave UI เป็น form workflow แล้ว แต่ยังไม่มีการสร้าง Word/DOCX; backup/restore ยังต้องซ้อมใน staging/production-like environment)
 - UAT กับข้อมูล/บัญชีจริงและ pilot 3 รพ.สต.
 
 ## คำสั่งตรวจซ้ำ
@@ -42,6 +43,8 @@ npm run target:test
 npm run target:build
 npm run build
 docker compose -f docker-compose.target.yml up --build -d
+# Production-like migration uses the controlled deploy command; see docs/DEPLOYMENT_RUNBOOK.md
+DATABASE_URL="$ONEDATA_TARGET_DATABASE_URL" npm run target:db:migrate
 ```
 
 การทดสอบรอบนี้ใช้เฉพาะข้อมูลที่สร้างจาก fixture และ health/contract/session/master-data unit endpoints ไม่อ่านหรือส่งข้อมูลลับ และไม่เปลี่ยนแปลงฐานข้อมูลของ Laravel, Portal หรือ Special-Allowances. Sync endpoint จะปฏิเสธเมื่อยังไม่ตั้งค่า Special URL/token; session เก็บเฉพาะ hash ในฐานข้อมูลและไม่คืน raw token ใน JSON response.
