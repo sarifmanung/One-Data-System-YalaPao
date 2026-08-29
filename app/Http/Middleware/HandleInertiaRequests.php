@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Tenant;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -39,9 +40,25 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $user = $request->user();
+        $workspaceTenantQuery = Tenant::query()->where('status', 'ACTIVE');
+
+        if ($user && ! $user->hasRole('ADMIN', 'PUBLIC_HEALTH_OFFICER')) {
+            $workspaceTenantQuery->whereHas('users', fn ($query) => $query->where('users.id', $user->id));
+        }
+
+        $workspaceTenantCount = $user ? (clone $workspaceTenantQuery)->count() : 0;
+        $workspaceTenant = $user
+            ? $workspaceTenantQuery->orderBy('name')->first(['id', 'code', 'name'])
+            : null;
+
         return array_merge(parent::share($request), [
             'auth' => [
-                'user' => $request->user()?->only(['id', 'name', 'username', 'role', 'person_id']),
+                'user' => $user?->only(['id', 'name', 'username', 'role', 'person_id']),
+            ],
+            'workspace' => [
+                'tenant' => $workspaceTenant?->only(['id', 'code', 'name']),
+                'tenant_count' => $workspaceTenantCount,
             ],
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),

@@ -3,20 +3,28 @@
 @tailwind utilities;
 
 @layer base {
-    body { font-family: "Noto Sans Thai", "Tahoma", ui-sans-serif, system-ui, sans-serif; }
+    html { background: #f8fafc; }
+    body { font-family: "Noto Sans Thai", "Tahoma", ui-sans-serif, system-ui, sans-serif; font-size: 14px; }
 }
 
 @layer components {
-    .panel { @apply rounded-2xl border border-slate-200 bg-white p-5 shadow-sm; }
-    .stat-card { @apply rounded-2xl border border-slate-200 bg-white p-5 shadow-sm; }
+    .panel { @apply rounded-2xl border border-slate-200/90 bg-white shadow-sm; }
+    .stat-card { @apply rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md; }
     .stat-label { @apply text-sm font-medium text-slate-500; }
-    .stat-value { @apply mt-2 text-3xl font-bold text-slate-900; }
-    .section-title { @apply text-lg font-semibold text-slate-900; }
+    .stat-value { @apply mt-2 text-3xl font-bold tracking-tight text-slate-900; }
+    .metric-icon { @apply flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-lg font-bold text-blue-700; }
+    .metric-icon-blue { @apply bg-blue-100 text-blue-800; }
+    .summary-card { @apply rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3; }
+    .summary-label { @apply text-xs font-medium text-slate-500; }
+    .summary-value { @apply mt-1 text-xl font-bold text-slate-900; }
+    .summary-value span { @apply text-xs font-medium text-slate-500; }
+    .roadmap-chip { @apply rounded-full border border-slate-200 bg-white px-3 py-1.5; }
+    .section-title { @apply text-lg font-semibold tracking-tight text-slate-900; }
     .section-help { @apply mt-1 text-sm text-slate-500; }
     .label { @apply mb-1 block text-sm font-medium text-slate-700; }
-    .field { @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-teal-600 focus:ring-2 focus:ring-teal-100; }
-    .btn-primary { @apply inline-flex items-center justify-center rounded-lg bg-teal-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-60; }
-    .btn-secondary { @apply inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50; }
+    .field { @apply w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100; }
+    .btn-primary { @apply inline-flex items-center justify-center rounded-xl bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60; }
+    .btn-secondary { @apply inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50; }
     .btn-small { @apply rounded-md border px-2.5 py-1 text-xs font-semibold transition; }
     .btn-green { @apply border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100; }
     .btn-amber { @apply border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100; }

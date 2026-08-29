@@ -45,8 +45,14 @@ class SpecialMasterDataSyncService
             $tenantIds = [];
             foreach ($healthCenters as $index => $healthCenter) {
                 $sourceId = $this->requiredId($healthCenter, 'health center', $index);
+                $areaKey = $healthCenter['areaKey'] ?? $healthCenter['area_key'] ?? null;
                 $sourceCode = $healthCenter['code']
                     ?? $healthCenter['number']
+                    ?? (filled($areaKey) && ! in_array(strtoupper((string) $areaKey), [
+                        'HARD_LEVEL_A',
+                        'HARD_LEVEL_B',
+                        'SPECIAL_LEVEL_2',
+                    ], true) ? $areaKey : null)
                     ?? null;
                 // Special-Allowances currently exposes areaKey as a rate area,
                 // not as a unique health-center code. Fall back to the source
@@ -54,9 +60,7 @@ class SpecialMasterDataSyncService
                 $tenantCode = $sourceCode !== null
                     ? (string) $sourceCode
                     : 'HC-'.substr(preg_replace('/[^A-Za-z0-9]/', '', $sourceId), -32);
-                $sourceCode ??= $healthCenter['areaKey']
-                    ?? $healthCenter['area_key']
-                    ?? null;
+                $sourceCode ??= $areaKey;
                 $tenant = Tenant::updateOrCreate(
                     ['source_system' => 'special_allowances', 'source_id' => $sourceId],
                     [
