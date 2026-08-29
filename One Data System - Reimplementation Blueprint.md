@@ -2,8 +2,8 @@
 
 เอกสารวิเคราะห์ระบบเพื่อการสร้างใหม่แบบ Clean-Room
 
-- เวอร์ชันเอกสาร: 1.4 — End-to-End Mutation Verification Revision
-- แก้ไขล่าสุด: 11 สิงหาคม 2569 (2026)
+- เวอร์ชันเอกสาร: 1.5 — Leave-first Integration Baseline Revision
+- แก้ไขล่าสุด: 29 สิงหาคม 2569 (2026)
 - วันที่สำรวจ: 10–11 สิงหาคม 2569 (2026)
 - ขอบเขตที่สำรวจ: หน่วยงาน รพ.สต. 1 แห่ง และสังกัดระดับองค์การบริหารส่วนจังหวัดที่เชื่อมกัน
 - บัญชีที่ใช้สำรวจ: บัญชีผู้ดูแลระบบซึ่งมองเห็นทั้งขอบเขต “หน่วยงาน” และ “สังกัด”
@@ -19,6 +19,7 @@
 | 1.2     | 10 ส.ค. 2569 | ปรับลำดับพัฒนาเป็น People/Organization Core → Leave → ฉ.10/11 → Excel/Report และเพิ่ม Calculation Run/Snapshot/Pilot rollout                                                                                                                                                     |
 | 1.3     | 10 ส.ค. 2569 | ทดสอบซ้ำแบบไม่เปลี่ยนข้อมูล: ยืนยันโครงสร้างประวัติการทำงานที่ใช้กับ ฉ.11, control การพิจารณาใบลา, วงจรไปราชการ และ parameters ของรายงาน ฉ.11; ระบุช่องว่างว่าไม่พบ ฉ.10 ใน catalog ระบบอ้างอิง                                                                                  |
 | 1.4     | 11 ส.ค. 2569 | ทดสอบ mutation แบบ end-to-end ด้วยข้อมูลสังเคราะห์ใน People, Leave/Duty, Schedule, Inventory, Assets, Vehicles, Finance gate, Settings และ Announcement; เพิ่มกฎที่ยืนยันจริง, defect/anti-requirement register, transactional/SoD/decimal/reversal guardrails และบันทึก cleanup |
+| 1.5     | 29 ส.ค. 2569 | ปิดทิศทาง MVP เป็น People Core + ระบบลาแบบ Word-first/ลงนามกระดาษ + เชื่อมระบบ Special-Allowances เดิมผ่าน API; เพิ่มฐานประกาศการลา อบจ. พ.ศ. 2569, paper-result verification, SSO Portal boundary, cutoff/lock/adjustment policy และตัดการสร้าง calculation engine ซ้ำใน One Data |
 
 ## วิธีอ่านระดับความมั่นใจ
 
@@ -31,6 +32,8 @@
 - **[OBSERVED]** พบจาก One Data System ตามวิธีสำรวจด้านบน; ใช้คู่กับระดับความมั่นใจเดิม `CONFIRMED/INFERRED/UNKNOWN`.
 - **[MUTATION-VERIFIED]** ยืนยันด้วยการทำรายการสังเคราะห์จนเห็นผลลัพธ์/สถานะ/ยอดที่เปลี่ยนจริง แล้วล้างหรือคืนค่าตามที่ระบุใน Appendix B.
 - **[OWNER-CONFIRMED]** เจ้าของโครงการยืนยันให้ใช้เป็นบริบทหรือข้อกำหนดของระบบใหม่.
+- **[LEGAL-SOURCE]** ตรวจจากประกาศ/แบบฟอร์มของหน่วยงานรัฐที่มีผลกับขอบเขตบุคลากรเป้าหมาย; ต้องเก็บเลขที่ ฉบับ และวันมีผลใน Rulebook.
+- **[CODEBASE-VERIFIED]** ตรวจจาก source code/เอกสารของระบบที่เจ้าของโครงการอนุญาต เช่น Special-Allowances, SSO Portal และ shared-infra; ไม่ใช่หลักฐานของระบบอ้างอิง GMTech.
 - **[PROPOSED]** ข้อเสนอด้านผลิตภัณฑ์ สถาปัตยกรรม หรือกระบวนการพัฒนา; ต้องผ่านการอนุมัติก่อนถือเป็น requirement.
 - **[OPEN]** Decision item ที่ยังต้องมีเจ้าของคำตอบ หลักฐาน และสถานะอนุมัติ.
 
@@ -44,8 +47,11 @@
 | หน่วยงานปฏิบัติการ     | รพ.สต. 38 แห่ง                                                                       | [OWNER-CONFIRMED]                   |
 | บุคลากร                | 267 คน ณ วันที่ 10 สิงหาคม 2569 และมีแนวโน้มเพิ่ม                                    | [OWNER-CONFIRMED]                   |
 | กลุ่มเป้าหมาย          | เจ้าหน้าที่ทุกคนของ รพ.สต. ที่สังกัด อบจ.ยะลา                                        | [OWNER-CONFIRMED]                   |
+| กลุ่มเปิดใช้ Leave แรก | ข้าราชการ อบจ. ที่ฝ่ายบุคคลยืนยันว่าอยู่ใต้ประกาศ ก.จ. พ.ศ. 2569; สถานะอื่นเปิดตาม policy profile ที่รับรองแล้ว | [OWNER-CONFIRMED + LEGAL GUARDRAIL] |
 | โครงสร้างรุ่นแรก       | `อบจ.ยะลา → รพ.สต. → บุคลากร`                                                        | [OWNER-CONFIRMED]                   |
-| First production scope | People/Organization Core, ระบบลา, การคำนวณ ฉ.10/11 และ Excel/Report                  | [OWNER-CONFIRMED + PROPOSED DESIGN] |
+| First production scope | People/Organization Core, ระบบลาแบบสร้าง Word/ลงนามภายนอก และเชื่อมระบบ ฉ.10/11 เดิมผ่าน API | [OWNER-CONFIRMED]                    |
+| ระบบคำนวณ ฉ.10/11      | ใช้ `Special-Allowances` ที่พัฒนาเสร็จแล้วเป็นเจ้าของสูตร รอบคำนวณ ผลลัพธ์ และรายงาน; One Data ส่งข้อมูลลาเท่านั้น | [OWNER-CONFIRMED + CODEBASE-VERIFIED] |
+| จุดเข้าใช้งาน/SSO       | เชื่อม `yala-pao-public-health-portal` ด้วย launch-token contract; ไม่สร้างบัญชี/รหัสผ่านข้ามระบบซ้ำ | [OWNER-CONFIRMED + CODEBASE-VERIFIED] |
 | การขยายระบบ            | เพิ่ม รพ.สต./บุคลากรและต่อโมดูลอื่นแบบ incremental                                   | [OWNER-CONFIRMED]                   |
 | Clinical/patient data  | ยังไม่ยืนยันว่าอยู่ในขอบเขต; baseline นี้ถือเฉพาะงานบริหารหลังบ้านจนกว่าจะมีคำตัดสิน | [OPEN]                              |
 
@@ -73,7 +79,9 @@ One Data System ที่สำรวจเป็นระบบบริหา�
 - ออกแบบเป็นแพลตฟอร์ม multi-organization ที่มีสองขอบเขตชัดเจน: `affiliation` และ `tenant/unit` **[CONFIRMED]**
 - ให้ `affiliation = อบจ.ยะลา` และ `tenant/unit = รพ.สต.` ในรุ่นแรก แต่ไม่ hard-code จำนวน 38 แห่งหรือสังกัดเดียวใน schema **[OWNER-CONFIRMED + PROPOSED]**
 - สร้าง People/Organization Core ให้ถูกต้องก่อน โดยแยกบุคคล โปรไฟล์ บัญชี การสังกัด และประวัติการจ้างออกจากกัน **[PROPOSED]**
-- ใช้ระบบลาและการคำนวณ ฉ.10/11 เป็น first production modules และสร้าง Excel/เอกสารจาก calculation run ที่ versioned/locked **[OWNER-CONFIRMED + PROPOSED]**
+- ใช้ People Core และระบบลาแบบ Word-first เป็นความสามารถใหม่ของ One Data; ใช้ `Special-Allowances` เดิมเป็นเจ้าของการคำนวณ ฉ.10/11 และเชื่อมด้วย API แบบ versioned **[OWNER-CONFIRMED + CODEBASE-VERIFIED]**
+- รุ่นแรกไม่ทำ online approval สำหรับใบลา: ผู้ใช้สร้าง DOCX ตามแบบราชการ พิมพ์และลงนามภายนอก แล้วเจ้าหน้าที่ผู้รับผิดชอบบันทึกผลเอกสารกลับเข้าระบบ **[OWNER-CONFIRMED]**
+- ส่งให้ Special-Allowances เฉพาะวันลาที่บันทึกผลว่าได้รับอนุญาตจากเอกสารภายนอกแล้ว; Draft/ออกเอกสารแล้ว/ไม่อนุญาต/ยกเลิกไม่เป็น input การคำนวณ **[OWNER-CONFIRMED]**
 - แยก “สิทธิ์เข้าใช้ระบบ” ออกจาก “ตำแหน่ง/หน้าที่/ผู้ลงนามในเอกสาร” ตั้งแต่ต้น
 - ใช้ข้อมูลหลักร่วมกันและสร้างเอกสารจากข้อมูลที่มีโครงสร้าง แทนการกรอกซ้ำ
 - กำหนด workflow, state transition, audit trail และกติกาล็อกข้อมูลให้เป็นข้อกำหนดส่วนกลาง
@@ -112,6 +120,28 @@ flowchart LR
 - ระบบสร้างเอกสาร PDF/งานพิมพ์จำนวนมาก และมีการส่งออก Excel ในหน้าการเงินบางหน้า **[CONFIRMED]**
 - พบช่องทางช่วยเหลือผ่าน Line OA และแบบฟอร์มภายนอก รวมถึงบริการ web analytics/rum ภายนอก **[CONFIRMED]**
 - ไม่พบหน้าตั้งค่า API key, webhook, SSO หรือการ sync กับระบบราชการอื่น **[CONFIRMED ว่าไม่พบใน navigation ที่สำรวจ; การมีอยู่เบื้องหลัง UNKNOWN]**
+
+#### 2.1.1 Target ecosystem ที่ตัดสินใจแล้วสำหรับรุ่นแรก
+
+```mermaid
+flowchart LR
+    User[บุคลากร/เจ้าหน้าที่] --> Portal[yala-pao-public-health-portal\nSSO และสิทธิ์เข้าโมดูล]
+    Portal -->|launch token อายุสั้น| OneData[One Data Web + Core API]
+    OneData --> People[People/Organization]
+    OneData --> Leave[Leave + DOCX]
+    Leave -->|เฉพาะผลเอกสารภายนอกที่ยืนยันแล้ว\nscoped internal API| Special[Special-Allowances API]
+    OneData -->|BFF/adapter สำหรับหน้าจอรวม| Special
+    Special --> Calc[สูตร ฉ.10/11 รอบคำนวณ\nlock adjustment และ report เดิม]
+    OneData -. shared Docker network .-> Infra[shared-infra]
+    Special -. shared Docker network .-> Infra
+    Portal -. shared Docker network .-> Infra
+```
+
+- Portal เป็นเจ้าของ login, account recovery, module access และ launch token; One Data สร้าง session ของตนหลังตรวจ token และใช้ `portal_user_id`/`sub` เป็น external identity mapping **[CODEBASE-VERIFIED + PROPOSED ADOPTION]**.
+- One Data เป็นเจ้าของ People/Organization และ Leave; `Special-Allowances` เป็นเจ้าของสูตร ตัวแปรที่ไม่ใช่การลา รอบคำนวณ lock/adjustment ผลลัพธ์ และรายงาน ฉ.10/11 **[OWNER-CONFIRMED + CODEBASE-VERIFIED]**.
+- ระบบอยู่บน server/network เดียวกันได้ แต่ต้องแยก database/schema credential และ service account ตามขอบเขต; ห้าม query หรือเขียนฐานข้อมูลของอีกระบบโดยตรง.
+- หน้าจอ One Data สามารถแสดง/สั่งงานข้อมูล ฉ.10/11 ผ่าน BFF/adapter ได้ แต่ business command ต้องไปจบที่ Special-Allowances API และใช้ permission/audit ของระบบเจ้าของข้อมูล.
+- ระยะ MVP ใช้ synchronous REST สำหรับการ sync รายเดือนและการอ่านผล; transactional outbox/event เป็นกลไกเพิ่มภายหลังเมื่อมี consumer หรือปริมาณงานที่คุ้มกับความซับซ้อน.
 
 ### 2.2 ขอบเขตองค์กร
 
@@ -444,18 +474,22 @@ Identity
 
 ห้ามสร้างระบบใหม่ด้วย `if role == admin` เพียงอย่างเดียว ควรใช้ RBAC + scope + resource policy:
 
-- Permission รูปแบบ `module.resource.action` เช่น `employee.profile.read`, `leave.request.approve`, `finance.cycle.close`.
+- Permission รูปแบบ `module.resource.action` เช่น `employee.profile.read`, `leave.document.issue`, `leave.paper-decision.record`, `leave.request.void`, `integration.special.sync`, `finance.cycle.close`.
 - Scope รูปแบบ `self`, `workgroup`, `tenant`, `affiliation`, `platform`.
 - Functional assignment มีผลเฉพาะการเลือกชื่อ/ลงนาม หรือเป็น policy condition ที่ระบุชัด ไม่ควรให้สิทธิ์โดยปริยาย.
 - Action เสี่ยงสูง ได้แก่ ปิดวงรอบ ล็อกแผน ย้ายบุคลากร จำหน่ายทรัพย์สิน ลบระเบียน และแก้รายรับย้อนหลัง ต้องใช้ permission เฉพาะพร้อม audit.
 - ผู้ดูแลสังกัดไม่ควรเห็น PII เกินจำเป็น; directory ข้ามหน่วยงานควรมี masking และเหตุผลการเข้าถึง.
 - ทุก API ต้องบังคับ scope ฝั่ง server แม้ UI จะซ่อนปุ่มแล้ว.
 
+สำหรับ MVP ผู้ใช้ทั่วไปมี `leave.request.self.create/read/cancel` และดาวน์โหลด DOCX ของตน; HR/เจ้าหน้าที่ที่มอบหมายมี `leave.paper-decision.record` ตาม tenant/affiliation; auditor อ่านประวัติได้แต่แก้ไม่ได้. Permission ที่พบในระบบอ้างอิงสำหรับ `leave.request.approve/reject` เป็นเพียง observed evidence และไม่ถูกนำมาใช้ใน target workflow รุ่นแรก.
+
 ---
 
 ## 7. Business Workflows
 
 ### 7.1 ลาและไปราชการ
+
+#### 7.1.1 Workflow ของระบบอ้างอิง
 
 ```mermaid
 stateDiagram-v2
@@ -479,6 +513,32 @@ stateDiagram-v2
 - วันหยุดที่กำหนดไว้แสดงในปฏิทินและเลือกเป็นวันลาไม่ได้ในการทดสอบ; เมื่อยกเลิกใบลา โควตาคืนหลัง reload แต่ค่าบนหน้าปัจจุบันอาจ stale ชั่วคราว **[MUTATION-VERIFIED]**.
 - ผู้อนุมัติตามระเบียบ จำนวนขั้น delegation/acting, comment/evidence, SLA และ transition หลัง approved ยัง **[UNKNOWN]**
 - ไปราชการใช้ข้อมูลเรื่อง ยานพาหนะ และผู้ร่วมเดินทาง; subtype `ไปอบรม` เพิ่มเรื่อง หลักสูตร/โครงการ หน่วยงานผู้จัด สถานที่ ค่าใช้จ่าย และหมายเหตุ; สร้าง แก้ไข และลบได้จริงโดยไม่แสดง approval status **[MUTATION-VERIFIED]** จึงควรเป็น aggregate/workflow แยกต่างหาก.
+
+#### 7.1.2 Target workflow รุ่นแรก — Word-first และลงนามภายนอก
+
+ระบบใหม่ไม่คัดลอก online approval ของระบบอ้างอิงใน MVP. ผู้ใช้ต้องได้เอกสารราชการที่กรอกง่าย ส่วนการเสนอ ตรวจ และลงนามยังทำบนกระดาษตามวิธีปฏิบัติงานจริง **[OWNER-CONFIRMED]**.
+
+```mermaid
+stateDiagram-v2
+    [*] --> DRAFT: เริ่มกรอกใบลา
+    DRAFT --> DOCUMENT_ISSUED: บันทึกและสร้าง DOCX
+    DOCUMENT_ISSUED --> PAPER_APPROVED: เจ้าหน้าที่บันทึกว่าเอกสารภายนอกได้รับอนุญาต
+    DOCUMENT_ISSUED --> PAPER_REJECTED: เจ้าหน้าที่บันทึกว่าไม่อนุญาต
+    DRAFT --> CANCELLED: ผู้ใช้ยกเลิกแบบร่าง
+    DOCUMENT_ISSUED --> CANCELLED: ยกเลิกก่อนทราบผล
+    PAPER_APPROVED --> VOIDED: ยกเลิก/แก้ไขตามเอกสารภายนอก
+    PAPER_APPROVED --> [*]
+    PAPER_REJECTED --> [*]
+    CANCELLED --> [*]
+    VOIDED --> [*]
+```
+
+- `PAPER_APPROVED` หมายถึง “เจ้าหน้าที่บันทึกผลจากเอกสารที่ลงนามภายนอกแล้ว” ไม่ใช่การอนุมัติทางราชการในระบบ.
+- ผู้ยื่นสร้าง DOCX และพิมพ์ได้เอง แต่ห้ามยืนยัน `PAPER_APPROVED` ให้รายการของตน; สิทธิ์นี้เป็นของ HR/เจ้าหน้าที่ผู้รับผิดชอบที่กำหนด และต้องเก็บ actor, เวลา, เลขที่/วันที่เอกสาร และเหตุผลการแก้ไข.
+- ไฟล์สแกนฉบับลงนามเป็น attachment แบบ optional ใน MVP เพื่อลดภาระผู้ใช้; metadata การยืนยันและ audit เป็นข้อมูลบังคับ.
+- การแก้ข้อมูลหลังออก DOCX ต้องสร้าง document revision ใหม่และรักษาไฟล์/ค่าที่เคยออก; ห้ามเปลี่ยนเอกสารเดิมเงียบ ๆ.
+- เฉพาะ `PAPER_APPROVED` ที่ยังไม่ `VOIDED/CANCELLED` และมีผลทับช่วงเดือนเป้าหมายเท่านั้นที่ Special-Allowances ใช้คำนวณ.
+- ไปราชการไม่อยู่ใน first production scope และยังคงเป็น aggregate แยกจาก Leave.
 
 ### 7.2 ตารางเวรและค่าตอบแทน
 
@@ -670,7 +730,7 @@ flowchart LR
 - จำนวน ราคา เลขไมล์ และมูลค่าต้องไม่ติดลบ; decimal precision ของเงินต้องตายตัว.
 - Create/Update บุคลากรต้องเป็น atomic command ครอบคลุม person, profile, membership, access/identity และ employment history; validation/duplicate failure ต้อง rollback ทั้งหมดหรือใช้ saga ที่ชดเชยได้.
 - ค่าโทรศัพท์/อีเมล/role ที่บันทึกต้อง round-trip กลับหน้า edit ได้ตรงเดิม; ห้ามให้ผู้ใช้กรอกใหม่เพื่อรักษาบัญชีโดยไม่ตั้งใจ.
-- ผู้อนุมัติใบลาต้องไม่เป็นผู้ยื่น ยกเว้น break-glass policy ที่กำหนดผู้อนุมัติสำรอง เหตุผล และ immutable audit.
+- MVP ไม่มี online approval; ผู้บันทึกว่าเอกสารกระดาษได้รับอนุญาตต้องไม่เป็นผู้ยื่นรายการเดียวกัน ยกเว้น break-glass policy ที่มีผู้อนุญาต เหตุผล หลักฐาน และ immutable audit.
 - ชุดรหัสครุภัณฑ์ต้อง unique ภายใน scope ที่ตกลง และสร้างด้วย transaction-safe sequence.
 - สต็อกต้องใช้ immutable movement ledger; การแก้ย้อนหลังสร้าง adjustment ไม่แก้ยอดคงเหลือตรง ๆ.
 - การ void/reverse ใบรับต้องตรวจ downstream issue และปฏิเสธหาก reversal ทำให้ยอดติดลบ; การลบใบเบิก/ใบรับต้องสร้าง reversing movement ไม่ลบ ledger เดิม.
@@ -685,14 +745,26 @@ flowchart LR
 | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
 | TP-001 | `Person` ต้องแยกจาก `EmployeeProfile`, `UserIdentity`, `Membership` และ `EmploymentHistory`; ห้ามผูกบุคคลกับ รพ.สต. ด้วย foreign key เดียวที่แก้ทับอดีต | PROPOSED — required foundation           |
 | TP-002 | เมื่อย้ายหน่วยงาน ให้ปิด membership เดิมและเปิด membership ใหม่โดยรักษาประวัติ                                                                          | PROPOSED — edge cases OPEN               |
-| TP-003 | ใบลาที่ผ่านสถานะตาม rule เป็น source of truth สำหรับ input การคำนวณ ฉ.10/11; หลีกเลี่ยงการคัดลอกยอดวันลาแบบ mutable                                     | PROPOSED — qualifying statuses OPEN      |
-| TP-004 | การคำนวณต้องอ้าง `CalculationRuleVersion` ที่มี effective date และผู้อนุมัติ                                                                            | PROPOSED — สูตรจริง OPEN                 |
-| TP-005 | แต่ละรอบต้องเก็บ input/person/membership/employment/leave snapshot หรือ immutable source references พร้อม hash                                          | PROPOSED                                 |
-| TP-006 | เมื่อรอบยืนยัน/ล็อกแล้ว ผลและไฟล์รายงานต้องไม่เปลี่ยนตามข้อมูลปัจจุบัน                                                                                  | OWNER-CONFIRMED INTENT + PROPOSED DESIGN |
-| TP-007 | การแก้หลังล็อกใช้ `Revision`/`Adjustment` พร้อมเหตุผลและ audit ไม่แก้ผลเดิมเงียบ ๆ                                                                      | PROPOSED                                 |
-| TP-008 | Excel/PDF เป็น artifact ของ calculation/report run ที่ระบุ template version/checksum และสร้างซ้ำได้ตรงเดิม                                              | PROPOSED                                 |
+| TP-003 | One Data เป็น source of truth ของข้อมูลลา; เฉพาะ `PAPER_APPROVED` ที่ยังมีผลเท่านั้นเป็น input ให้ Special-Allowances                                    | OWNER-CONFIRMED                          |
+| TP-004 | One Data ไม่สร้างสูตร/Calculation Engine ฉ.10/11 ซ้ำ; `Special-Allowances` เดิมเป็นเจ้าของสูตร ตัวแปรอื่น รอบ ผล lock adjustment และ report           | OWNER-CONFIRMED + CODEBASE-VERIFIED      |
+| TP-005 | ทุกการ sync ต้องมี period, person mapping, source cutoff, leave revision/source refs และ source hash เพื่อให้ Special-Allowances snapshot/reconcile ได้ | OWNER-CONFIRMED + PROPOSED CONTRACT      |
+| TP-006 | เมื่อรอบ Special-Allowances ล็อกแล้ว ผลและไฟล์รายงานต้องไม่เปลี่ยนตามข้อมูลลา People หรือ Employment ปัจจุบัน                                           | OWNER-CONFIRMED                          |
+| TP-007 | การแก้ลาหลังล็อกสร้าง adjustment อ้างรอบเดิมใน Special-Allowances; ห้ามแก้ผลเดิมเงียบ ๆ                                                                | OWNER-CONFIRMED                          |
+| TP-008 | Excel/PDF ฉ.10/11 เป็น artifact ของ Special-Allowances; One Data แสดงหรือดาวน์โหลดผ่าน scoped API โดยไม่ regenerate ตัวเลขเอง                          | OWNER-CONFIRMED + CODEBASE-VERIFIED      |
+| TP-009 | ฐานกฎสำหรับข้าราชการ อบจ. รุ่นแรกคือประกาศ ก.จ. เรื่องมาตรฐานทั่วไปว่าด้วยการลาของข้าราชการองค์การบริหารส่วนจังหวัด พ.ศ. 2569 และแบบแนบท้าย         | LEGAL-SOURCE; HR SIGN-OFF REQUIRED       |
+| TP-010 | MVP ใช้ Word-first: กรอก → สร้าง DOCX → พิมพ์/ลงนามภายนอก → เจ้าหน้าที่บันทึกผล; ไม่มี online approval chain                                           | OWNER-CONFIRMED                          |
+| TP-011 | บุคลากรต่างสถานะการจ้างต้องเลือก `LeavePolicyProfile` ตามฐานกฎหมาย/ช่วงมีผล; ห้ามใช้สิทธิ์ข้าราชการ อบจ. กับพนักงานจ้าง/ลูกจ้างโดยอัตโนมัติ          | LEGAL GUARDRAIL                          |
+| TP-012 | รอบเปิด sync ซ้ำได้; ค่าเริ่มต้นช่วงตรวจสอบคือ 3 วันทำการหลังสิ้นเดือนแบบ configurable; หลังจ่าย/ล็อกใช้ adjustment รอบถัดไป                         | OWNER-CONFIRMED DIRECTION + CONFIGURABLE |
+| TP-013 | Portal เป็นเจ้าของ login/module access และ One Data/Special-Allowances แยก session/authorization ของตน; ห้ามแชร์ password หรือ database               | CODEBASE-VERIFIED + PROPOSED ADOPTION    |
 
-ชื่อทางการ สูตร คุณสมบัติผู้มีสิทธิ์ การหักจากการลา cutoff และ approval ของ ฉ.10/11 ยัง **[OPEN]**; ตารางนี้เป็น architectural guardrail ไม่ใช่สูตรการเบิกที่อนุมัติแล้ว.
+ฐานเอกสารกฎหมายที่ตรวจแล้ว:
+
+- [ประกาศ ก.จ. ก.ท. และ ก.อบต. เรื่องมาตรฐานทั่วไปว่าด้วยการลา พ.ศ. 2569 — กรมส่งเสริมการปกครองท้องถิ่น](https://www.dla.go.th/land/tempHome.do?departmentLv2Id=98266y3oq5k96svhofn9vvklmz3tmc2skw)
+- [ประกาศฉบับข้าราชการองค์การบริหารส่วนจังหวัด พ.ศ. 2569](https://infocenter.oic.go.th/upload/cms/1777261294_7413.pdf)
+- [ชุดแบบฟอร์มแนบท้ายฉบับ Word](https://infocenter.oic.go.th/upload/cms/1777261315_7826.docx)
+- [ตารางกำหนดผู้มีอำนาจพิจารณาอนุญาตการลา](https://infocenter.oic.go.th/upload/cms/1777261315_9244.docx)
+
+ประกาศกำหนดการลา 11 กลุ่มและแบบฟอร์มที่เกี่ยวข้องสำหรับข้าราชการ อบจ. แต่ Rulebook implementation ยังต้องให้ฝ่ายบุคคลยืนยันการนับวัน สิทธิ์สะสม เอกสารประกอบ และกลุ่มบุคลากรที่อยู่ใต้ประกาศนี้. สำหรับพนักงานจ้าง ลูกจ้างประจำ ผู้ช่วยราชการ หรือสถานะอื่น ต้องมี policy profile และฐานระเบียบแยกก่อนเปิดใช้กับกลุ่มนั้น.
 
 ### 8.5 Reference defects และ anti-requirements จาก mutation testing
 
@@ -702,7 +774,7 @@ flowchart LR
 | ----------- | ------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ | ------------------------------------------------------------------------- |
 | REF-DEF-001 | การสร้างบุคลากรครั้งแรกแจ้งโทรศัพท์ซ้ำและค้างหน้า create แต่ระเบียน person/core ถูกสร้างแล้ว ขณะที่ access/history ไม่ครบ | partial aggregate, duplicate retry, ข้อมูลกำพร้า | atomic command + idempotency key + rollback/integration test              |
 | REF-DEF-002 | หน้า edit ไม่แสดงอีเมล/โทรศัพท์ access ที่เพิ่งบันทึก แม้ list ยังแสดงโทรศัพท์                                            | overwrite credential/contact โดยไม่ตั้งใจ        | read-after-write/round-trip contract test และแยก contact จาก identity     |
-| REF-DEF-003 | บัญชีเดียวกันยื่นและอนุมัติใบลาของตนเองได้                                                                                | fraud/SoD violation                              | `approver_id != requester_id`, delegation และ break-glass audit           |
+| REF-DEF-003 | บัญชีเดียวกันยื่นและอนุมัติใบลาของตนเองได้                                                                                | fraud/SoD violation                              | MVP ไม่มี online approval; `paper_result_recorded_by != requester_id` และ break-glass audit |
 | REF-DEF-004 | โควตาหลังยกเลิกยังแสดงค่าเดิมจน reload                                                                                    | ผู้ใช้ตัดสินใจจาก stale projection               | transactional balance ledger + cache invalidation + consistency indicator |
 | REF-DEF-005 | วันที่เกิดเท่ากับวันเริ่มงานและวันปัจจุบันผ่าน validation                                                                 | ข้อมูลบุคลากรไร้ความสมเหตุผล                     | age/date plausibility rule + migration exception workflow                 |
 | REF-DEF-006 | แก้ไขไปราชการสำเร็จแต่ toast ระบุว่าแก้ “ใบลา”                                                                            | domain feedback ผิด ทำให้ผู้ใช้ไม่มั่นใจ         | typed notification/event + UX regression test                             |
@@ -733,14 +805,14 @@ flowchart LR
 
 - `ShiftType`, `SchedulePeriod`, `ShiftAssignment`, `ScheduleInspector`
 - `Holiday`
-- `LeaveType`, `LeavePolicy`, `LeaveBalance`, `LeaveRequest`, `LeaveApproval`
+- `LeaveType`, `LeavePolicyProfile`, `LeavePolicy`, `LeaveBalance`, `LeaveRequest`, `LeaveDocumentRevision`, `LeaveExternalDecision`
 - `OfficialDutyRequest`, `OfficialDutyCompanion`, `OfficialDutyApproval`
 
-**Allowance Calculation — First Production Domain**
+**Special-Allowances Integration — First Production Boundary**
 
-- `AllowanceScheme` (ฉ.10/ฉ.11), `AllowancePeriod`, `CalculationRuleVersion`
-- `CalculationRun`, `CalculationInputSnapshot`, `AllowanceResult`
-- `CalculationReview`, `CalculationAdjustment`, `CalculationRunReport`
+- `ExternalSystem`, `ExternalPersonMapping`
+- `LeaveExportBatch`, `LeaveExportItem`, `IntegrationDelivery`, `IntegrationReconciliation`
+- `ExternalAllowancePeriodRef`, `ExternalAllowanceReportRef` เป็น reference/projection เท่านั้น; calculation entities จริงอยู่ใน `Special-Allowances`
 
 **Inventory**
 
@@ -795,21 +867,18 @@ erDiagram
 
     LEAVE_TYPE ||--o{ LEAVE_POLICY : governed_by
     PERSON ||--o{ LEAVE_REQUEST : requests
-    LEAVE_REQUEST ||--o{ LEAVE_APPROVAL : reviewed_by
+    LEAVE_REQUEST ||--o{ LEAVE_DOCUMENT_REVISION : renders
+    LEAVE_REQUEST ||--o{ LEAVE_EXTERNAL_DECISION : records_paper_result
     PERSON ||--o{ OFFICIAL_DUTY_REQUEST : requests
     OFFICIAL_DUTY_REQUEST ||--o{ OFFICIAL_DUTY_COMPANION : includes
 
-    TENANT ||--o{ ALLOWANCE_PERIOD : owns
-    ALLOWANCE_SCHEME ||--o{ CALCULATION_RULE_VERSION : versions
-    ALLOWANCE_PERIOD ||--o{ CALCULATION_RUN : executes
-    CALCULATION_RULE_VERSION ||--o{ CALCULATION_RUN : governs
-    CALCULATION_RUN ||--|{ CALCULATION_INPUT_SNAPSHOT : freezes
-    CALCULATION_RUN ||--|{ ALLOWANCE_RESULT : produces
-    PERSON ||--o{ ALLOWANCE_RESULT : receives
-    TENANT_MEMBERSHIP ||--o{ CALCULATION_INPUT_SNAPSHOT : snapshots
-    LEAVE_REQUEST ||--o{ CALCULATION_INPUT_SNAPSHOT : contributes
-    CALCULATION_RUN ||--o{ CALCULATION_ADJUSTMENT : revised_by
-    CALCULATION_RUN ||--o{ REPORT_RUN : renders
+    EXTERNAL_SYSTEM ||--o{ EXTERNAL_PERSON_MAPPING : maps
+    PERSON ||--o{ EXTERNAL_PERSON_MAPPING : identifies
+    TENANT ||--o{ LEAVE_EXPORT_BATCH : exports
+    LEAVE_EXPORT_BATCH ||--|{ LEAVE_EXPORT_ITEM : contains
+    LEAVE_REQUEST ||--o{ LEAVE_EXPORT_ITEM : contributes
+    LEAVE_EXPORT_BATCH ||--o{ INTEGRATION_DELIVERY : delivers
+    LEAVE_EXPORT_BATCH ||--o{ INTEGRATION_RECONCILIATION : reconciles
 
     TENANT ||--o{ SUPPLY_ITEM : owns
     VENDOR ||--o{ STOCK_RECEIPT : supplies
@@ -849,13 +918,13 @@ erDiagram
 
 - `EmployeeOnboarding` command ต้องสร้าง/เชื่อม `Person` + profile + primary membership + access/identity + employment history แบบ atomic และ idempotent; aggregate ภายในอาจแยกตารางได้แต่ห้ามเผย partial success. การแก้ข้อมูลต้องบันทึกชนิด `CORRECTION` หรือ `REAL_CHANGE` พร้อม `effective_from` และรักษา snapshot เก่า.
 - `SchedulePeriod` aggregate ต่อ tenant/month ลดการชนกันของการแก้แต่ละ cellด้วย optimistic versioning.
-- `LeaveRequest`, `OfficialDutyRequest`, `VehicleRequest`, `EmployeeTransfer` เป็น workflow aggregate แยกกัน มี state transition log; Leave ต้องบังคับ segregation of duties และ balance reservation/reversal ใน transaction เดียวกับ transition.
-- `CalculationRun` เป็น aggregate แยกจาก Leave: อ่าน approved/source-qualified leave และ effective-dated People data เพื่อสร้าง snapshot/results; หลัง `LOCKED` เป็น immutable และแก้ผ่าน adjustment/revision เท่านั้น.
+- `LeaveRequest` เป็น document-centric aggregate แยกจาก `OfficialDutyRequest`: เก็บ draft, document revisions และผลอนุญาตจากกระดาษ. การยืนยัน `PAPER_APPROVED` ต้องบังคับ separation ระหว่าง requester กับ verifier และปรับ balance/eligibility ใน transaction เดียว.
+- `LeaveExportBatch` เป็น integration aggregate ของ One Data: สรุปเฉพาะ effective `PAPER_APPROVED` leave ต่อ period/person พร้อม source refs/hash. `CalculationRun`/ผล/lock/adjustment เป็น aggregate ของ Special-Allowances และห้ามจำลองซ้ำในฐานข้อมูล One Data.
 - `SupplyItem` ไม่เก็บยอดเป็นแหล่งความจริงเพียงฟิลด์เดียว; source of truth คือ `StockMovement`, ส่วน `StockBalance` เป็น projection. Receipt/Issue ที่ posted ใช้ reversal movement และ dependency guard แทน hard delete.
 - `Asset` เป็น supertype; vehicle อ้าง `asset_id` แบบ optional แต่ควรกำหนดนโยบายให้ยานพาหนะที่เป็นกรรมสิทธิ์ต้องเชื่อม. เงินและค่าเสื่อมทั้งหมดเป็น fixed decimal; vehicle/asset ใช้ archive/void โดยไม่ cascade-delete history.
 - `FinancialPlan` แยกตาม tenant/fiscal year/revision type/version และ immutable เมื่อ locked.
 - `ReportRun` เก็บ parameters, data version/hash, signer snapshot และตำแหน่งไฟล์ เพื่อพิมพ์ซ้ำได้ตรงเดิม.
-- `CalculationRunReport` เชื่อม calculation run กับ report artifact; การดาวน์โหลด Excel รอบเก่าต้องอ้าง artifact/snapshot เดิม ไม่ query live data ใหม่.
+- `ExternalAllowanceReportRef` เชื่อมหน้าจอ One Data กับ report artifact/run ใน Special-Allowances; การดาวน์โหลดรอบเก่าต้องอ้าง external artifact เดิม ไม่ query live data แล้วสร้างตัวเลขใหม่.
 
 ---
 
@@ -1063,14 +1132,12 @@ UI ยืนยันเส้นตรง 5 ปีจากราคาทุ�
 
 ### 11.5 First-production reporting — Leave และ ฉ.10/11
 
-- Excel/PDF ทุกไฟล์ต้องอ้าง `calculation_run_id`, rule version, source cutoff, template version และ artifact checksum **[PROPOSED]**.
-- ผลระดับบุคคลต้องอธิบายได้ว่า eligible amount, deduction และ final amountมาจาก input/rule ใด โดยจำกัดการเปิดเผย PII ตาม permission.
-- เมื่อ run `LOCKED` แล้ว การแก้ People/Employment/Leave ภายหลังต้องไม่เปลี่ยนผลเดิม; ใช้ adjustment/revision ที่เชื่อมกลับ original result.
-- การ regenerate อาจใช้ template version เดิมเพื่อได้ artifact เดิม หรือสร้าง artifact version ใหม่จาก results เดิมตาม policy ที่อนุมัติ; ห้าม query live source เพื่อคำนวณย้อนหลังใหม่โดยปริยาย.
-- ต้องมี reconciliation summary ต่อ รพ.สต. และรวม อบจ.ยะลา โดยผลรวมต้อง trace ลงถึงรายบุคคลภายใต้สิทธิ์.
-- สำหรับ ฉ.11 ต้อง snapshot ประวัติการทำงานที่ถูกเลือก `นำไปคิด ฉ11`, ระดับพื้นที่, เดือนคิดอายุงาน, ช่วงคำขอ และ parameter ผู้ลงนาม/การประชุมที่ใช้จริง; ห้ามคำนวณย้อนหลังจากประวัติที่แก้แล้วโดยไม่มี version.
-- ฉ.10 ไม่มี evidence จาก report catalog รอบนี้ จึงต้องมี requirement/template track แยกจาก ฉ.11 และห้ามคัดลอกกฎ/คอลัมน์ของ ฉ.11 ไปใช้โดยปริยาย.
-- รูปแบบ ฉ.10/11 อย่างเป็นทางการ สูตร คอลัมน์ ผู้ลงนาม และปลายทางการส่งยัง **[OPEN]** และต้องใช้ approved golden workbook ก่อน coding report.
+- ใบลาต้องสร้าง DOCX จากแบบแนบท้ายประกาศ พ.ศ. 2569 โดยเก็บ `template_version`, source record version, document revision และ checksum; ผู้ใช้พิมพ์เพื่อลงนามภายนอก.
+- เอกสารใบลาแต่ละ revision ต้องพิมพ์ซ้ำได้ตรงกับข้อมูล ณ เวลาที่ออก แม้ People/Position/Leave จะถูกแก้ภายหลัง.
+- Excel/PDF ฉ.10/11 ยังคงสร้างโดย Special-Allowances จาก calculation run/period ที่ระบบนั้นเป็นเจ้าของ; One Data เพียงแสดงสถานะ/ลิงก์ดาวน์โหลดหรือ proxy ไฟล์ผ่าน scoped API.
+- ทุก leave export ไป Special-Allowances ต้องอ้าง source cutoff, leave revisions/source refs, person mapping, row count และ checksum; มี reconciliation ต่อ รพ.สต. และรวม อบจ.ยะลา.
+- เมื่อ period ใน Special-Allowances `LOCKED` แล้ว การแก้ People/Employment/Leave ภายหลังต้องไม่เปลี่ยนผลเดิม; ใช้ adjustment ที่เชื่อมกลับรอบเดิม.
+- One Data ห้ามคำนวณ eligible amount, deduction หรือ final amount ซ้ำ และห้ามสร้าง workbook ฉ.10/11 จาก live data เอง.
 
 ---
 
@@ -1107,9 +1174,10 @@ UI ยืนยันเส้นตรง 5 ปีจากราคาทุ�
 
 ### 12.3 Export ที่แนะนำ
 
-- PDF สำหรับเอกสารทางการพร้อม immutable report run.
+- DOCX สำหรับใบลาตามแบบราชการ พร้อม immutable document revision; PDF เป็น optional preview/export ภายหลังและไม่แทนเอกสาร Word ที่ผู้ใช้ต้องนำไปลงนาม.
+- PDF สำหรับเอกสารทางการอื่นพร้อม immutable report run.
 - XLSX สำหรับรายงานเชิงตาราง โดยแยกชีต `Metadata`, `Data Dictionary`, `Data`.
-- XLSX ฉ.10/11 ต้องสร้างจาก locked `CalculationRun` และเก็บเป็น immutable `ReportArtifact`; ห้าม export โดยคำนวณใหม่จาก live data โดยปริยาย.
+- XLSX ฉ.10/11 ต้องสร้างและเก็บโดย Special-Allowances จาก locked period/run; One Data ดาวน์โหลดผ่าน API โดยไม่คำนวณหรือแก้ artifact.
 - CSV UTF-8 BOM สำหรับ migration/analytics ที่ไม่ต้องรักษารูปแบบ.
 - ZIP evidence package สำหรับ audit ที่รวม manifest/hash ไม่รวมข้อมูลเกิน scope.
 - Scheduled export หรือ API access ควรใช้ service account, scoped token และ rate limit.
@@ -1148,23 +1216,35 @@ UI ยืนยันเส้นตรง 5 ปีจากราคาทุ�
 
 ```mermaid
 flowchart LR
-    Core[Domain services] --> Outbox[(Transactional outbox)]
-    Outbox --> Bus[Event/Job broker]
-    Bus --> Notify[Notification adapters]
-    Bus --> Docs[Report renderer]
-    Bus --> HR[HR connector]
-    Bus --> Finance[Accounting connector]
-    Bus --> Archive[Document archive]
-    API[Scoped external API] --> Core
-    SSO[OIDC/SAML Identity Provider] --> IAM[Identity & Access]
-    IAM --> Core
+    Portal[yala-pao-public-health-portal] -->|signed launch token| IAM[One Data IAM adapter]
+    IAM --> Core[One Data Core]
+    Core --> Leave[Leave + DOCX]
+    Leave -->|period/person leave contract| SpecialAPI[Special-Allowances API]
+    Core --> Adapter[Special-Allowances BFF adapter]
+    Adapter -->|period status/results/reports| SpecialAPI
+    Leave --> Outbox[(Transactional outbox)]
+    Outbox -. future event consumers .-> Jobs[Job/notification workers]
 ```
 
-- ใช้ anti-corruption layer ต่อ integration เพื่อไม่ให้ schema ภายนอกแพร่เข้ามาใน domain.
-- ใช้ transactional outbox สำหรับ event สำคัญ เช่น plan locked, leave approved, employee transferred, asset disposed.
-- ทุก webhook ลงลายเซ็น มี replay protection, delivery log และ dead-letter queue.
-- Sync บุคลากรต้องใช้ external identity mapping + effective date ไม่จับคู่ด้วยชื่อ.
+- **Portal contract:** รองรับ manifest/launch endpoint ตาม Portal project, ตรวจ `iss/aud/exp/signature/return_to`, สร้าง local session และ map `portal_user_id`; launch token ใช้ครั้งเดียวหรือมี replay protection และห้ามใช้แทน long-lived API token.
+- **Special-Allowances contract:** เริ่มด้วย synchronous REST และ service account แบบ least privilege. Special-Allowances ดึงหรือ One Data สั่ง sync เฉพาะ leave summary ของ period; exact direction ปิดใน contract test แต่ source of truth ไม่เปลี่ยน.
+- **Anti-corruption layer:** map canonical leave types/person IDs ของ One Data ไป attendance fields/entries ที่ Special-Allowances รองรับ โดยไม่ให้ schema ของ Special แพร่เข้ามาใน Leave domain.
+- **Identity mapping:** ใช้ immutable external ID ระหว่าง `person_id`, `portal_user_id` และ employee ID ของ Special-Allowances; ห้ามจับคู่ด้วยชื่อ เลขโทรศัพท์ หรือ national ID เพียงอย่างเดียว.
+- **Period protocol:** `OPEN` sync ซ้ำแบบ idempotent ได้; ก่อน lock ต้องคืน unmapped persons, changed/cancelled leave, row counts และ checksum ให้ผู้ใช้ reconcile. เมื่อ `LOCKED/PAID` แล้ว Special-Allowances ปฏิเสธการ overwrite และรับเฉพาะ adjustment/correction flow.
+- **Security:** ไม่แชร์ database credential, root MySQL user, browser cookie หรือ application secret ระหว่างระบบ. Internal API ใช้ TLS/private network, audience-scoped credential, rotation, rate limit, correlation ID และ audit ทั้งผู้ส่ง/ผู้รับ.
+- **Infrastructure:** ใช้ reverse proxy/network/MySQL server ของ `shared-infra` ร่วมกันได้ แต่แต่ละ application มี database และ DB user ของตน; backup/restore ต้องทดสอบแยก application และเก็บสำเนานอกเครื่องตามนโยบาย production.
+- Transactional outbox เก็บไว้สำหรับ publication หลัง commit และ retry แต่ MVP ไม่ต้องติดตั้ง event broker หาก REST + reconciliation ตอบโจทย์แล้ว.
 - Analytics ฝั่ง browserต้องผ่าน consent/data minimization และห้ามส่ง PII/เลขประจำตัว/ข้อมูลสุขภาพใน URL หรือ event.
+
+### 13.4 Existing codebase baseline
+
+| Project | Responsibility used by this blueprint | Verified implementation evidence |
+| ------- | ------------------------------------- | -------------------------------- |
+| `Special-Allowances` | Financial Calculation System ระดับกองสาธารณสุข; One Data เติมเฉพาะข้อมูลลา | NestJS/Prisma/MySQL backend, Next.js frontend, attendance entries→scalar projection, optimistic record/period version, period lock, adjustment period, audit/export และ test suites **[CODEBASE-VERIFIED]** |
+| `yala-pao-public-health-portal` | Login/module access/SSO entry สำหรับ One Data และระบบย่อย | module manifest, signed short-lived launch token, deep-link return flow และ local session contract **[CODEBASE-VERIFIED; project in active development]** |
+| `shared-infra` | Reverse proxy, shared Docker network, MySQL host และ backup foundation บน server เดียวกัน | Nginx Proxy Manager, `webproxy`, MySQL 8 และ scheduled local backup **[CODEBASE-VERIFIED]** |
+
+การอยู่ repository/server เดียวกันไม่เปลี่ยน bounded-context ownership. Dependency ระหว่างระบบต้อง pin contract version และทดสอบร่วมใน CI/UAT; ห้ามอาศัย internal table/schema ของอีก project แม้เข้าถึงได้ทาง network.
 
 ---
 
@@ -1200,9 +1280,9 @@ result, policy_decision, export_metadata
 - grant/revoke role และ functional assignment
 - อ่าน/ส่งออกข้อมูลอ่อนไหวจำนวนมาก
 - create/update/void/delete บุคลากร สต็อก ทรัพย์สิน รถ และการเงิน
-- approve/reject/cancel ลา รถ ย้ายบุคลากร
-- calculate/recalculate/review/confirm/lock ฉ.10/11 รวม rule version, cutoff, source hash และผลรวม
-- create/approve adjustment โดยอ้าง original allowance result และเหตุผล
+- issue/reissue/download DOCX, record paper decision, cancel/void/correct ใบลา; แยกจาก approve/reject ของรถ/การย้ายบุคลากร
+- สร้าง/ส่ง/รับ acknowledgment/retry/reconcile leave export รวม period, cutoff, source hash, external period/request ID และผลรวมโดยไม่ log PII
+- อ่าน/download ผลหรือรายงาน ฉ.10/11 ผ่าน adapter และส่ง correction/adjustment request โดยอ้าง external original period/result; calculation transition audit ตัวจริงอยู่ใน Special-Allowances
 - เปิด/ปิด/ล็อก/ปลดล็อกวงรอบแผน
 - เปลี่ยนผู้ลงนาม/ลายเซ็น/เลขหนังสือ/template
 - generate/download report
@@ -1214,9 +1294,9 @@ Audit ต้องแยก storage/permission จากข้อมูลธุ
 
 **Identity & session**
 
-- รองรับ OIDC/SAML หรือ local auth ที่แข็งแรง, MFA สำหรับ admin และ risk-based reauthentication สำหรับ action เสี่ยง.
-- access token อายุสั้น, refresh rotation/reuse detection, revoke ทุก session, device/session list และ idle/absolute timeout.
-- password/OTP/phone recovery ต้องมี rate limit, enumeration protection และ audit.
+- ใช้ Portal launch-token contract เป็น SSO baseline; ตรวจ issuer, audience, signature, expiry, nonce/replay และ allowlisted `return_to` ก่อนสร้าง local session.
+- One Data ไม่เก็บ password ซ้ำจาก Portal; local session ต้องมี idle/absolute timeout, revoke และผูก external identity ที่ immutable.
+- MFA/account recovery เป็นหน้าที่ Portal; action เสี่ยงใน One Data อาจขอ fresh launch/reauthentication ตาม contract และต้อง audit.
 
 **Authorization & multi-tenancy**
 
@@ -1339,8 +1419,7 @@ Workspace selector
 flowchart TB
     subgraph Clients
       Web[Responsive Web App]
-      Mobile[Future Mobile/PWA]
-      External[Authorized External Clients]
+      Portal[SSO Portal]
     end
 
     subgraph Edge
@@ -1352,7 +1431,7 @@ flowchart TB
       IAM[Identity & Access]
       ORG[Organization & People]
       WORK[Schedule / Leave / Duty]
-      ALLOW[ฉ.10/11 Allowance Calculation]
+      INT[Special-Allowances Adapter]
       INV[Inventory]
       ASSET[Assets & Vehicles]
       FIN[Finance Planning & Actuals]
@@ -1373,13 +1452,18 @@ flowchart TB
       WORKERS[Report / Import / Notification Workers]
     end
 
+    subgraph ExistingSystem[Existing Special-Allowances]
+      SAPI[Special-Allowances API]
+      SDB[(Special Database)]
+      SCALC[Formula / Period / Lock / Adjustment / Reports]
+    end
+
     Web --> WAF --> BFF
-    Mobile --> WAF
-    External --> WAF
+    Portal -->|launch token| WAF
     BFF --> IAM
     BFF --> ORG
     BFF --> WORK
-    BFF --> ALLOW
+    BFF --> INT
     BFF --> INV
     BFF --> ASSET
     BFF --> FIN
@@ -1392,9 +1476,12 @@ flowchart TB
     Application --> OUTBOX --> JOBS --> WORKERS
     WORKERS --> DB
     WORKERS --> OBJ
+    INT -->|scoped REST| SAPI
+    SAPI --> SDB
+    SAPI --> SCALC
 ```
 
-แผนภาพไม่บังคับภาษา framework หรือ cloud vendor. Relational database เหมาะเพราะมี transaction, constraint, reporting relation และ audit consistency สูง. Object storage เหมาะกับภาพ ลายเซ็น และไฟล์รายงาน. Queue ใช้สำหรับ PDF/Excel/import/notification ที่ใช้เวลานาน.
+แผนภาพไม่บังคับภาษา framework หรือ cloud vendor. One Data เริ่มเป็น modular monolith แต่ Special-Allowances และ Portal คงเป็น deployable/database แยก. Relational database เหมาะเพราะมี transaction, constraint, reporting relation และ audit consistency สูง. Object storage เหมาะกับ DOCX, attachment และไฟล์รายงาน. Queue ใช้สำหรับ document/import/notification ที่ใช้เวลานานเมื่อจำเป็น.
 
 ### 16.3 Module boundaries
 
@@ -1402,8 +1489,8 @@ flowchart TB
 | --------------------- | ------------------------------------------------------------------------------------------ | ------------------------------------------------------ | ------------------------------------ |
 | Identity & Access     | identities, memberships, roles, permissions, sessions                                      | person display projection                              | HR profile/history                   |
 | Organization & People | affiliation, tenant, employee profile, job history, position                               | access grants                                          | session/credential                   |
-| Workforce             | shift, schedule, holiday, leave, official duty                                             | employee/workgroup, signer                             | employee master                      |
-| Allowance Calculation | ฉ.10/11 schemes, rule versions, periods, calculation runs, snapshots, results, adjustments | effective People data, approved leave, report renderer | People/Leave source records          |
+| Workforce             | shift, schedule, holiday, leave, official duty; รุ่นแรกใช้ Leave แบบ Word-first             | employee/workgroup, signer                             | employee master                      |
+| Special Integration   | external ID mapping, leave export batches, delivery/reconciliation, external period/report refs | effective People data, paper-approved leave, Special API | สูตร/period/result/report ใน Special |
 | Inventory             | supply master, receipt, issue, movement, vendor, annual plan                               | workgroup/actor                                        | finance actual without command/event |
 | Assets & Vehicles     | asset lifecycle, vehicle workflow                                                          | employee/tenant, finance categories                    | inventory/employee master            |
 | Finance               | cycles, plan revisions, revenue/expense taxonomy, actuals                                  | organization, personnel/asset plan projections         | stock ledger/asset register          |
@@ -1412,7 +1499,7 @@ flowchart TB
 
 ### 16.4 Deployment evolution
 
-**First production release:** modular monolith + single relational database แยก schema/module boundary + object storage + report worker. เปิดใช้เฉพาะ Platform, People/Organization, Leave, Allowance Calculation และ Reports ก่อน แล้วต่อ module อื่นเข้าภายหลัง. ใช้ transaction ภายในโมดูลและ outbox ข้ามโมดูล **[PROPOSED]**.
+**First production release:** One Data เป็น modular monolith + relational database ของตน + object storage/document worker. เปิดใช้ Platform, People/Organization, Leave/DOCX และ Special-Allowances adapter ก่อน; Portal, Special-Allowances และ One Data เป็น deployable/database แยกแม้อยู่ server/network เดียวกัน. ใช้ transaction ภายใน One Data, scoped REST + reconciliation ข้ามระบบ และ outbox สำหรับ retry/future events **[OWNER-CONFIRMED DIRECTION + PROPOSED DESIGN]**.
 
 **Scale-out triggers:** แยก Report/Import worker ก่อนเพราะ workload หนัก; แยก Notification/Integration ต่อมา; แยก transactional domain เฉพาะเมื่อ team ownership, scaling หรือ regulatory isolation ชัดเจน. ห้ามเริ่ม microservices เพียงเพราะมีหลายเมนู.
 
@@ -1500,37 +1587,56 @@ voided_at, voided_by, void_reason -- แทน hard delete สำหรับข
 | `shift_assignments`        | schedule_period_id, person_id, work_date, shift_type_id, worked_hours, rate_snapshot                                               | unique per allowed combination; detect overlap                                         |
 | `schedule_inspectors`      | schedule_period_id, work_date/person_id/role                                                                                       | clarify actual inspector grain in discovery                                            |
 | `holidays`                 | jurisdiction_scope, holiday_date, name, type                                                                                       | unique date/type; source/version                                                       |
-| `leave_types`              | code, name, active                                                                                                                 | seeded 11 types                                                                        |
-| `leave_policies`           | affiliation_id, leave_type_id, entitlement, period_basis, accumulation, effective dates, conditions                                | replaces hard-coded quotas                                                             |
+| `leave_types`              | code, name, official_group_code, active                                                                                            | seeded 11 groups ตามประกาศ ก.จ. พ.ศ. 2569; version/effective date                      |
+| `leave_policy_profiles`    | affiliation_id, code, employee_type_scope, legal_basis, effective_from/to, status                                                   | แยกข้าราชการ อบจ. ออกจากพนักงานจ้าง/ลูกจ้าง/สถานะอื่น                                 |
+| `leave_policies`           | policy_profile_id, leave_type_id, entitlement, period_basis, accumulation, effective dates, conditions                             | replaces hard-coded quotas; published version immutable                                 |
 | `leave_balances`           | person_id, policy_id, period, granted, used, reserved, adjusted                                                                    | projection/ledger backed                                                               |
-| `leave_requests`           | tenant_id, requester_id, leave_type_id, start/end, calculated_days, reason, canonical_status, submitted_at, cancelled_by/at/reason | overlap/quota guards; canonical status decoupled from Thai display labels              |
-| `leave_approvals`          | request_id, step_no, approver_id/assignment_code, decision, comment, decided_at, delegated_from_id, break_glass_reason             | immutable decisions; requester cannot approve own request except audited signed policy |
+| `leave_requests`           | tenant_id, requester_id, policy_id, leave_type_id, start/end, calculated_days, reason, canonical_status, issued_at, cancelled/void fields | status `DRAFT/DOCUMENT_ISSUED/PAPER_APPROVED/PAPER_REJECTED/CANCELLED/VOIDED`; overlap/quota guards |
+| `leave_document_revisions` | request_id, revision_no, template_code/version, source_snapshot/hash, docx_object_id/checksum, generated_by/at                      | immutable published revision; regenerate from snapshot                                  |
+| `leave_external_decisions` | request_id, decision, external_document_no/date, recorded_by/at, note, attachment_id nullable, supersedes_id                       | บันทึกผลกระดาษ ไม่ใช่ online approval; requester != recorder โดย default                |
 | `official_duty_requests`   | tenant_id, requester_id, type, subject, start/end, vehicle_text/vehicle_id, lifecycle_status, updated/deleted/voided by/at/reason  | separate lifecycle from leave; deletion policy OPEN                                    |
 | `official_duty_companions` | request_id, person_id                                                                                                              | unique pair                                                                            |
 | `official_duty_approvals`  | request_id, step_no, decision fields                                                                                               | optional only if owner confirms approval workflow; do not infer from leave             |
 
-### 17.4 Allowance Calculation — ฉ.10/11
+### 17.4 Special-Allowances Integration — ฉ.10/11
 
-ตารางกลุ่มนี้เป็น proposed model สำหรับ first production domain; ชื่อทางการของ scheme และสูตรต้องแทนที่ placeholder หลัง Rulebook ได้รับอนุมัติ **[OPEN]**.
+One Data ไม่สร้างตาราง calculation engine, formulas, results หรือ report artifacts ของ ฉ.10/11 ซ้ำ. ตารางเหล่านั้นคงอยู่ในฐานข้อมูล `Special-Allowances` ซึ่งรองรับ calculation, period integrity, optimistic locking, adjustment period และ report อยู่แล้ว **[CODEBASE-VERIFIED + OWNER-CONFIRMED]**.
 
-| Table                         | Key fields                                                                                                                                                                         | Constraints/notes                                                      |
-| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| `allowance_schemes`           | id, code (`CHOR10`/`CHOR11` placeholder), official_name, description, active                                                                                                       | code/name ต้องยืนยันจากเอกสารทางการ                                    |
-| `allowance_periods`           | id, tenant_id, scheme_id, fiscal_year_id, period_start, period_end, cutoff_at, status                                                                                              | unique tenant/scheme/period; calendar rule versioned                   |
-| `calculation_rule_versions`   | id, affiliation_id, scheme_id, version, effective_from/to, rule_definition, approved_by/at, status                                                                                 | immutable เมื่อ published; formula/config ต้องตรวจสอบได้               |
-| `calculation_runs`            | id, allowance_period_id, rule_version_id, run_no, status, source_cutoff_at, calculated/reviewed/confirmed/locked by/at, supersedes_run_id, version                                 | state: DRAFT→CALCULATED→REVIEWED→CONFIRMED→LOCKED; unique run sequence |
-| `calculation_input_snapshots` | id, run_id, person_id, membership_snapshot, employment_snapshot (incl. area/include flag), leave_snapshot/source_refs, service_age_through, claim_period, source_hash, captured_at | immutable; เก็บข้อมูลเท่าที่จำเป็นและ hash สำหรับตรวจซ้ำ               |
-| `allowance_results`           | id, run_id, person_id, membership_id_snapshot, allowance_type, eligible_amount, deduction_amount, final_amount, calculation_details, result_hash                                   | unique run/person/type; fixed decimal; immutable after lock            |
-| `calculation_reviews`         | id, run_id, reviewer_id, decision, comment, reviewed_at                                                                                                                            | append-only review history                                             |
-| `calculation_adjustments`     | id, original_result_id, adjustment_period_id, amount_delta, reason_code, reason, requested/approved by/at, status                                                                  | ห้ามแก้ original result; audit ทุก transition                          |
-| `calculation_run_reports`     | run_id, report_run_id, format, template_version, artifact_checksum                                                                                                                 | Excel/PDF ต้องย้อนกลับสู่ run เดิมได้                                  |
+ตารางต่อไปนี้เป็น integration metadata ที่ One Data เป็นเจ้าของ:
+
+| Table                         | Key fields                                                                                                                                    | Constraints/notes                                                                  |
+| ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `external_systems`            | id, code (`SPECIAL_ALLOWANCES`), base_url_ref, audience, active, contract_version                                                             | ไม่เก็บ secret plaintext; config/secret manager เป็นเจ้าของ credential             |
+| `external_person_mappings`    | system_id, person_id, external_person_id, effective_from/to, status, verified_by/at                                                           | unique active mapping; ห้าม map ด้วยชื่ออย่างเดียว                                 |
+| `leave_export_batches`        | id, system_id, tenant_id, period_start/end, source_cutoff_at, status, item_count, source_hash, created_by/at                                  | idempotency key unique ต่อ consumer/tenant/period/source hash                      |
+| `leave_export_items`          | batch_id, person_id, external_person_id, leave_type_code, working_days, source_request_refs/revisions, item_hash                              | immutable batch item; aggregate contract ต้องตรง attendance projection ของ Special |
+| `integration_deliveries`      | batch_id, attempt_no, request_id, sent/acknowledged_at, response_code, external_period_ref, error_code/detail_redacted                        | retry/audit; no PII in operational log                                             |
+| `integration_reconciliations` | batch_id, external_period_ref, expected/accepted/rejected/unmapped counts, local/external hash, status, reviewed_by/at                        | ต้อง PASS ก่อน lock หรือมี exception ที่ลงเหตุผล                                   |
+| `external_report_refs`        | system_id, external_period_ref, external_report_id, format, checksum, generated_at, access_scope                                             | reference/cache metadata; artifact owner คือ Special-Allowances                    |
+
+Current Special-Allowances attendance contract ที่ตรวจจาก source **[CODEBASE-VERIFIED]**:
+
+| One Data leave group        | Special attendance type | Projection basis ใน Special | Contract status |
+| --------------------------- | ----------------------- | --------------------------- | --------------- |
+| ลากิจส่วนตัว               | `PERSONAL_LEAVE`        | วันทำการ                    | direct mapping  |
+| ลาป่วย                      | `SICK_LEAVE`            | วันทำการ                    | direct mapping  |
+| ลาคลอดบุตร                  | `MATERNITY_LEAVE`       | วันปฏิทิน                   | direct mapping  |
+| ลาไปประกอบพิธีฮัจย์         | `HAJJ_LEAVE`            | วันปฏิทิน                   | direct mapping  |
+| ลาอุปสมบท                   | `ORDAIN_LEAVE`          | วันปฏิทิน                   | direct mapping  |
+| ลาพักผ่อน                   | `VACATION_LEAVE`        | วันทำการ                    | direct mapping  |
+| ขาดราชการ                   | `ABSENT`                | วันทำการ                    | ไม่ใช่ใบลา; One Data Leave ห้ามสร้างอัตโนมัติ |
+| ฝึกอบรมโดยสมัครใจ/ตามคำสั่ง | `TRAINING_*`            | วันทำการ + occurrence count | ไม่ใช่ตัวแปรจาก Leave; รักษาค่าเดิมใน Special |
+| ลาอีก 6 กลุ่ม/ถือศีลฯ ที่ไม่มีชนิดตรง | ไม่มี direct type       | —                           | ต้องให้เจ้าของสูตรอนุมัติ mapping/version ก่อนส่ง |
+
+ห้ามรวมประเภทที่ยังไม่มี direct type เข้า `leaveUnclassifiedDays` หรือประเภทใกล้เคียงโดยคาดเดา เพราะอาจเปลี่ยนผลคำนวณ. การส่ง complete snapshot ต้อง reset เฉพาะ leave types ที่ contract version นั้นประกาศว่า One Data เป็นเจ้าของ และต้องรักษา `ABSENT`, `TRAINING_*`, historical unclassified และ other non-working fields ที่ Special เป็นเจ้าของไว้.
 
 ข้อกำหนดสำคัญ:
 
-- `calculation_runs` ไม่ควรถือ live query เป็นผลลัพธ์สุดท้าย; ต้องมี snapshot/reference ที่ immutable.
-- `rule_definition` อาจใช้ DSL/config ที่ตรวจได้ แต่ห้ามฝังสูตรสำคัญเฉพาะใน UI หรือ spreadsheet.
-- การ regenerate รายงานจาก run ที่ล็อกต้องให้ตัวเลขเดิม; หาก template ใหม่ ให้สร้าง artifact version ใหม่แต่ไม่เปลี่ยน results.
-- ข้อมูลลาหลัง cutoff ต้องเข้าสู่ adjustment/revision ตาม policy ที่ยังต้องยืนยัน.
+- One Data ส่งเฉพาะ leave dimensions ที่ Special-Allowances contract ต้องใช้ และไม่เขียน scalar/calendar fields ในฐานข้อมูล Special โดยตรง.
+- Adapter ต้องรองรับ source contract ของ Special ที่ใช้ attendance entries แล้ว project เป็น scalar fields ด้วย logic เดียวกัน; การเปลี่ยน schema ต้อง version contract และทดสอบทั้ง save/lock path.
+- ช่วง `OPEN` sync ซ้ำได้แบบ idempotent และแทน complete leave snapshot ของ period ตาม contract; omission semantics ต้องชัดเจนเพื่อไม่คงค่า stale.
+- ค่าเริ่มต้น grace period คือ 3 วันทำการหลังสิ้นเดือนแบบ configurable. ก่อน lock ต้อง reconcile unmapped person, rejected item, changed/cancelled leave และ hash.
+- หลัง `LOCKED/PAID` ห้าม overwrite รอบเดิม. การแก้ข้อมูลลาสร้าง correction/adjustment ใน Special-Allowances โดยอ้าง original period; controlled reopen ใช้เฉพาะกรณียังไม่จ่ายและต้องมี permission + reason + audit.
 
 ### 17.5 Inventory
 
@@ -1596,7 +1702,7 @@ voided_at, voided_by, void_reason -- แทน hard delete สำหรับข
 | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
 | `report_definitions`  | code, name, version, template_object_id, parameter_schema, active                                                                      | immutable published versions                                    |
 | `report_runs`         | definition_id/version, organization scope, requested_by, parameters_json, data_snapshot_ref/hash, status, output_object_id, expires_at | reproducible and auditable                                      |
-| `report_artifacts`    | report_run_id, format, object_key, checksum, size, generated_at, retention_class                                                       | one run may have XLSX/PDF variants; immutable artifact metadata |
+| `report_artifacts`    | report_run_id, format, object_key, checksum, size, generated_at, retention_class                                                       | one run may have DOCX/PDF/XLSX variants; immutable artifact metadata |
 | `signature_snapshots` | report_run_id, function_code, person_display, title_display, signature_object_hash                                                     | copy-on-generate                                                |
 | `attachments`         | owner_type/id, object_key, mime, size, checksum, classification, scan_status                                                           | signed access                                                   |
 | `announcements`       | affiliation_id, message, active, activated_at, created_by                                                                              | partial unique index for one active                             |
@@ -1610,11 +1716,13 @@ voided_at, voided_by, void_reason -- แทน hard delete สำหรับข
 
 - Composite indexes เริ่มด้วย `tenant_id`/`affiliation_id` สำหรับทุก list/report path.
 - Partial unique: announcement active หนึ่งรายการต่อสังกัด; open primary membership ตาม policy; one disposal per asset.
-- Partial/unique: calculation run sequence ต่อ period, result ต่อ run/person/type และห้ามแก้ผลเมื่อ run locked.
+- Partial/unique: leave export batch/idempotency ต่อ consumer/tenant/period/source hash และ active external person mapping ต้องไม่ซ้ำ; calculation constraints เป็นความรับผิดชอบของ Special-Allowances.
 - Exclusion/validation for overlapping vehicle bookings and optionally employee leave/shift.
 - Check constraints: date order, positive quantity, nonnegative money/mileage, fiscal month 1–12.
 - Command invariant: employee onboarding is all-or-nothing across person/profile/membership/access/history and requires idempotency key for retry.
-- SoD invariant: leave approver differs from requester unless a recorded break-glass policy/delegation applies.
+- Paper-result invariant: ผู้บันทึก `PAPER_APPROVED/PAPER_REJECTED` ต้องต่างจาก requester เว้นแต่มี recorded break-glass approval/reason/evidence; ไม่เรียก action นี้ว่า online approval.
+- Document invariant: `leave_document_revisions` ที่ออกแล้ว immutable และ DOCX checksum ต้องตรง artifact; การแก้สร้าง revision ใหม่.
+- Integration invariant: เฉพาะ effective `PAPER_APPROVED` leave เข้าสู่ export; ทุก batch trace กลับ request revision ได้และต้องไม่ mutate หลังส่งสำเร็จ.
 - Stock invariant: on-hand projection may not become negative; receipt reversal with downstream consumption is rejected or preceded by explicit issue reversal.
 - Decimal invariant: money/depreciation/quantity precision uses fixed decimal; closing book value and report totals obey an approved rounding rule.
 - Retention invariant: vehicle, asset, employee, leave, finance plan and posted-stock records use archive/void/supersede; no cascading hard delete of histories.
@@ -1669,36 +1777,34 @@ GET    /v1/tenants/{tenantId}/schedules/{year}/{month}
 PUT    /v1/tenants/{tenantId}/schedules/{year}/{month}/assignments/{assignmentKey}
 POST   /v1/tenants/{tenantId}/leave-requests
 GET    /v1/tenants/{tenantId}/leave-requests?year=&status=&employeeId=
-POST   /v1/leave-requests/{id}:submit
-POST   /v1/leave-requests/{id}:approve
-POST   /v1/leave-requests/{id}:reject
+PATCH  /v1/leave-requests/{id}
+POST   /v1/leave-requests/{id}:issue-document
+GET    /v1/leave-requests/{id}/document-revisions
+GET    /v1/leave-document-revisions/{revisionId}/download
+POST   /v1/leave-requests/{id}:record-paper-decision
 POST   /v1/leave-requests/{id}:cancel
+POST   /v1/leave-requests/{id}:void
 GET    /v1/employees/{employeeId}/leave-balance?year=
 POST   /v1/tenants/{tenantId}/official-duty-requests
 POST   /v1/official-duty-requests/{id}:approve
 ```
 
-**Allowance calculation — ฉ.10/11**
+`record-paper-decision` รับเฉพาะ `APPROVED/REJECTED` จากเจ้าหน้าที่ผู้รับผิดชอบและ metadata ของเอกสารภายนอก; เป็นการรับรองการบันทึกข้อมูล ไม่ใช่การอนุมัติออนไลน์. `issue-document` ต้อง snapshot ข้อมูลและสร้าง DOCX revision แบบ immutable.
+
+**Special-Allowances integration — ฉ.10/11**
 
 ```http
-GET    /v1/allowance-schemes
-GET    /v1/affiliations/{affiliationId}/allowance-rule-versions?scheme=&effectiveAt=
-POST   /v1/affiliations/{affiliationId}/allowance-rule-versions
-GET    /v1/tenants/{tenantId}/allowance-periods?fiscalYear=&scheme=
-POST   /v1/tenants/{tenantId}/allowance-periods
-POST   /v1/allowance-periods/{periodId}/calculation-runs
-POST   /v1/calculation-runs/{runId}:calculate
-POST   /v1/calculation-runs/{runId}:review
-POST   /v1/calculation-runs/{runId}:confirm
-POST   /v1/calculation-runs/{runId}:lock
-GET    /v1/calculation-runs/{runId}/inputs
-GET    /v1/calculation-runs/{runId}/results
-POST   /v1/calculation-runs/{runId}/adjustments
-POST   /v1/calculation-runs/{runId}/reports
-GET    /v1/calculation-runs/{runId}/reports/{reportId}/download
+GET    /internal/v1/allowance-leave-periods/{year}/{month}?tenantId=
+GET    /internal/v1/allowance-leave-periods/{year}/{month}/changes?since=&tenantId=
+POST   /v1/integrations/special-allowances/periods/{year}/{month}:sync-leave
+GET    /v1/integrations/special-allowances/periods/{year}/{month}/reconciliation?tenantId=
+GET    /v1/integrations/special-allowances/periods?fiscalYear=&tenantId=
+GET    /v1/integrations/special-allowances/periods/{externalPeriodId}/results
+GET    /v1/integrations/special-allowances/periods/{externalPeriodId}/reports
+GET    /v1/integrations/special-allowances/reports/{externalReportId}/download
 ```
 
-ทุก command ต้องตรวจ state/version/idempotency และ permission; endpoint `calculate` ต้องบันทึก rule version, cutoff และ source hash. `lock` ต้องห้าม mutation ต่อ inputs/results และ `adjustments` ต้องสร้างผลต่างแยกจาก original **[PROPOSED]**.
+`/internal` เป็น consumer contract สำหรับ service account ของ Special-Allowances และคืนเฉพาะ effective `PAPER_APPROVED` leave พร้อม external person mapping/source revisions/hash. Endpoint `/v1/integrations/...` เป็น BFF/operation surface สำหรับ One Data UI; adapter เรียก Special API จริงและห้ามคำนวณ/lock/adjust result ใน One Data. Exact upstream paths ต้องยืนยันด้วย OpenAPI/contract tests ก่อน implementation.
 
 **Inventory**
 
@@ -1780,13 +1886,15 @@ GET    /v1/audit-events?scope=&resourceType=&resourceId=&actor=&from=&to=
 ### 18.3 Command example
 
 ```json
-POST /v1/leave-requests/01J...:approve
+POST /v1/leave-requests/01J...:record-paper-decision
 Idempotency-Key: 9e2f...
 If-Match: "4"
 
 {
-  "decisionComment": "อนุมัติตามสิทธิ์",
-  "actingAsFunction": "DIRECTOR",
+  "decision": "APPROVED",
+  "externalDocumentNo": "ยล 0000/000",
+  "externalDecisionDate": "2026-08-29",
+  "note": "ตรวจเอกสารฉบับลงนามแล้ว",
   "clientRequestId": "..."
 }
 ```
@@ -1795,9 +1903,9 @@ If-Match: "4"
 {
   "data": {
     "id": "01J...",
-    "status": "APPROVED",
+    "status": "PAPER_APPROVED",
     "version": 5,
-    "approvedAt": "2026-08-10T03:15:00Z"
+    "paperDecisionRecordedAt": "2026-08-29T03:15:00Z"
   },
   "requestId": "req_..."
 }
@@ -1810,8 +1918,8 @@ If-Match: "4"
   "type": "https://example.invalid/problems/invalid-transition",
   "title": "Invalid state transition",
   "status": 409,
-  "code": "LEAVE_NOT_PENDING",
-  "detail": "Only a pending request can be approved.",
+  "code": "LEAVE_NOT_DOCUMENT_ISSUED",
+  "detail": "Only a document-issued request can receive a paper decision.",
   "fields": [],
   "requestId": "req_..."
 }
@@ -1832,11 +1940,12 @@ Event ที่ควร publish หลัง commit:
 
 ```text
 EmployeeTransferred.v1
-LeaveRequestApproved.v1
-AllowanceCalculationCompleted.v1
-AllowanceCalculationReviewed.v1
-AllowanceCalculationLocked.v1
-AllowanceAdjustmentApproved.v1
+LeaveDocumentIssued.v1
+LeavePaperDecisionRecorded.v1
+LeaveRequestVoided.v1
+LeaveExportPrepared.v1
+LeaveExportAcknowledged.v1
+LeaveIntegrationReconciliationFailed.v1
 OfficialDutyApproved.v1
 SchedulePublished.v1
 StockReceiptPosted.v1
@@ -1863,9 +1972,9 @@ Event payload ส่งเพียง ID, scope, version และข้อม�
 | --------------------------- | ------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------- | ---------------------- |
 | M1 Platform Foundation      | org scope, IAM, session, role/policy, audit, files, notification skeleton                  | secure shell, scope switch, permission SDK, audit viewer                | none                   |
 | M2 Organization & People    | affiliation/tenant, employee, job/license, access grants, org order                        | directory, forms, effective history, transfer foundation                | M1                     |
-| M3 Workforce                | leave first; shifts, holidays and official duty phased later                               | leave policy/balance/request/approval/cancel; later monthly matrix/duty | M1–M2                  |
-| M4 Allowance Calculation    | ฉ.10/11 schemes, rule versions, periods, calculation runs, snapshots, results, adjustments | reproducible monthly calculation and locked results                     | M1–M3                  |
-| M5 Documents & Reporting    | templates, report runs, XLSX/PDF, artifacts, signer snapshots                              | first: Leave + ฉ.10/11 Excel; 17 observed report families phased later  | M1 + M2–M4 read models |
+| M3 Workforce                | leave first; shifts, holidays and official duty phased later                               | policy profile, balance, request, DOCX revision, paper-result record/cancel/void | M1–M2             |
+| M4 Special Integration      | Portal identity mapping, Special-Allowances person mapping, leave sync, period/result/report adapter, reconciliation | reliable API boundary to systems already developed | M1–M3                  |
+| M5 Documents & Reporting    | templates, DOCX/report runs, artifacts and source snapshots                                | first: official Leave DOCX; ฉ.10/11 artifacts remain owned by Special   | M1 + M2–M4 read models |
 | M6 Inventory                | supplies, vendors, receipt, issue, ledger, annual plan                                     | immutable movement, balances, reports                                   | M1–M2, M5              |
 | M7 Assets                   | asset/land lifecycle, depreciation, disposal, repair/custodian/benefit                     | พ.ด.1/พ.ด.2 registers                                                   | M1–M2, M5              |
 | M8 Vehicles                 | registry, asset link, authorizations, requests, usages, accidents, maintenance             | forms 2–6, calendar/conflict                                            | M1–M2, M7, M5          |
@@ -1876,8 +1985,8 @@ Event payload ส่งเพียง ID, scope, version และข้อม�
 ### 19.2 Recommended team topology
 
 - Platform/Security team owns M1, common libraries, policy and delivery platform.
-- People/Leave/Allowance team owns M2–M4 for first production release.
-- Reporting capability owner works with M5 and domain experts; first priority is reproducible ฉ.10/11 Excel.
+- People/Leave/Integration owners develop M2–M4 for first production release; ทีมเล็กสองคนสามารถแบ่งตาม module ownership ใน monorepo.
+- Reporting capability owner works with M5 and HR; first priority is official Leave DOCX. ฉ.10/11 Excel ใช้ implementation เดิมของ Special-Allowances.
 - Resource Operations team owns M6–M8 after pilot.
 - Finance team owns M9 while starting rule/report discovery early.
 - Enabling QA/Data team owns migration test data, report golden masters, tenant isolation and performance.
@@ -1905,7 +2014,7 @@ Event payload ส่งเพียง ID, scope, version และข้อม�
 
 ### 20.1 MVP goal
 
-สร้าง Core Personnel Platform ที่ถูกต้อง แล้วเปิดใช้ระบบลา + การคำนวณ ฉ.10/11 + Excel/Report เป็น first production workflow สำหรับ รพ.สต. แบบ incremental โดยยังไม่สร้าง One Data System ทุกโมดูลพร้อมกัน **[OWNER-CONFIRMED DIRECTION + PROPOSED DELIVERY PLAN]**.
+สร้าง Core Personnel Platform ที่ถูกต้อง แล้วเปิดใช้ระบบลาแบบ DOCX/ลงนามภายนอกเป็น source of truth พร้อมส่งวันลาที่ได้รับอนุญาตแล้วไปยังระบบ Special-Allowances เดิมผ่าน API. เปิดใช้งานแบบ incremental โดยยังไม่สร้าง One Data System ทุกโมดูลและไม่สร้าง Calculation Engine ฉ.10/11 ซ้ำ **[OWNER-CONFIRMED]**.
 
 ### 20.2 In scope
 
@@ -1915,19 +2024,21 @@ Event payload ส่งเพียง ID, scope, version และข้อม�
 - Person, EmployeeProfile, UserIdentity, Tenant/Affiliation Membership.
 - effective-dated Employment History, Position, Workgroup, Employee Type และ Professional License เท่าที่จำเป็นต่อ Release 1.
 - Authentication/session และ baseline role/permission ที่บังคับฝั่ง server.
-- functional assignment ขั้นต้นสำหรับผู้ตรวจ/ผู้อนุมัติ/ผู้ลงนาม.
+- integration กับ SSO Portal launch token และ external identity mapping.
+- functional assignment ขั้นต้นสำหรับเจ้าหน้าที่บันทึกผลเอกสาร ผู้ตรวจข้อมูล และผู้ลงนามที่ต้องแสดงใน Word.
 - append-only audit, secure file/artifact storage และ fiscal/calculation period.
 - seed/migration framework สำหรับ 38 รพ.สต. และบุคลากร 267 คน.
 
 **Release 1 — First Production Modules**
 
-- Leave types/policies/balance, request, approval/reject/cancel และประวัติ.
-- ฉ.10/11 scheme/rule version เมื่อ Rulebook ได้รับอนุมัติ.
-- Allowance period และ Calculation Run.
-- input/person/membership/employment/leave snapshots หรือ immutable references.
-- results, review, confirm, lock และ revision/adjustment.
-- Excel report จาก locked calculation run; ดาวน์โหลดซ้ำได้ตรงเดิม.
-- basic leave/allowance dashboard, audit timeline และ reconciliation report.
+- Leave policy profile สำหรับข้าราชการ อบจ. ตามประกาศ พ.ศ. 2569; สถานะบุคลากรอื่นยังไม่เปิดจนมี Rulebook ของกลุ่มนั้น.
+- แบบร่างใบลา การคำนวณวัน/ยอดสิทธิ์ การออก DOCX ตามแบบราชการ และ document revision ที่พิมพ์ซ้ำได้.
+- การบันทึกผลเอกสารกระดาษ `PAPER_APPROVED/PAPER_REJECTED`, การยกเลิก/void/correction และประวัติ audit; ไม่มี online approval chain.
+- Portal SSO integration และ permission สำหรับ requester, HR/paper-result verifier, affiliation viewer และ auditor.
+- External person mapping และ versioned leave API/adapter ไป Special-Allowances.
+- Sync/reconciliation รายเดือน, configurable grace period, handling สำหรับ Special period ที่ open/locked และ adjustment หลังล็อก.
+- แสดงสถานะรอบ ผล และลิงก์รายงาน ฉ.10/11 จาก Special-Allowances ผ่าน One Data UI โดยไม่คำนวณซ้ำ.
+- basic leave/integration dashboard, audit timeline และ reconciliation report.
 
 **Pilot rollout**
 
@@ -1940,7 +2051,8 @@ Event payload ส่งเพียง ID, scope, version และข้อม�
 - ตารางเวร/OT, ไปราชการ และรายงานที่ไม่จำเป็นต่อ Leave + ฉ.10/11 first workflow.
 - Inventory, Assets, Vehicles และ Finance planning/actuals.
 - รายงาน One Data System ทั้ง 17 แบบนอกเหนือจากแบบที่ต้องใช้ใน first workflow.
-- สูตรหรือ template ฉ.10/11 ที่ยังไม่ได้รับรอง; ห้าม implement จากการคาดเดา.
+- การเขียนสูตร calculation engine, period/result/lock/adjustment และ template ฉ.10/11 ซ้ำใน One Data; ใช้ Special-Allowances เดิม.
+- Online leave approval, digital signature/PKI และการบังคับอัปโหลดสแกนเอกสารลงนาม.
 - mobile native app, offline-first, public API marketplace.
 - advanced forecasting/AI, OCR, automated bank/accounting integration.
 - highly configurable workflow designer.
@@ -1952,13 +2064,13 @@ Event payload ส่งเพียง ID, scope, version และข้อม�
 - Target baseline ถูกต้อง: อบจ.ยะลา 1 แห่ง, รพ.สต. 38 แห่ง และบุคลากร 267 คน ณ migration cutoff พร้อม reconciliation ที่เจ้าของข้อมูลลงนาม.
 - UAT end-to-end อย่างน้อย 3 รพ.สต. ขนาดใหญ่/กลาง/เล็ก และ role/policy profiles ที่ได้รับอนุมัติ.
 - ไม่มี cross-tenant data leakage ใน automated suite/penetration test.
-- Leave balance/day counting และ approval/cancel ผ่าน golden cases/edge cases ที่ฝ่ายงานรับรอง.
+- Leave balance/day counting, DOCX, paper-result/cancel/void ผ่าน golden cases/edge cases ที่ฝ่ายงานรับรอง.
 - Employee onboarding ผ่าน atomicity/idempotency/failure-injection test และ correction-vs-real-change ย้อนหลังให้เอกสารถูก version.
-- Leave self-approval ถูกปฏิเสธใน server policy; delegation/break-glass ทุกกรณีมีเหตุผลและ immutable audit.
-- ผลคำนวณ ฉ.10/11 ตรงกับ approved examples 100% ตาม tolerance/rounding ที่ระบุ.
-- Locked calculation run ไม่เปลี่ยนเมื่อแก้ข้อมูลบุคลากร การสังกัด ประวัติการจ้าง หรือใบลาภายหลัง.
-- Adjustment/revision ย้อนรอยถึง original result และไม่แก้ประวัติเดิม.
-- Excel golden-master ผ่านคอลัมน์ สูตรรวม ลำดับ รูปแบบ ฟอนต์ และ checksum; ดาวน์โหลดซ้ำจาก run เดิมให้ผลเหมือนเดิม.
+- ผู้ยื่นไม่สามารถบันทึกว่าเอกสารของตนได้รับอนุญาต; break-glass ทุกกรณีมีผู้อนุญาต เหตุผล หลักฐาน และ immutable audit.
+- DOCX golden-master ผ่านข้อความ ช่องข้อมูล หน้า ฟอนต์ และ checksum policy; ดาวน์โหลด revision เดิมให้ข้อมูลเหมือนเดิม.
+- API contract test ยืนยัน mapping วันลาจาก One Data ไป attendance projection ที่ Special-Allowances ใช้ทั้ง save และ period-lock path.
+- Reconciliation ก่อน lock รายงาน unmapped/rejected/changed/cancelled leave และ checksum; unresolved discrepancy ต้อง block lock หรือมี exception ที่ผู้มีอำนาจลงเหตุผล.
+- Locked/Paid period ใน Special-Allowances ไม่ถูก overwrite เมื่อแก้ข้อมูลบุคลากรหรือใบลาภายหลัง; adjustment ย้อนรอยถึง original period ได้.
 - Seed/load test ครบ 38 รพ.สต. และประมาณ 267 คน รวม aggregate report และช่วงปิดรอบ.
 - Restore drill สำเร็จตาม RPO/RTO ที่ตกลง.
 - Zero open critical/high security issue; medium มี risk acceptance/plan.
@@ -1984,7 +2096,7 @@ Roadmap หลัง First Production Release **[PROPOSED; reprioritize ตา�
 3. **Release 4 — Inventory:** วัสดุ ร้านค้า รับเข้า เบิก ledger/balance แผนประจำปี และรายงานคงเหลือ.
 4. **Release 5 — Assets:** พ.ด.1/พ.ด.2 ค่าเสื่อม ผู้รับผิดชอบ ซ่อม ประโยชน์ และจำหน่าย.
 5. **Release 6 — Finance:** master/cycle, BASE/เพิ่มเติม/เปลี่ยนแปลง, แผน ผลจริง เทียบแผน dashboard และรายงานรวม.
-6. **Release 7 — Advanced Reporting & Integration:** รายงานราชการครบชุด, bulk import/export, API/webhook, SSO/HR/e-Saraban/accounting connectors และ analytics.
+6. **Release 7 — Advanced Reporting & Integration:** รายงานราชการครบชุด, bulk import/export, event/webhook, HR/e-Saraban/accounting connectors และ analytics; Portal SSO กับ Special-Allowances API เป็น foundation ตั้งแต่ Release 0–1.
 
 Future enhancements ที่ไม่ผูกกับ release จนกว่าจะมี business case:
 
@@ -2053,43 +2165,45 @@ Future enhancements ที่ไม่ผูกกับ release จนกว่
 **Features**
 
 - E03-F1 Leave policy/rule catalog and effective dates
-- E03-F2 Leave balances/reservation ledger
-- E03-F3 Request, approval, reject, cancel and correction
+- E03-F2 Leave balances/usage ledger
+- E03-F3 Draft, DOCX issue, paper-result record, cancel/void and correction
 - E03-F4 Holiday/day-counting source
-- E03-F5 Leave document/report inputs
+- E03-F5 Official DOCX template/version/revision
 - E03-F6 Shift/official duty extension after pilot
 
 **Representative tasks**
 
-- Workshop all 11 leave policies and day-counting examples.
-- Implement date/overlap/quota reservation engine.
-- Define approval assignment fallback/acting director.
-- Enforce requester/approver separation and test delegation/break-glass paths.
-- Golden-test leave documents and every rule edge case.
-- Add cancel/reversal handling that restores balance.
-- Verify quota projection refreshes immediately after approve/reject/cancel and repeated submit is idempotent with explicit feedback.
+- Convert the 2569 PAO announcement and official Word attachments into a signed Leave Rulebook/template inventory; confirm employee-type scope with HR.
+- Workshop all 11 leave groups and day-counting examples; implement effective-dated policy profiles rather than one global quota table.
+- Implement date/overlap/balance engine and immutable leave usage/correction history.
+- Build DRAFT→DOCUMENT_ISSUED→PAPER_APPROVED/PAPER_REJECTED→VOIDED/CANCELLED guards without an online approval chain.
+- Enforce requester/paper-result-verifier separation and test permission/break-glass paths.
+- Generate versioned DOCX from official forms; golden-test fields, Thai layout, pagination, checksum and repeat download.
+- Add cancel/void/correction handling that restores balance and emits integration changes.
+- Verify quota projection refreshes immediately after paper decision/cancel/void and repeated commands are idempotent with explicit feedback.
 - Defer shift matrix/official duty coding until first production workflow is stable.
 
-### Epic E04 — ฉ.10/11 allowance calculation
+### Epic E04 — Special-Allowances integration
 
 **Features**
 
-- E04-F1 Scheme and calculation-rule versioning
-- E04-F2 Allowance periods and cutoff
-- E04-F3 Calculation run/input snapshots
-- E04-F4 Per-person results and calculation explanation
-- E04-F5 Review, confirm and lock
-- E04-F6 Revision/adjustment and reconciliation
+- E04-F1 Portal/external identity and person mapping
+- E04-F2 Versioned leave-summary contract
+- E04-F3 Idempotent period sync and source snapshots
+- E04-F4 Special period/result/report adapter for One Data UI
+- E04-F5 Cutoff, lock awareness and reconciliation
+- E04-F6 Late correction/adjustment hand-off
 
 **Representative tasks**
 
-- Obtain official names, regulations, formulas and approved examples for ฉ.10/11.
-- Define eligibility, leave impact, partial-period, rounding and cutoff rules.
-- Build deterministic calculation engine with published rule version.
-- Snapshot person/membership/employment/leave inputs and source hash.
-- Implement DRAFT→CALCULATED→REVIEWED→CONFIRMED→LOCKED guards.
-- Add adjustment flow that never mutates locked original results.
-- Golden-test every approved calculation example and retrospective correction.
+- Inventory existing Special-Allowances OpenAPI/routes, attendance-entry projection, period lock and adjustment contracts; do not duplicate its formulas.
+- Define canonical mapping from One Data leave groups to the exact Special fields/types already supported, including omission/reset semantics.
+- Implement and reconcile immutable external person mappings; block unknown/duplicate mappings.
+- Build internal leave-summary API and Special adapter with service-account auth, idempotency key, source refs/hash and contract tests.
+- Sync repeatedly while Special period is open; default grace period 3 business days after month-end, configurable by authorized operator.
+- Before lock, reconcile expected/accepted/rejected/unmapped/changed/cancelled counts and hashes.
+- For locked/paid periods, hand late corrections to Special adjustment flow; controlled reopen only before payment with permission/reason/audit.
+- Surface Special period status/results/reports in One Data without copying calculation ownership.
 
 ### Epic E05 — Reporting and documents
 
@@ -2104,13 +2218,13 @@ Future enhancements ที่ไม่ผูกกับ release จนกว่
 
 **Representative tasks**
 
-- Inventory official templates and obtain approved golden files.
+- Inventory official Leave templates and obtain HR-approved golden DOCX files; use existing Special report artifacts for ฉ.10/11.
 - Define parameter schemas and data dictionaries.
 - Embed Thai fonts and test pagination.
 - Prevent spreadsheet formula injection.
 - Implement report job retry, expiry and regeneration policy.
 - Build report diff tests across template versions.
-- Verify repeated download from one locked run yields identical content/checksum under the approved policy.
+- Verify repeated Leave document revision download is stable and Special report download resolves to the same external locked artifact/checksum.
 
 ### Epic E06 — Inventory
 
@@ -2241,7 +2355,7 @@ E01 Platform
   ↓
 E02 People/Organization
   ↓
-E03 Leave → E04 ฉ.10/11 → E05 Excel/Reports
+E03 Leave + DOCX → E04 Special-Allowances API/SSO Integration → E05 Unified UI/Reports
   ↓
 Pilot 3 รพ.สต. → 10 → 38
   ↓
@@ -2250,13 +2364,13 @@ E08 Vehicles / E06 Inventory / E07 Assets / E09 Finance ตามผล pilot �
 E10 spans workflows; E11 spans all releases
 ```
 
-ฉ.10/11 Rulebook และ report-template approval ต้องเริ่มก่อน E04/E05 coding. Finance discovery ควรเริ่มล่วงหน้าแม้ coding E09 มาภายหลัง เพราะกฎไม่ชัดและเสี่ยง rework สูง.
+Leave Rulebook/official DOCX และ Special-Allowances integration contract ต้องเริ่มก่อน E03/E04 coding. สูตรและ report ฉ.10/11 ไม่ใช่งานสร้างใหม่ของ One Data; ใช้ implementation/golden tests ใน Special-Allowances และเพิ่ม cross-system contract/reconciliation tests. Finance discovery ควรเริ่มล่วงหน้าแม้ coding E09 มาภายหลัง เพราะกฎไม่ชัดและเสี่ยง rework สูง.
 
 ---
 
 ## 23. Decision Register / Unknown / Requires Verification
 
-### 23.0 Decisions and baselines closed through revision 1.4
+### 23.0 Decisions and baselines closed through revision 1.5
 
 | ID     | Decision/baseline                                                                                                                                                            | Status                                   | Impact                                       |
 | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- | -------------------------------------------- |
@@ -2265,10 +2379,18 @@ E10 spans workflows; E11 spans all releases
 | DR-003 | บุคลากร 267 คน ณ 10 ส.ค. 2569 และจะเพิ่ม                                                                                                                                     | OWNER-CONFIRMED                          | migration/capacity/test data                 |
 | DR-004 | กลุ่มเป้าหมายคือเจ้าหน้าที่ทุกคนของ รพ.สต. ในสังกัด                                                                                                                          | OWNER-CONFIRMED                          | identity/UX/training; login mapping ยัง OPEN |
 | DR-005 | พัฒนา incremental ไม่สร้างทุกโมดูลก่อนเปิดใช้                                                                                                                                | OWNER-CONFIRMED                          | release strategy                             |
-| DR-006 | First production direction คือ People/Organization Core → Leave → ฉ.10/11 → Excel/Report                                                                                     | OWNER-CONFIRMED + PROPOSED DESIGN        | MVP/backlog/data model                       |
+| DR-006 | First production direction คือ People/Organization Core → Leave/DOCX → Special-Allowances API → unified UI/report access                                                      | OWNER-CONFIRMED                          | MVP/backlog/data model                       |
 | DR-007 | Rollout แบบ pilot 3 แห่ง แล้ว 10 และ 38                                                                                                                                      | PROPOSED — formal approval pending       | UAT/support/cutover                          |
 | DR-008 | Modular Monolith เป็น architecture baseline; technology stack ยังไม่ล็อก                                                                                                     | PROPOSED — ADR pending                   | implementation/deployment                    |
 | DR-009 | ระบบใหม่ต้องไม่ลอก defect ของ reference: onboarding ต้อง atomic, approval ต้องมี SoD, เงินใช้ fixed decimal และข้อมูลราชการใช้ void/reversal/history แทน destructive cascade | PROPOSED — required engineering baseline | architecture, API, schema, acceptance gates  |
+| DR-010 | MVP ไม่มี online leave approval; ผู้ใช้สร้าง Word พิมพ์และลงนามภายนอก แล้วเจ้าหน้าที่บันทึกผลเอกสารกลับเข้าระบบ                                                                  | OWNER-CONFIRMED                          | leave workflow/API/permissions               |
+| DR-011 | เฉพาะใบลาสถานะ `PAPER_APPROVED` ที่ยังมีผลเป็น source input ให้ Special-Allowances                                                                                                 | OWNER-CONFIRMED                          | integration/filter/reconciliation            |
+| DR-012 | `Special-Allowances` เดิมเป็นเจ้าของสูตร ตัวแปรที่ไม่ใช่การลา period/result/lock/adjustment/report; One Data ห้าม reimplement calculation engine                                   | OWNER-CONFIRMED + CODEBASE-VERIFIED      | system boundary/development scope            |
+| DR-013 | ข้าราชการ อบจ. ใช้ประกาศมาตรฐานทั่วไปว่าด้วยการลาของข้าราชการองค์การบริหารส่วนจังหวัด พ.ศ. 2569 และแบบ Word แนบท้ายเป็น baseline                                                | LEGAL-SOURCE; HR SIGN-OFF REQUIRED       | policy profile/document templates            |
+| DR-014 | สถานะการจ้างอื่นต้องมี LeavePolicyProfile/ฐานกฎหมายแยก และยังไม่เปิดสิทธิ์จนฝ่ายบุคคลรับรอง                                                                                         | OWNER-CONFIRMED GUARDRAIL                | rollout/data model                           |
+| DR-015 | รอบ Special ที่ open sync ซ้ำได้; grace period เริ่มต้น 3 วันทำการแบบ configurable; หลัง locked/paid ใช้ adjustment ไม่ overwrite ผลเดิม                                            | OWNER-CONFIRMED                          | period protocol/late correction              |
+| DR-016 | ใช้ `yala-pao-public-health-portal` เป็น SSO/module-entry และใช้ launch token/external identity mapping; แต่ละระบบมี local session/authorization                                       | OWNER-CONFIRMED + CODEBASE-VERIFIED      | IAM/integration                              |
+| DR-017 | One Data, Portal และ Special-Allowances อยู่ server/shared-infra เดียวกันได้ แต่แยก database/user/secret และเชื่อมผ่าน API เท่านั้น                                                     | OWNER-CONFIRMED + PROPOSED SECURITY      | deployment/security                          |
 
 #### 23.0.1 Observed constraints verified in revision 1.3
 
@@ -2300,17 +2422,17 @@ E10 spans workflows; E11 spans all releases
 | ID    | Open decision                                                                                                                                                                                                                                                                 | Suggested owner                                         | Required artifact                                  |
 | ----- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- | -------------------------------------------------- |
 | P0-01 | ระบบรุ่นแรกเป็นงานบริหารหลังบ้านเท่านั้น หรือรวมข้อมูลผู้ป่วย/เวชระเบียน/HDC                                                                                                                                                                                                  | Product owner + DPO/security + health-information owner | signed System Boundary                             |
-| P0-02 | เจ้าหน้าที่ทั้ง 267 คนต้องมีบัญชีรายบุคคลทุกคนหรือบางคนเป็น employee record เท่านั้น; login/SSO/recovery/MFA ใช้อะไร                                                                                                                                                          | Product owner + IT/security                             | Identity & Account Policy                          |
+| P0-02 | ยืนยันการ map บุคลากร 267 คนกับบัญชี Portal, module role, account recovery/MFA และผู้ที่เป็น employee record แต่ไม่ต้อง login; Portal เป็น SSO baseline แล้ว                                                                                                                    | Product owner + Portal owner + IT/security              | Identity & Account Mapping Policy                  |
 | P0-03 | บุคลากรมีหลาย รพ.สต./หลายกลุ่มงาน/ช่วยราชการ/รักษาการพร้อมกันได้หรือไม่, ย้ายกลางงวดอย่างไร และ semantics “แก้ข้อมูลที่ผิด” เทียบ “เปลี่ยนแปลงจริง” ใช้ย้อนหลังกับเอกสาร/สูตรใด                                                                                               | HR owner                                                | People & Membership Rulebook + correction policy   |
 | P0-04 | Role matrix จริง: self/tenant/affiliation visibility, CRUD, approve, export, PII และ superadmin/auditor                                                                                                                                                                       | Process owners + security/DPO                           | signed Permission Matrix                           |
-| P0-05 | Workflow การลา: ผู้ขอ/ผู้ตรวจ/ผู้อนุมัติ, จำนวนขั้น, acting/delegation, comment/evidence, cancel หลังอนุมัติ, correct/backdate และ SLA; ต้องตัดสิน segregation of duties เพราะ reference ยอมให้ admin อนุมัติใบลาตนเอง; ใช้ vocabulary 4 สถานะที่ทดสอบแล้วเป็น input          | HR/process owner + auditor                              | Leave State Diagram + SoD matrix                   |
-| P0-06 | กฎลา 11 ประเภท: วันหยุด ครึ่งวัน overlap อายุงาน สะสม ยกมา cutoff และการคืนโควตา; holiday-disable และ quota reversal ถูกยืนยันแล้วแต่กฎนับวัน/ความสอดคล้องทันทียังต้องอนุมัติ                                                                                                 | HR/legal/process owner                                  | Leave Rulebook + golden cases                      |
-| P0-07 | ชื่อทางการ/ฐานระเบียบ/ผู้มีสิทธิ์/สูตร ฉ.10 และ ฉ.11 รวมผลจากประเภทลา ระดับพื้นที่/ประวัติการทำงาน การเริ่มงานกลางเดือน การย้าย และ rounding; ยืนยันด้วยว่า ฉ.10 เกี่ยวข้องกับหมวด `พตส.` หรือเป็นคนละงาน เพราะ reference catalog ไม่พบ ฉ.10                                  | Allowance/finance/HR owner                              | ฉ.10/11 Calculation Rulebook + terminology mapping |
-| P0-08 | รอบคำนวณและ cutoff; review/confirm/lock; ข้อมูลมาหลัง cutoff; revision/adjustment และการเบิกชดเชย                                                                                                                                                                             | Allowance/finance owner + auditor                       | Calculation State Diagram + correction policy      |
-| P0-09 | Excel/PDF source-of-truth: template, คอลัมน์, สูตรรวม, filename, submission destination, retention และการพิมพ์ซ้ำ; ยืนยัน semantics/default ของ parameters ที่พบ เช่น signer/certifier/controller, เลขหนังสือแยกกลุ่ม, service-age-through month, claim range และข้อมูลประชุม | Document/finance owner                                  | approved golden templates + parameter dictionary   |
+| P0-05 | ปิด online approval ออกจาก MVP แล้ว; ต้องยืนยันว่า role ใดบันทึกผลกระดาษ, metadata/หลักฐานขั้นต่ำ, cancel/void/correct/backdate และ break-glass เมื่อ requester กับ verifier อาจเป็นคนเดียวกันในหน่วยงานเล็ก                                                                  | HR/process owner + auditor                              | Paper-result State Diagram + Permission/SoD matrix |
+| P0-06 | ประกาศ ก.จ. พ.ศ. 2569 และ 11 กลุ่มเป็น baseline แล้ว; ยังต้องยืนยันวันหยุด ครึ่งวัน overlap อายุงาน สะสม ยกมา เอกสารประกอบ และ policy profile ของพนักงานจ้าง/ลูกจ้าง/สถานะอื่น                                                                                                  | HR/legal/process owner                                  | Signed Leave Rulebook + golden cases                |
+| P0-07 | ยืนยัน field/type mapping จาก `PAPER_APPROVED` leave ไป attendance contract ที่ Special-Allowances รองรับ รวม employee mapping, complete-snapshot/reset semantics และช่วงวันที่ข้ามเดือน; สูตร ฉ.10/11 ไม่ implement ซ้ำใน One Data                                             | Special owner + HR + integration owner                 | Versioned API mapping + contract tests              |
+| P0-08 | Direction cutoff/lock ปิดแล้ว: open sync ซ้ำ, grace 3 วันทำการ configurable, locked/paid ใช้ adjustment; ต้อง map exact status/API และสิทธิ์ controlled reopen ของ Special-Allowances                                                                                            | Allowance owner + auditor + integration owner          | Period Integration State Diagram                    |
+| P0-09 | Leave DOCX ใช้แบบแนบท้าย พ.ศ. 2569; ต้องอนุมัติ golden layout/field mapping. ฉ.10/11 report เป็น artifact ของ Special-Allowances; One Data ต้องตกลง API download, permission, retention และ checksum contract                                                                 | HR/document owner + Special owner                      | approved Leave DOCX + report-access contract        |
 | P0-10 | แหล่งข้อมูลบุคลากร 267 คน/38 รพ.สต., field mapping, duplicates, validation, migration cutoff และ reconciliation                                                                                                                                                               | Data owners + HR + IT                                   | migration inventory/mapping                        |
 
-ห้าม finalize calculation schema/formula หรือเริ่ม E04/E05 implementation จากการคาดเดาจน P0-07–P0-09 ได้รับอนุมัติ.
+ห้ามเริ่ม integration production หรือออก Leave DOCX ใช้งานจริงจน P0-05–P0-09 ได้รับอนุมัติ. สามารถพัฒนา skeleton/adapter test doubles ได้ แต่ห้ามสร้างสูตรหรือ report engine ฉ.10/11 ซ้ำใน One Data.
 
 ### 23.2 Deferred domain unknowns — ต้องปิดก่อน release ของโมดูลนั้น
 
@@ -2320,7 +2442,7 @@ E10 spans workflows; E11 spans all releases
 - **Assets:** code uniqueness/reset, useful life, residual/partial year, rounding, revaluation, transfer/disposal reversal; binary-float artifact เป็น defect ที่ต้องมี regression test.
 - **Finance:** KPI/formulas, submit/approve/lock/unlock, revision aggregation และ rounding; BASE gate/ลำดับเปิด alternative cycle ยืนยันแล้ว.
 - **Organization expansion:** หลาย อบจ., affiliation nesting, tenant transfer/no-affiliation และ district master.
-- **Integration:** HR, HDC, e-Saraban, accounting, SSO, API/webhook และ source of truth.
+- **Integration:** Portal SSO และ Special-Allowances source ownership ปิดแล้วสำหรับ MVP; exact OpenAPI/identity mapping ยังต้องปิด. HR, HDC, e-Saraban, accounting และ webhook อื่นเป็น future discovery.
 
 รายการเหล่านี้ไม่บล็อก Release 0–1 หากไม่มี dependency โดยตรง แต่ discovery ต้องเริ่มก่อน release ที่เกี่ยวข้อง.
 
@@ -2355,8 +2477,8 @@ E10 spans workflows; E11 spans all releases
 | Question class    | Safest verification                                                    | Required participants               | Artifact                             |
 | ----------------- | ---------------------------------------------------------------------- | ----------------------------------- | ------------------------------------ |
 | People/membership | Workshop ด้วยการย้าย ช่วยราชการ รักษาการ และหลาย assignment            | HR + unit/affiliation admins        | signed People Rulebook               |
-| Leave             | ตัวอย่างปกติ/edge cases และ expected balance/status                    | HR + approvers + users              | Leave Rulebook/golden tests          |
-| ฉ.10/11           | ระเบียบจริง + Excel ที่ใช้งาน (de-identified) + manual calculations    | allowance/finance/HR/auditor        | Calculation Rulebook/golden workbook |
+| Leave             | ประกาศ/แบบ Word พ.ศ. 2569 + ตัวอย่างนับวัน/balance + paper-result/cancel/correction | HR + verifier + users               | Leave Rulebook/DOCX/golden tests     |
+| ฉ.10/11 integration | Existing Special API/attendance projection + leave mapping + period lock/adjustment scenarios | Special owner + HR + auditor        | OpenAPI/contract/reconciliation tests |
 | Permissions       | Role-by-role UAT accounts ใน sandbox                                   | security/DPO + representatives      | permission matrix/test results       |
 | Workflow          | State-transition walkthrough + synthetic data                          | process owner/approvers             | state diagrams + SLA                 |
 | Reports           | Golden file comparison และ repeat-download test                        | document owner/auditor              | approved templates/data dictionary   |
@@ -2480,4 +2602,4 @@ Observed evidence / Owner-confirmed decision
 
 # Conclusion
 
-แก่นของระบบใหม่ไม่ใช่การทำหน้าเว็บเหมือน One Data System แต่คือแพลตฟอร์มงานราชการระดับหน่วยบริการที่มีข้อมูลบุคลากรร่วม workflow ที่ตรวจสอบได้ ledger/history ที่ย้อนรอยได้ เอกสารที่พิมพ์ซ้ำได้ และการกำกับ 38 รพ.สต. ภายใต้ อบจ.ยะลาอย่างปลอดภัย. ลำดับเริ่มต้นคือ People/Organization Core → Leave → ฉ.10/11 Calculation Run → Excel/Report → Pilot 3→10→38 แห่ง. Mutation testing ยืนยัน domain flow สำคัญและเปิดเผย anti-requirements ที่ต้องแก้ตั้งแต่ราก ได้แก่ atomic onboarding, requester/approver separation, fixed-decimal calculation, reversal/void แทน hard delete และ consistency reconciliation. ฉ.10 ยังไม่พบในระบบอ้างอิง จึงต้องแยก Rulebook/template จาก ฉ.11 อย่างชัดเจน. ก่อนเริ่ม implementation ต้องปิด P0 Rulebook, Permission/SoD, Workflow, Cutoff/Adjustment และ Golden Template พร้อมนำ REF-DEF-001–012 ไปเป็น negative acceptance tests.
+แก่นของระบบใหม่ไม่ใช่การทำหน้าเว็บเหมือน One Data System แต่คือแพลตฟอร์มงานราชการระดับหน่วยบริการที่มี People Core ร่วม ข้อมูลที่ย้อนรอยได้ เอกสารที่พิมพ์ซ้ำได้ และ integration boundary ที่ชัดเจนสำหรับ 38 รพ.สต. ภายใต้ อบจ.ยะลา. ลำดับเริ่มต้นคือ Portal SSO/People Core → Leave + official DOCX → บันทึกผลลงนามภายนอก → Special-Allowances API/reconciliation → Pilot 3→10→38 แห่ง. One Data เป็น source of truth ของการลา ส่วน Special-Allowances เดิมเป็นเจ้าของสูตร รอบคำนวณ lock/adjustment ผล และรายงาน ฉ.10/11; ห้ามสร้างซ้ำหรือเชื่อมฐานข้อมูลตรง. ก่อนเริ่ม implementation production ต้องปิด Leave Rulebook ตามประกาศ ก.จ. พ.ศ. 2569, policy profile ตามสถานะการจ้าง, paper-result Permission/SoD, Portal/person mapping, Special API contract และ golden DOCX พร้อมนำ REF-DEF-001–012 ไปเป็น negative acceptance tests.
