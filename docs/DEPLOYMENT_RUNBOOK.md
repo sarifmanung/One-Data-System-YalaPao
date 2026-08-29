@@ -53,6 +53,7 @@ mysqldump --single-transaction --routines --triggers \
 - `DATABASE_URL="$ONEDATA_TARGET_DATABASE_URL" npm run target:schema:check` ตรวจ migration status และ schema drift; production/staging ห้ามตั้ง `ONEDATA_SCHEMA_CHECK_ALLOW_UNAPPLIED`.
 - `ONEDATA_BACKUP_DIR=/private/backup/onedata npm run target:backup` สร้าง SQL backup และ SHA-256 sidecar โดยไม่ overwrite ไฟล์เดิม.
 - `ONEDATA_BACKUP_FILE=... ONEDATA_RESTORE_DATABASE=onedata_restore_<run-id> ONEDATA_RESTORE_CONFIRM=RESTORE_TO_NEW_DATABASE npm run target:restore:verify` ตรวจ checksum และ restore ลง database ใหม่เท่านั้น; script ไม่ drop database ที่ restore แล้ว.
+- `ONEDATA_UAT_BASE_URL=... ONEDATA_UAT_WEB_URL=... ONEDATA_UAT_EVIDENCE_DIR=/private/var/onedata/uat-evidence npm run target:uat:evidence` เก็บหลักฐาน gate แบบ JSON/Markdown ที่มีเฉพาะ HTTP status และ aggregate shape; ต้องใช้ directory แบบ absolute ที่ไม่ใช่ root และไม่เก็บ payload, cookie, token หรือ PII.
 - ตรวจ aggregate API metrics ที่ `/api/health/metrics` จากเครือข่าย monitoring เท่านั้น และส่ง status/error/latency metrics ต่อไปยังระบบ monitoring กลางโดยไม่ส่ง path parameter, cookie, token หรือ payload.
 
 ## 4. Deploy/rollback order
@@ -69,6 +70,7 @@ Worker เปิดใช้งานด้วย `--profile worker` และ `
 ## 5. Operational checks
 
 - API liveness/readiness, database connection และ container restart count
+- เก็บ `target:uat:evidence` ทุก gate โดยผูกกับ commit/build/environment และตรวจว่า artifact ไม่มีข้อมูลดิบ; หาก local development เปิด dev auth ให้บันทึก `ONEDATA_UAT_EXPECT_ME_STATUS=200` เป็นข้อยกเว้น ไม่ใช่ security approval
 - auth 401/403/429 rate, durable replay rejection, session revoke/idle expiry/rotation และ origin rejection
 - People sync run status, unmapped employee count และ leave snapshot batch status
 - delivery `RETRYABLE_FAILURE`/`FAILED`, locked-period responses, reconciliation `MISMATCH/BLOCKED`, source hash/row-count mismatch และ schedule ที่หมดอายุ/ถูก pause

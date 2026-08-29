@@ -8,6 +8,7 @@ expected_contract="${ONEDATA_UAT_EXPECTED_CONTRACT_VERSION:-1.4}"
 cookie_file="${ONEDATA_UAT_COOKIE_FILE:-}"
 web_url="${ONEDATA_UAT_WEB_URL:-}"
 require_security_headers="${ONEDATA_UAT_REQUIRE_SECURITY_HEADERS:-false}"
+expected_me_status="${ONEDATA_UAT_EXPECT_ME_STATUS:-401}"
 
 tmp_dir="$(mktemp -d "${TMPDIR:-/tmp}/onedata-uat-smoke.XXXXXX")"
 trap 'rm -rf "$tmp_dir"' EXIT
@@ -53,11 +54,15 @@ console.log(`PASS contract-version (${actual})`);
 NODE
 
 unauthenticated_status="$(request_status "/api/v1/me" "$tmp_dir/response-unauthenticated.json")"
-if [[ "$unauthenticated_status" != "401" ]]; then
-  echo "FAIL deny-by-default: expected HTTP 401 without a session, got $unauthenticated_status" >&2
+if [[ "$unauthenticated_status" != "$expected_me_status" ]]; then
+  echo "FAIL auth-probe: expected HTTP $expected_me_status without a session, got $unauthenticated_status" >&2
   exit 1
 fi
-echo "PASS deny-by-default (HTTP 401)"
+if [[ "$expected_me_status" == "401" ]]; then
+  echo "PASS deny-by-default (HTTP 401)"
+else
+  echo "PASS auth-probe (HTTP $expected_me_status; explicit non-production override)"
+fi
 
 if [[ "$require_security_headers" == "true" ]]; then
   headers_file="$tmp_dir/live.headers"

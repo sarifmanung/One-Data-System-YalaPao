@@ -33,7 +33,7 @@ docker compose -f docker-compose.target.yml up --build -d
 
 สำหรับ migration/deployment ของ target ให้ดู [deployment runbook](docs/DEPLOYMENT_RUNBOOK.md). ฐานข้อมูลใหม่ใช้ `DATABASE_URL="$ONEDATA_TARGET_DATABASE_URL" npm run target:db:migrate`; production ห้ามใช้ `prisma db push` หรือ `--accept-data-loss`.
 
-แผน UAT/pilot/cutover และ test matrix อยู่ที่ [UAT/Pilot/Cutover Plan](docs/UAT_PILOT_CUTOVER_PLAN.md). ตรวจ target แบบ read-only ได้ด้วย `ONEDATA_UAT_BASE_URL=http://localhost:3100 ONEDATA_UAT_WEB_URL=http://localhost:3101 ./scripts/target-uat-smoke.sh`.
+แผน UAT/pilot/cutover และ test matrix อยู่ที่ [UAT/Pilot/Cutover Plan](docs/UAT_PILOT_CUTOVER_PLAN.md). ตรวจ target แบบ read-only ได้ด้วย `scripts/target-uat-smoke.sh` และสร้างหลักฐาน aggregate-only สำหรับ gate ได้ด้วย `scripts/target-uat-evidence.sh` โดยไม่เก็บ payload, cookie, token หรือ PII.
 
 เปิด dashboard preview ที่ `http://localhost:3101/tenant-dashboard`, Portal launch bridge ที่ `http://localhost:3101/auth/portal/launch?token=...` และ API ที่ `http://localhost:3100/api/health/live`. Compose target มีฐานข้อมูล development แยกที่ `13307` และ seed สังเคราะห์เป็นค่าเริ่มต้น; ใน local สามารถตั้งค่า Special URL/token แล้วสั่ง master-data sync เพื่อทำ real-data shadow run ได้ โดยข้อมูลจะถูกเขียนเฉพาะ target local database. Authentication จะปฏิเสธโดยค่าเริ่มต้นจนกว่าจะตั้งค่า Portal secret/launch token หรือเปิด development auth สำหรับ local test.
 
@@ -150,9 +150,13 @@ ONEDATA_BACKUP_DIR=/private/backup/onedata \
 ONEDATA_UAT_BASE_URL=http://localhost:3100 \
   ONEDATA_UAT_WEB_URL=http://localhost:3101 \
   ./scripts/target-uat-smoke.sh
+ONEDATA_UAT_BASE_URL=http://localhost:3100 \
+  ONEDATA_UAT_WEB_URL=http://localhost:3101 \
+  ONEDATA_UAT_EVIDENCE_DIR=/private/var/onedata/uat-evidence \
+  npm run target:uat:evidence
 ```
 
-`target:schema:check` ต้องรันกับฐานที่มี migration history ใน staging/production; local `db push` ใช้ `ONEDATA_SCHEMA_CHECK_ALLOW_UNAPPLIED=true` ได้เฉพาะ disposable database. `target:backup` สร้าง SQL backup พร้อม sidecar SHA-256 โดยไม่ overwrite ไฟล์เดิม และ `target:restore:verify` restore ได้เฉพาะฐานใหม่ที่ตั้งชื่อ `onedata_restore_<name>` พร้อม confirmation ที่ชัดเจน. Metrics แบบ aggregate ที่ไม่เก็บ path/IP/identity/payload อยู่ที่ `/api/health/metrics` และควรเปิดให้เฉพาะเครือข่าย monitoring.
+`target:schema:check` ต้องรันกับฐานที่มี migration history ใน staging/production; local `db push` ใช้ `ONEDATA_SCHEMA_CHECK_ALLOW_UNAPPLIED=true` ได้เฉพาะ disposable database. `target:backup` สร้าง SQL backup พร้อม sidecar SHA-256 โดยไม่ overwrite ไฟล์เดิม และ `target:restore:verify` restore ได้เฉพาะฐานใหม่ที่ตั้งชื่อ `onedata_restore_<name>` พร้อม confirmation ที่ชัดเจน. Metrics แบบ aggregate ที่ไม่เก็บ path/IP/identity/payload อยู่ที่ `/api/health/metrics` และควรเปิดให้เฉพาะเครือข่าย monitoring. `target:uat:evidence` ต้องระบุ `ONEDATA_UAT_EVIDENCE_DIR` เป็น absolute non-root directory และสร้าง JSON/Markdown ที่เก็บเฉพาะผลตรวจรวม; ค่า auth probe เริ่มต้นคือ 401. หาก local development เปิด dev auth จน `/api/v1/me` ตอบ 200 ให้ตั้ง `ONEDATA_UAT_EXPECT_ME_STATUS=200` เฉพาะการตรวจ local และห้ามตีความเป็น production security pass.
 
 ## ขอบเขตที่ยังต้องทำต่อ
 
@@ -160,4 +164,5 @@ ONEDATA_UAT_BASE_URL=http://localhost:3100 \
 - ทดสอบข้อมูลจริง 38 รพ.สต. และแก้ mapping บัญชี Portal ↔ บุคลากรให้ครบ
 - ตัดสินใจ/รับรองกฎวันลาและแบบ Word จริงก่อนสร้าง document module
 - เปิด scheduled monthly snapshot หลัง schedule owner, reconciliation/alerting และ UAT approval ผ่าน (worker/schedule/reconciliation foundation มีแล้ว แต่ปิด scheduled delivery เป็นค่าเริ่มต้น)
+- ทำ UAT evidence ตาม [Release Readiness](docs/RELEASE_READINESS.md) และ staging/pilot จริง; local evidence ที่ผ่านเป็นเพียง G0 checkpoint
 - เพิ่ม module อื่นภายหลัง เช่น จองรถ โดยรักษา module boundary และ data ownership เดิม

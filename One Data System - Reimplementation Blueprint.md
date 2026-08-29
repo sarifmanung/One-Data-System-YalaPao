@@ -2,7 +2,7 @@
 
 เอกสารวิเคราะห์ระบบเพื่อการสร้างใหม่แบบ Clean-Room
 
-- เวอร์ชันเอกสาร: 1.19 — UAT, Pilot & Cutover Operating Plan
+- เวอร์ชันเอกสาร: 1.27 — UAT Evidence & Release Readiness Checkpoint
 - แก้ไขล่าสุด: 29 สิงหาคม 2569 (2026)
 - วันที่สำรวจ: 10–11 สิงหาคม และ 29 สิงหาคม 2569 (2026)
 - ขอบเขตที่สำรวจ: หน่วยงาน รพ.สต. 1 แห่ง และสังกัดระดับองค์การบริหารส่วนจังหวัดที่เชื่อมกัน
@@ -41,6 +41,7 @@
 | 1.24    | 29 ส.ค. 2569 | เพิ่ม snapshot reconciliation summary/UI, complete employee-row snapshot, affiliation-scoped schedule approval gate และขยับ shared contract เป็น v1.4 |
 | 1.25    | 29 ส.ค. 2569 | เพิ่ม durable Portal launch-token replay, database-backed session revoke/rotation, auth cleanup worker, explicit trusted-proxy policy และ audit สำหรับ login/logout/rotation |
 | 1.26    | 29 ส.ค. 2569 | เพิ่ม schema-drift/migration check, backup + SHA-256 sidecar, restore-to-new-database verification และ aggregate operational metrics ที่ไม่เก็บ PII |
+| 1.27    | 29 ส.ค. 2569 | เพิ่ม aggregate-only UAT evidence script, local dev-auth override ที่ต้องระบุชัดเจน, release-readiness gate G0–G5 checkpoint และนโยบายเก็บหลักฐานที่ไม่บันทึก payload/cookie/token/PII |
 
 ## วิธีอ่านระดับความมั่นใจ
 
@@ -60,7 +61,7 @@
 
 > เอกสารนี้สกัด “ความต้องการทางธุรกิจ” จากระบบอ้างอิง ไม่ใช่คำสั่งให้คัดลอกหน้าจอ โค้ด เทคโนโลยี หรือข้อจำกัดของระบบเดิมแบบ 1:1
 
-> **Effective implementation baseline:** ส่วน `Implementation Addendum v1.26` ท้ายเอกสารเป็น checkpoint/decision ล่าสุดของเจ้าของโครงการ และใช้ร่วมกับ auth/session ของ `Implementation Addendum v1.25`, snapshot reconciliation/schedule ของ `Implementation Addendum v1.24`, versioned Leave Rulebook ของ `Implementation Addendum v1.23`, permission/delegation ของ `Implementation Addendum v1.22`, source-user reconciliation ของ `Implementation Addendum v1.21`, real-data shadow sync ของ `Implementation Addendum v1.20`, UAT/pilot/cutover ของ `Implementation Addendum v1.19`, migration/deployment ของ `Implementation Addendum v1.18`, security ของ `Implementation Addendum v1.17`, worker ของ `Implementation Addendum v1.16`, integration ของ `Implementation Addendum v1.15`, UI ของ `Implementation Addendum v1.14`, authorization ของ `Implementation Addendum v1.12`, provisional calculation ของ `Implementation Addendum v1.13` และ workflow ใบลาของ `Implementation Addendum v1.8`. addenda ก่อนหน้าเก็บไว้เพื่อ traceability โดย Laravel/Vue หมายถึง current implementation baseline ส่วน NestJS/NextJS หมายถึง target architecture.
+> **Effective implementation baseline:** ส่วน `Implementation Addendum v1.27` ท้ายเอกสารเป็น checkpoint/decision ล่าสุดของเจ้าของโครงการ และใช้ร่วมกับ release gate ใน [Release Readiness](docs/RELEASE_READINESS.md), UAT/pilot/cutover ของ `Implementation Addendum v1.19`, auth/session ของ `Implementation Addendum v1.25`, snapshot reconciliation/schedule ของ `Implementation Addendum v1.24`, versioned Leave Rulebook ของ `Implementation Addendum v1.23`, permission/delegation ของ `Implementation Addendum v1.22`, source-user reconciliation ของ `Implementation Addendum v1.21`, real-data shadow sync ของ `Implementation Addendum v1.20`, migration/deployment ของ `Implementation Addendum v1.18`, security ของ `Implementation Addendum v1.17`, worker ของ `Implementation Addendum v1.16`, integration ของ `Implementation Addendum v1.15`, UI ของ `Implementation Addendum v1.14`, authorization ของ `Implementation Addendum v1.12`, provisional calculation ของ `Implementation Addendum v1.13` และ workflow ใบลาของ `Implementation Addendum v1.8`. addenda ก่อนหน้าเก็บไว้เพื่อ traceability โดย Laravel/Vue หมายถึง current implementation baseline ส่วน NestJS/NextJS หมายถึง target architecture.
 
 > **Implementation checkpoint 29 สิงหาคม 2569:** target workspace เริ่มทำงานแบบแยกจาก Laravel/Vue แล้วที่ `apps/api`, `apps/web` และ `packages/contracts`. API foundation มี health/readiness, request-id, API envelope, problem-details, deny-by-default development auth boundary, tenant-context helper, HS256 Portal launch-token verifier/exchange, hashed local session/logout, Portal role/position → One Data capability mapping, server-side permission guard และ Special master-data projection boundary; web foundation มี Next.js dashboard shell, `/auth/portal/launch` bridge, runtime current-user read และ Paper-first leave page/server actions สำหรับสร้าง ส่ง ยกเลิก บันทึกผลกระดาษ และ void ตาม capability. Docker Compose target ใช้พอร์ต `3100/3101` และมี MySQL development แยกบน `13307` พร้อม Prisma schema/seed สังเคราะห์. People/Leave vertical slice มี read/create/state-transition API, capability checks และ audit/outbox ในฐานข้อมูลทดสอบแล้ว; leave draft คำนวณจำนวนวันฝั่ง server ด้วย provisional working/calendar-day rule, ตัดวันหยุดที่มีข้อมูล, เก็บค่าทศนิยมแบบ fixed-decimal และป้องกัน active-request overlap. กติกานี้เป็น development foundation เท่านั้น ยังต้องผูกกับ HR Rulebook/สิทธิ์โควตาที่รับรองก่อน production. Browser smoke ยืนยัน flow สร้าง → ส่ง → บันทึก `PAPER_APPROVED` โดยผู้ตรวจแยกบัญชี → `VOIDED` และคืนข้อมูลทดลองเป็นสถานะที่ไม่มีผลแล้ว. Master-data sync มี validated source-ID upsert, effective membership, soft-inactivate และ sync report; local real-data shadow run กับ Special สำเร็จแล้ว แต่ยังไม่มี user-to-employee mapping ที่ยืนยันจาก source. Special leave snapshot adapter มี prepare/deliver แบบ immutable batch, source hash/idempotency, service-token client, response guard, complete employee rows, reconciliation summary และ retry metadata แล้ว; worker foundation มี retry due delivery, optional monthly orchestration, MySQL named lock และ approved schedule gate โดยยังปิด scheduled execution เป็นค่าเริ่มต้น. Production security foundation มี fail-fast config, idle session timeout, secure-cookie check, CSRF origin policy, security headers, explicit trusted-proxy policy, database-backed launch-token replay/session revocation, session rotation, auth audit/cleanup และ per-process rate limit แล้ว. Migration/operations foundation เพิ่ม schema-drift check, backup + SHA-256 sidecar, restore-to-new-database verification และ aggregate response metrics ที่ไม่เก็บ path/IP/identity/payload; ยังต้องต่อ monitoring/alerting กลาง. มี Prisma initial/forward migrations ที่ deploy ตรวจบน MySQL ชั่วคราว, production Compose template และ deployment runbook สำหรับ controlled migration, backup/restore, baseline ฐานข้อมูลเดิม และ rollback แล้ว แต่ยังต้องทำ staging/restore rehearsal, edge rate limit, Portal role/membership revocation propagation, schedule owner/permission sign-off, locked-period adjustment, production alerting, DOCX และ production real-data acceptance ก่อน production sign-off.
 
@@ -3455,3 +3456,37 @@ source code ของ `Special-Allowances` ที่ตรวจในรอบ�
 - target build/typecheck/test ผ่าน, production Compose parse ผ่าน และ local Docker API/Web health ผ่าน.
 - เครื่องมือ backup/restore ไม่ลบหรือ overwrite ข้อมูล production โดยอัตโนมัติ; restore tool บังคับชื่อฐานใหม่และ confirmation.
 - สถานะยังเป็น migration/operations foundation ไม่ใช่ production approval.
+
+---
+
+# Implementation Addendum v1.27 — UAT evidence & release readiness (29 สิงหาคม 2569)
+
+ภาคผนวกนี้บันทึกงานปิดรอบ foundation สำหรับการตรวจ G0 และเตรียม G1 โดยแยก “หลักฐานว่า target local ทำงาน” ออกจาก “การอนุมัติใช้ข้อมูลจริง/production”.
+
+## 1. สิ่งที่ลงมือทำแล้ว
+
+- เพิ่ม `scripts/target-uat-evidence.sh` และคำสั่ง `npm run target:uat:evidence` สำหรับ probe liveness, readiness, contract, aggregate metrics, auth boundary, security headers, web health และเรียก UAT smoke ชุดเดียวกัน.
+- Evidence script บังคับ `ONEDATA_UAT_EVIDENCE_DIR` เป็น absolute non-root directory, ไม่ overwrite artifact เดิม และสร้าง JSON/Markdown ที่มีเฉพาะ HTTP status, contract/metrics shape, expected-vs-actual status และ exit code.
+- ไม่เก็บ response payload, cookie, token, identity, IP หรือข้อมูลบุคคลใน artifact. Response ที่ใช้ตรวจถูกเก็บไว้เฉพาะ temporary directory ระหว่าง process และถูกล้างเมื่อจบ.
+- `target-uat-smoke.sh` รองรับ `ONEDATA_UAT_EXPECT_ME_STATUS`; ค่าเริ่มต้นยังเป็น `401` เพื่อยืนยัน deny-by-default. Local development ที่เปิด dev auth สามารถตั้ง `200` ได้เฉพาะเมื่อระบุเป็น override ในหลักฐาน.
+- เพิ่ม [Release Readiness](docs/RELEASE_READINESS.md) เป็น checkpoint เดียวสำหรับสถานะ G0–G5, production blockers และลำดับงานถัดไป.
+
+## 2. ผลการตรวจสอบ checkpoint นี้
+
+- shell syntax และ `git diff --check` ผ่าน.
+- local Docker API/Web evidence ผ่าน: liveness/readiness/contract/metrics/auth probe/web dashboard/security headers และ smoke ทุกจุดผ่าน โดยใช้ dev-auth override `expected HTTP 200` ตามสภาพ local.
+- artifact ที่สร้างทดสอบตรวจได้เฉพาะ aggregate/status และ policy flags ว่าไม่เก็บ payload/cookie/token/PII; ไม่ commit artifact ที่อาจผูกกับ environment ลง repository.
+- สถานะรวมคือ **พร้อม G0 และเตรียม G1**; ยังไม่ใช่ production approval, real-data pilot หรืออนุมัติเปิด monthly delivery.
+
+## 3. สิ่งที่ยังไม่เสร็จและห้ามตีความว่า production-ready
+
+- ต้องสร้าง staging และทดสอบด้วย auth deny-by-default (`/api/v1/me` ต้องได้ `401` เมื่อไม่มี session), SSO test double, proxy/CSRF/cookie, shared edge rate limit และ alerting จริง.
+- ต้องทำ restore/migration rehearsal บน production-like infrastructure, baseline ฐานข้อมูลเดิม, secret rotation และ rollback rehearsal.
+- ต้องจับคู่ Portal user → employee/workspace และทำ People/Leave/Special reconciliation กับข้อมูลจริงโดยมี data owner/HR sign-off.
+- ต้องรับรอง HR Rulebook/แบบฟอร์มและทดสอบ locked-period/reconciliation/duplicate/negative paths ของ Special ก่อนเปิด pilot.
+
+## 4. Acceptance ของ checkpoint นี้
+
+- มีเครื่องมือสร้างหลักฐาน UAT ที่ตรวจซ้ำได้และลดความเสี่ยงการนำข้อมูลลับ/PII ไปอยู่ใน artifact.
+- local G0 evidence และ regression baseline ผ่านตาม [Release Readiness](docs/RELEASE_READINESS.md).
+- G1–G5 ยังคง `BLOCKED` จนกว่าจะมีหลักฐานและผู้อนุมัติตาม [UAT/Pilot/Cutover Plan](docs/UAT_PILOT_CUTOVER_PLAN.md).

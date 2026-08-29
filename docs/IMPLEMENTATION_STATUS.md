@@ -21,10 +21,10 @@
 | Special leave snapshot adapter | เสร็จระดับ local integration foundation | prepare complete snapshot จาก `PAPER_APPROVED` พร้อม employee rows ครบ scope, source hash/idempotency, immutable batch, service-token client, delivery history, reconciliation summary, retry metadata และ period/version acknowledgement guard; ยังไม่เปิด real-data delivery |
 | Leave snapshot worker | เสร็จระดับ local integration foundation | API image มี `worker`/`worker:once`, MySQL named lock, retry due deliveries, approved schedule gate, optional previous-month cutoff orchestration และ affiliation-scoped system identity; ปิดด้วย `ONEDATA_WORKER_ENABLED=false` เป็นค่าเริ่มต้น |
 | Prisma migration/deployment foundation | เสร็จระดับ local integration foundation | initial/forward migrations, `migrate deploy`, schema-drift check, production Compose template, backup/checksum และ restore-to-new-database verification scripts กับ [deployment runbook](DEPLOYMENT_RUNBOOK.md); ตรวจ tooling กับ MySQL ชั่วคราวแล้ว แต่ยังไม่ baseline ฐานข้อมูลเดิมหรือ production-like restore rehearsal |
-| UAT/pilot operating foundation | เสร็จระดับ planning + local smoke/shadow | [UAT/Pilot/Cutover Plan](UAT_PILOT_CUTOVER_PLAN.md), test matrix, G0–G5 gate, reconciliation/rollback checklist, snapshot/schedule monitor และ `scripts/target-uat-smoke.sh`; local real-data shadow run ผ่าน แต่ยังไม่มี staging/real-data pilot |
+| UAT/pilot operating foundation | เสร็จระดับ planning + local evidence/shadow | [UAT/Pilot/Cutover Plan](UAT_PILOT_CUTOVER_PLAN.md), [Release Readiness](RELEASE_READINESS.md), test matrix, G0–G5 gate, reconciliation/rollback checklist, snapshot/schedule monitor, `scripts/target-uat-smoke.sh` และ aggregate-only `scripts/target-uat-evidence.sh`; local evidence ผ่านโดยใช้ dev-auth override แต่ยังไม่มี staging/real-data pilot |
 | Prisma/People/Leave vertical slice | เสร็จระดับ local development | schema + synthetic seed, People read, Leave `DRAFT → SUBMITTED → PAPER_APPROVED/PAPER_REJECTED`, `CANCELLED/VOIDED`, provisional server-side day calculation, fixed-decimal requested days, holiday exclusion, active-request overlap guard, Paper-first UI/server actions และ durable audit/outbox |
 | Leave Rulebook foundation | เสร็จระดับ local development | versioned/effective-dated `LeavePolicyProfile`/`LeavePolicyRule`, draft/publish API, legal-basis/approval audit, active leave-type validation และ production guard ที่ไม่อนุญาต provisional calculation |
-| Regression checks | ผ่าน | target typecheck, target build, API 19 suites/67 tests, shell syntax/tooling checks, legacy Vite build, Docker health smoke และ browser workflow smoke ด้วยข้อมูลสังเคราะห์ |
+| Regression checks | ผ่าน | target typecheck, target build, API 19 suites/67 tests, shell syntax/tooling checks, UAT evidence script, legacy Vite build, Docker health smoke และ browser workflow smoke ด้วยข้อมูลสังเคราะห์ |
 
 ## ยังไม่เสร็จและห้ามตีความว่า production-ready
 
@@ -34,7 +34,7 @@
 - People reconciliation จาก Special-Allowances, การ map Portal user กับ employee และการยืนยันผลกับ data owner (local shadow import และ source-user projection/report ผ่านแล้ว; ยังต้องทำ mapping ที่ตรวจรับและ sign-off)
 - HR-approved leave Rulebook/official legal basis, quota/balance engine, half-day policy, holiday ownership, complete snapshot และ production acceptance rules (versioned policy draft/publish foundation และ provisional day calculation/state machine/revision/audit/outbox foundation มีแล้ว; ห้ามถือ provisional rule เป็นกฎสิทธิ์จริง)
 - locked-period adjustment/correction contract, production alerting และ production schedule approval/owner sign-off (worker retry/monthly, approved schedule gate และ reconciliation UI foundation มีแล้ว แต่ยังปิด scheduled delivery)
-- document/DOCX, report access และ production operational observability (leave UI เป็น form workflow แล้ว แต่ยังไม่มีการสร้าง Word/DOCX; aggregate metrics/tooling มีแล้ว แต่ยังต้องเชื่อม dashboard/alerting และซ้อม backup/restore ใน staging/production-like environment)
+- document/DOCX, report access และ production operational observability (leave UI เป็น form workflow แล้ว แต่ยังไม่มีการสร้าง Word/DOCX; aggregate metrics และ aggregate-only UAT evidence tooling มีแล้ว แต่ยังต้องเชื่อม dashboard/alerting และซ้อม backup/restore ใน staging/production-like environment)
 - UAT กับข้อมูล/บัญชีจริงและ pilot 3 รพ.สต.
 - staging restore rehearsal, production-like real-data shadow run, owner sign-off และ pilot ตาม [UAT/Pilot/Cutover Plan](UAT_PILOT_CUTOVER_PLAN.md)
 
@@ -50,9 +50,14 @@ docker compose -f docker-compose.target.yml up --build -d
 DATABASE_URL="$ONEDATA_TARGET_DATABASE_URL" npm run target:db:migrate
 # Read-only target smoke (set ONEDATA_UAT_WEB_URL for the web probe)
 ONEDATA_UAT_BASE_URL=http://localhost:3100 ONEDATA_UAT_WEB_URL=http://localhost:3101 ./scripts/target-uat-smoke.sh
+# Aggregate-only UAT evidence; local dev auth may require ONEDATA_UAT_EXPECT_ME_STATUS=200
+ONEDATA_UAT_BASE_URL=http://localhost:3100 ONEDATA_UAT_WEB_URL=http://localhost:3101 \
+  ONEDATA_UAT_EVIDENCE_DIR=/private/var/onedata/uat-evidence npm run target:uat:evidence
 ```
 
 ชุด automated tests ใช้ fixture และ unit/contract endpoints โดยไม่เปิดข้อมูลส่วนบุคคลใน log. เพิ่ม local real-data shadow run แบบอ่านจาก Special ผ่าน service token แล้วเขียนเฉพาะ target local database: ตรวจพบ 38 หน่วยงาน, 267 บุคลากร และ 43 users โดยไม่แก้ไขฐานข้อมูล Laravel, Portal หรือ Special-Allowances และไม่ทำ leave snapshot delivery. Token ถูกส่งผ่าน runtime environment เท่านั้น ไม่อยู่ใน repository หรือ JSON response.
+
+`target:uat:evidence` เก็บเพียง HTTP status, contract/metrics shape และผล smoke ลง JSON/Markdown; ไม่เก็บ response payload, cookie, token, identity, IP หรือข้อมูลบุคคล. หลักฐาน local ที่ตั้ง `ONEDATA_UAT_EXPECT_ME_STATUS=200` เป็นข้อยกเว้นของ development auth และไม่ใช้แทนการทดสอบ deny-by-default ใน staging/production.
 
 ## Security note
 

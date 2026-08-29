@@ -363,6 +363,7 @@ Shared private Docker network
 - Audit completeness tests
 - Backup restore drill
 - Migration dry run และ reconciliation report
+- Aggregate-only UAT evidence artifact ที่ผูกกับ commit/build/environment และไม่เก็บ payload, cookie, token หรือ PII
 - Security review สำหรับ PII, session, file access, logs และ service credentials
 
 ## 17. Decisions Required Before Production Integration
