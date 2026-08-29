@@ -1,7 +1,11 @@
 import { cookies } from 'next/headers';
 import { getApiHealth, getCurrentUser } from '../../lib/api';
 
-const navItems = ['ภาพรวม', 'ระบบการลา', 'บุคลากร'];
+const navItems = [
+  { label: 'ภาพรวม', href: '/tenant-dashboard' },
+  { label: 'ระบบการลา', href: '/leave' },
+  { label: 'บุคลากร', href: '#people' },
+];
 
 export const dynamic = 'force-dynamic';
 
@@ -19,8 +23,8 @@ export default async function TenantDashboardPage() {
         <div className="brand">One Data</div>
         <nav className="main-nav" aria-label="เมนูหลัก">
           {navItems.map((item, index) => (
-            <a className={index === 0 ? 'nav-link active' : 'nav-link'} href="#" key={item}>
-              {item}
+            <a className={index === 0 ? 'nav-link active' : 'nav-link'} href={item.href} key={item.label}>
+              {item.label}
             </a>
           ))}
         </nav>
@@ -66,8 +70,8 @@ export default async function TenantDashboardPage() {
         </section>
 
         <div className="action-row">
-          <button className="primary-button" type="button">บันทึกใบลา</button>
-          <button className="outline-button" type="button">ดูรายชื่อบุคลากร</button>
+          <a className="primary-button" href="/leave">บันทึกใบลา</a>
+          <a className="outline-button" href="#people">ดูรายชื่อบุคลากร</a>
         </div>
 
         <section className="recent-panel" aria-labelledby="recent-title">
@@ -76,7 +80,7 @@ export default async function TenantDashboardPage() {
               <h2 id="recent-title">รายการใบลาล่าสุด</h2>
               <p>แสดงเฉพาะรายการที่มีสถานะ PAPER_APPROVED เพื่อส่งต่อให้ระบบ ฉ.10/11</p>
             </div>
-            <a className="panel-link" href="#">ดูทั้งหมด <span aria-hidden="true">→</span></a>
+            <a className="panel-link" href="/leave">ดูทั้งหมด <span aria-hidden="true">→</span></a>
           </div>
           <div className="empty-state">
             <div className="empty-icon" aria-hidden="true">✓</div>

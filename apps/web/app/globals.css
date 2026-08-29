@@ -213,10 +213,13 @@ h1 {
 
 .primary-button,
 .outline-button {
+  align-items: center;
   border-radius: 12px;
   cursor: pointer;
+  display: inline-flex;
   font-size: 16px;
   font-weight: 700;
+  justify-content: center;
   padding: 13px 22px;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
@@ -394,5 +397,362 @@ h2 {
   .status-bar {
     align-items: flex-start;
     flex-wrap: wrap;
+  }
+}
+
+.topbar-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.leave-content {
+  padding-bottom: 44px;
+}
+
+.leave-heading {
+  margin-bottom: 24px;
+}
+
+.notice {
+  border: 1px solid;
+  border-radius: 12px;
+  font-size: 15px;
+  margin-bottom: 20px;
+  padding: 13px 16px;
+}
+
+.notice-success {
+  background: #effcf9;
+  border-color: #8fe8d9;
+  color: #0b625e;
+}
+
+.notice-error {
+  background: #fff5f4;
+  border-color: #f0b6b0;
+  color: #a23b32;
+}
+
+.leave-layout {
+  align-items: start;
+  display: grid;
+  gap: 22px;
+  grid-template-columns: minmax(300px, 0.78fr) minmax(0, 1.35fr);
+}
+
+.leave-panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+  padding: 26px;
+}
+
+.leave-form-panel {
+  position: sticky;
+  top: 20px;
+}
+
+.leave-form,
+.leave-inline-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.leave-form label,
+.leave-inline-form label {
+  color: #35425a;
+  display: flex;
+  flex-direction: column;
+  font-size: 14px;
+  font-weight: 700;
+  gap: 7px;
+}
+
+.leave-form input,
+.leave-form select,
+.leave-form textarea,
+.leave-inline-form input,
+.leave-inline-form select,
+.leave-inline-form textarea {
+  background: #fff;
+  border: 1px solid #cbd8e8;
+  border-radius: 9px;
+  color: var(--ink);
+  font: inherit;
+  font-size: 15px;
+  padding: 10px 11px;
+  width: 100%;
+}
+
+.leave-form textarea,
+.leave-inline-form textarea {
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.leave-form input:focus,
+.leave-form select:focus,
+.leave-form textarea:focus,
+.leave-inline-form input:focus,
+.leave-inline-form select:focus,
+.leave-inline-form textarea:focus {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px #d9f7f2;
+  outline: none;
+}
+
+.form-grid-two {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.form-footnote {
+  background: #f6f9fc;
+  border-radius: 9px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+  padding: 11px 12px;
+}
+
+.primary-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  transform: none;
+}
+
+.permission-empty,
+.leave-empty-state {
+  align-items: center;
+  color: var(--muted);
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  justify-content: center;
+  min-height: 230px;
+  text-align: center;
+}
+
+.permission-empty {
+  align-items: flex-start;
+  justify-content: flex-start;
+  min-height: 0;
+  padding-top: 28px;
+  text-align: left;
+}
+
+.permission-empty strong,
+.leave-empty-state strong {
+  color: #62728c;
+  font-size: 16px;
+}
+
+.permission-empty span,
+.leave-empty-state span {
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.request-count {
+  background: #f1f6fb;
+  border-radius: 999px;
+  color: #63738d;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 6px 10px;
+  white-space: nowrap;
+}
+
+.leave-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 22px;
+}
+
+.leave-card {
+  border: 1px solid #e0e8f1;
+  border-radius: 14px;
+  padding: 18px;
+}
+
+.leave-card-header {
+  align-items: flex-start;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+}
+
+.leave-card h3 {
+  font-size: 19px;
+  margin: 10px 0 4px;
+}
+
+.leave-card-meta,
+.leave-reason {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.5;
+  margin-bottom: 0;
+}
+
+.leave-days {
+  align-items: flex-end;
+  color: var(--brand-dark);
+  display: flex;
+  flex-direction: column;
+  min-width: 58px;
+}
+
+.leave-days strong {
+  font-size: 27px;
+  line-height: 1;
+}
+
+.leave-days span {
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.leave-status {
+  border-radius: 999px;
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 5px 9px;
+}
+
+.status-draft {
+  background: #f2f5f8;
+  color: #64738b;
+}
+
+.status-submitted {
+  background: #fff7e8;
+  color: #9a671c;
+}
+
+.status-paper_approved {
+  background: #e9f8f5;
+  color: #0b7168;
+}
+
+.status-paper_rejected,
+.status-voided {
+  background: #fff0ef;
+  color: #a4473f;
+}
+
+.status-cancelled {
+  background: #f4f0f8;
+  color: #765b88;
+}
+
+.leave-card-details {
+  border-top: 1px solid #edf1f5;
+  color: #8190a5;
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 12px;
+  gap: 8px 16px;
+  margin-top: 15px;
+  padding-top: 12px;
+}
+
+.leave-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 16px;
+}
+
+.compact-button {
+  font-size: 14px;
+  padding: 9px 14px;
+}
+
+.leave-action-details {
+  border-top: 1px solid #edf1f5;
+  margin-top: 16px;
+  padding-top: 14px;
+}
+
+.leave-action-details summary {
+  color: var(--brand);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.leave-inline-form {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 14px;
+}
+
+.leave-inline-form .full-width-field,
+.leave-inline-form .compact-button {
+  grid-column: 1 / -1;
+}
+
+.danger-details summary {
+  color: #a4473f;
+}
+
+.danger-button {
+  background: #a4473f;
+  border: 1px solid #a4473f;
+  border-radius: 12px;
+  color: #fff;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 9px 14px;
+}
+
+.danger-button:hover {
+  background: #873832;
+}
+
+@media (max-width: 960px) {
+  .leave-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .leave-form-panel {
+    position: static;
+  }
+}
+
+@media (max-width: 560px) {
+  .leave-panel {
+    padding: 20px;
+  }
+
+  .form-grid-two,
+  .leave-inline-form {
+    grid-template-columns: 1fr;
+  }
+
+  .leave-inline-form .full-width-field,
+  .leave-inline-form .compact-button {
+    grid-column: auto;
+  }
+
+  .leave-card-header {
+    flex-direction: column;
+  }
+
+  .leave-days {
+    align-items: flex-start;
+    flex-direction: row;
+    gap: 6px;
   }
 }

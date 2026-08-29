@@ -11,6 +11,7 @@
 - Organization/tenant scope, บุคลากร และ external ID mapping
 - ใบลาใน Laravel/Vue spike ปัจจุบันยังใช้ `DRAFT → CONFIRMED → CANCELLED/VOID` (legacy เท่านั้น; ไม่ใช่ target state machine)
 - Target leave workflow สำหรับ NestJS/Next.js คือ Paper-first `DRAFT → SUBMITTED → PAPER_APPROVED/PAPER_REJECTED` พร้อม `CANCELLED/VOIDED`, revision, audit และ outbox; draft คำนวณวันแบบ provisional ฝั่ง server ด้วย fixed-decimal/holiday/overlap guard และยังรอ HR Rulebook ก่อนใช้งานจริง
+- Target web มีหน้า `/leave` และ server actions สำหรับสร้าง/ส่ง/ยกเลิกใบลา บันทึกผลจากเอกสารกระดาษ และ void ตาม capability; ยังไม่สร้าง Word/DOCX จนกว่าจะมีแบบฟอร์มมาตรฐาน
 - monthly leave snapshot แบบเต็มงวด มี version, SHA-256 source hash, idempotency และ delivery history
 - Special-Allowances internal API สำหรับอ่าน master data และรับ leave snapshot
 - Docker Compose สำหรับการพัฒนาแบบมี MySQL แยกฐานข้อมูล

@@ -14,7 +14,7 @@
 การลงมือรอบแรกสร้าง target workspace แบบ coexistence แล้ว โดยไม่ย้ายหรือเขียนทับ Laravel/Vue เดิม:
 
 - `apps/api`: NestJS foundation, versioned API prefix, health/readiness, request-id, problem-details, Portal HS256 launch-token exchange, hashed local session/session guard และ Special master-data projection service
-- `apps/web`: Next.js App Router dashboard shell, Portal launch bridge ที่ `/auth/portal/launch`, และการอ่าน current user จาก API ตอน runtime
+- `apps/web`: Next.js App Router dashboard shell, Paper-first leave page/server actions, Portal launch bridge ที่ `/auth/portal/launch`, และการอ่าน current user จาก API ตอน runtime
 - `packages/contracts`: shared TypeScript contract v1.2, capability permissions และ leave snapshot fixture ที่ห้ามส่ง `CONFIRMED`
 - `docker-compose.target.yml`: API/web แยกจาก compose เดิมบนพอร์ต `3100/3101`
 - automated checks: contracts/API/web typecheck, API unit/e2e smoke tests, target production build และ legacy Vite build

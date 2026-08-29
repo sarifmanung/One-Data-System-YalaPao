@@ -2,7 +2,7 @@
 
 เอกสารวิเคราะห์ระบบเพื่อการสร้างใหม่แบบ Clean-Room
 
-- เวอร์ชันเอกสาร: 1.13 — Reference Audit, NestJS/NextJS Target Baseline, Authorization & Provisional Leave Rules Checkpoint
+- เวอร์ชันเอกสาร: 1.14 — Reference Audit, NestJS/NextJS Target Baseline & Paper-first Leave UI Checkpoint
 - แก้ไขล่าสุด: 29 สิงหาคม 2569 (2026)
 - วันที่สำรวจ: 10–11 สิงหาคม และ 29 สิงหาคม 2569 (2026)
 - ขอบเขตที่สำรวจ: หน่วยงาน รพ.สต. 1 แห่ง และสังกัดระดับองค์การบริหารส่วนจังหวัดที่เชื่อมกัน
@@ -28,6 +28,7 @@
 | 1.11    | 29 ส.ค. 2569 | เพิ่ม Special-Allowances master-data projection boundary: validated client, source-ID upsert, effective membership, soft-inactivate, durable sync run และ admin sync endpoint โดยยังไม่ตั้งค่า source/token จริง |
 | 1.12    | 29 ส.ค. 2569 | เพิ่ม One Data capability permission allowlist จาก Portal role/position, session permission snapshot, server-side route guard สำหรับ People/Leave และบังคับ SoD สำหรับผู้บันทึกผลใบลากระดาษ; เพิ่ม contract version 1.2 |
 | 1.13    | 29 ส.ค. 2569 | เพิ่ม provisional server-side leave calculation: working/calendar-day mode, holiday exclusion, fixed two-decimal requested days, date-range validation, active-request overlap guard และ calculation basis; ย้ำว่ายังไม่ใช่ HR Rulebook หรือ quota engine ที่รับรองแล้ว |
+| 1.14    | 29 ส.ค. 2569 | เพิ่ม Next.js Paper-first leave page และ server actions สำหรับสร้าง/ส่ง/ยกเลิกใบลา บันทึกผลเอกสารกระดาษ และ void; เพิ่ม automated workflow tests และ browser smoke test บน Docker target โดย cleanup ข้อมูลสังเคราะห์แล้ว |
 
 ## วิธีอ่านระดับความมั่นใจ
 
@@ -47,9 +48,9 @@
 
 > เอกสารนี้สกัด “ความต้องการทางธุรกิจ” จากระบบอ้างอิง ไม่ใช่คำสั่งให้คัดลอกหน้าจอ โค้ด เทคโนโลยี หรือข้อจำกัดของระบบเดิมแบบ 1:1
 
-> **Effective implementation baseline:** ส่วน `Implementation Addendum v1.13` ท้ายเอกสารเป็น checkpoint/decision ล่าสุดของเจ้าของโครงการ; supersede เฉพาะรายละเอียด leave calculation ที่เกี่ยวข้องใน revision ก่อนหน้า และใช้ร่วมกับ authorization ของ `Implementation Addendum v1.12` และ workflow ใบลาของ `Implementation Addendum v1.8`. `Implementation Addendum v1.12`, `v1.11`, `v1.10`, `v1.8`, `v1.7`, `v1.6` และ revision ก่อนหน้าเก็บไว้เพื่อ traceability โดย Laravel/Vue หมายถึง current implementation baseline ส่วน NestJS/NextJS หมายถึง target architecture.
+> **Effective implementation baseline:** ส่วน `Implementation Addendum v1.14` ท้ายเอกสารเป็น checkpoint/decision ล่าสุดของเจ้าของโครงการ; supersede เฉพาะรายละเอียด implementation/UI ของ leave ที่เกี่ยวข้องใน revision ก่อนหน้า และใช้ร่วมกับ authorization ของ `Implementation Addendum v1.12`, provisional calculation ของ `Implementation Addendum v1.13` และ workflow ใบลาของ `Implementation Addendum v1.8`. `Implementation Addendum v1.13`, `v1.12`, `v1.11`, `v1.10`, `v1.8`, `v1.7`, `v1.6` และ revision ก่อนหน้าเก็บไว้เพื่อ traceability โดย Laravel/Vue หมายถึง current implementation baseline ส่วน NestJS/NextJS หมายถึง target architecture.
 
-> **Implementation checkpoint 29 สิงหาคม 2569:** target workspace เริ่มทำงานแบบแยกจาก Laravel/Vue แล้วที่ `apps/api`, `apps/web` และ `packages/contracts`. API foundation มี health/readiness, request-id, API envelope, problem-details, deny-by-default development auth boundary, tenant-context helper, HS256 Portal launch-token verifier/exchange, hashed local session/logout, Portal role/position → One Data capability mapping, server-side permission guard และ Special master-data projection boundary; web foundation มี Next.js dashboard shell, `/auth/portal/launch` bridge และอ่าน current user จาก API ตอน runtime. Docker Compose target ใช้พอร์ต `3100/3101` และมี MySQL development แยกบน `13307` พร้อม Prisma schema/seed สังเคราะห์. People/Leave vertical slice มี read/create/state-transition API, capability checks และ audit/outbox ในฐานข้อมูลทดสอบแล้ว; leave draft คำนวณจำนวนวันฝั่ง server ด้วย provisional working/calendar-day rule, ตัดวันหยุดที่มีข้อมูล, เก็บค่าทศนิยมแบบ fixed-decimal และป้องกัน active-request overlap. กติกานี้เป็น development foundation เท่านั้น ยังต้องผูกกับ HR Rulebook/สิทธิ์โควตาที่รับรองก่อน production. Master-data sync มี validated source-ID upsert, effective membership, soft-inactivate และ sync report แต่ยังไม่ตั้งค่า source/token จริง. Production migration/backup, permission scope/delegation แบบละเอียด, Special leave adapter, worker และ real-data import ยังไม่พร้อม production และเป็นงานถัดไปตาม release plan.
+> **Implementation checkpoint 29 สิงหาคม 2569:** target workspace เริ่มทำงานแบบแยกจาก Laravel/Vue แล้วที่ `apps/api`, `apps/web` และ `packages/contracts`. API foundation มี health/readiness, request-id, API envelope, problem-details, deny-by-default development auth boundary, tenant-context helper, HS256 Portal launch-token verifier/exchange, hashed local session/logout, Portal role/position → One Data capability mapping, server-side permission guard และ Special master-data projection boundary; web foundation มี Next.js dashboard shell, `/auth/portal/launch` bridge, runtime current-user read และ Paper-first leave page/server actions สำหรับสร้าง ส่ง ยกเลิก บันทึกผลกระดาษ และ void ตาม capability. Docker Compose target ใช้พอร์ต `3100/3101` และมี MySQL development แยกบน `13307` พร้อม Prisma schema/seed สังเคราะห์. People/Leave vertical slice มี read/create/state-transition API, capability checks และ audit/outbox ในฐานข้อมูลทดสอบแล้ว; leave draft คำนวณจำนวนวันฝั่ง server ด้วย provisional working/calendar-day rule, ตัดวันหยุดที่มีข้อมูล, เก็บค่าทศนิยมแบบ fixed-decimal และป้องกัน active-request overlap. กติกานี้เป็น development foundation เท่านั้น ยังต้องผูกกับ HR Rulebook/สิทธิ์โควตาที่รับรองก่อน production. Browser smoke ยืนยัน flow สร้าง → ส่ง → บันทึก `PAPER_APPROVED` โดยผู้ตรวจแยกบัญชี → `VOIDED` และคืนข้อมูลทดลองเป็นสถานะที่ไม่มีผลแล้ว. Master-data sync มี validated source-ID upsert, effective membership, soft-inactivate และ sync report แต่ยังไม่ตั้งค่า source/token จริง. Production migration/backup, permission scope/delegation แบบละเอียด, Special leave adapter, worker, DOCX และ real-data import ยังไม่พร้อม production และเป็นงานถัดไปตาม release plan.
 
 ## Target Product Baseline
 
@@ -3051,3 +3052,32 @@ PAPER_APPROVED → VOIDED
 
 - unit tests ครอบคลุม working days, calendar days, holiday exclusion, reversed range, unknown rule และ fixed calculation basis.
 - target typecheck และ API test suite ผ่านรวม 6 suites/18 tests; ต้อง rebuild Docker target และทดสอบ create/overlap/cancel กับฐานข้อมูล development ก่อนเริ่ม UI workflow.
+
+---
+
+# Implementation Addendum v1.14 — Paper-first leave UI (29 สิงหาคม 2569)
+
+ภาคผนวกนี้บันทึกการนำ Leave vertical slice ไปใช้งานผ่าน Next.js UI ใน target workspace. แนวทางยังคงเรียบง่ายตามคำตัดสินของเจ้าของโครงการ: ผู้ใช้กรอกใบลาในระบบ, ส่งรายการเพื่อดำเนินการเอกสารภายนอก, แล้วเจ้าหน้าที่บันทึกผลจากใบกระดาษในระบบ. ยังไม่สร้าง DOCX และไม่มี online approval chain.
+
+## 1. ขอบเขต UI ที่ลงมือทำแล้ว
+
+- เพิ่มหน้า `/leave` ที่อ่านประเภทการลาและรายการใบลาจาก NestJS API ตาม tenant workspace ของ session.
+- ผู้มี capability `leave.request.create` สร้างใบลาเป็น `DRAFT`; จำนวนวันและฐานการคำนวณมาจาก server ไม่รับค่าจำนวนวันจาก browser.
+- ผู้เป็นเจ้าของรายการที่มี capability `leave.request.submit` ส่ง `DRAFT` เป็น `SUBMITTED`; ผู้เป็นเจ้าของที่มี `leave.request.cancel` ยกเลิก `DRAFT/SUBMITTED` ได้ โดยประวัติยังอยู่.
+- ผู้มี capability `leave.paper-decision.record` เปิดแบบฟอร์มบันทึกผลกระดาษ พร้อมผลอนุมัติ/ไม่อนุมัติ, จำนวนวันที่อนุมัติ, เลขที่เอกสาร, วันที่เอกสาร และหมายเหตุ.
+- ผู้มี capability `leave.request.void` ทำให้ `PAPER_APPROVED` เป็น `VOIDED` พร้อมเหตุผล; API ตรวจ requester–approver separation ซ้ำ แม้ UI จะแสดง control ตาม capability แล้ว.
+- ทุก action ใน UI เรียก server action ของ Next.js ซึ่งส่ง session cookie และ tenant context ให้ API; การตัดสินสิทธิ์และ state transition ยังอยู่ที่ NestJS service/guard.
+- Dashboard เดิมเชื่อมลิงก์ไปหน้า `/leave` แล้ว ส่วน People link ยังเป็น placeholder จนกว่าจะมี People UI ที่พร้อม.
+
+## 2. สิ่งที่ยืนยันด้วยการทดสอบ
+
+- API unit tests สำหรับ requester self-recording, approved days เกิน requested days และ atomic paper approval + audit/outbox ผ่าน.
+- Browser smoke ใน Docker target ด้วยข้อมูลสังเคราะห์ยืนยัน `create DRAFT → submit SUBMITTED → record PAPER_APPROVED ด้วย recorder ที่แยกบัญชี → void VOIDED`; รายการทดสอบไม่มีสถานะที่มีผลค้างอยู่.
+- ค่าเริ่มต้นของ Docker target ยังปิด development auth และเมื่อปิดแล้ว `/api/v1/me` ตอบ `401`; dev role ถูกเปิดเฉพาะระหว่าง smoke test และคืนค่าเดิมหลังทดสอบ.
+
+## 3. ขอบเขตที่ยังไม่ควรตีความว่าเสร็จ
+
+- การสร้าง Word/DOCX, preview, เลขที่หนังสือ และการพิมพ์ยังเลื่อนไปหลังได้รับแบบฟอร์มมาตรฐานจริง.
+- ยังไม่มี quota/balance, HR Rulebook, delegated approver configuration, half-day policy และการเลือก workspace หลายแห่งผ่าน UI.
+- ยังไม่มี Special snapshot prepare/send/retry/reconciliation UI; `PAPER_APPROVED` เป็นเพียงผลภายใน One Data จนกว่าจะผ่าน integration adapter และ period protocol.
+- ก่อน production ต้องเพิ่ม CSRF/same-origin deployment policy, session hardening, rate limit, observability, production migration/backup และ UAT กับบัญชีจริงที่ได้รับอนุญาต.
