@@ -34,6 +34,7 @@
 | 1.17    | 29 ส.ค. 2569 | เพิ่ม production security guard foundation: fail-fast environment validation, idle session timeout, secure-cookie checks, CSRF origin policy, security headers และ auth/mutation rate limit; เพิ่ม security test coverage และระบุ distributed replay/session revocation กับ edge limiter เป็นงานก่อน production sign-off |
 | 1.18    | 29 ส.ค. 2569 | เพิ่ม Prisma initial migration baseline ที่ตรวจ deploy บน MySQL ชั่วคราว, คำสั่ง `migrate deploy`, production Compose template และ deployment runbook สำหรับ migration, backup/restore, baseline ฐานข้อมูลเดิม, rollback และ worker activation; ย้ำว่ายังไม่ใช่ production sign-off จนกว่าจะทำ staging/restore rehearsal และ data-owner approval |
 | 1.19    | 29 ส.ค. 2569 | เพิ่มแผน UAT/pilot/cutover แบบ coexistence ตั้งแต่ G0 ถึง rollout 38 รพ.สต., test matrix ด้าน SSO/tenant/People/Leave/Special/operations, reconciliation checklist, exit criteria และ rollback triggers; เพิ่ม read-only UAT smoke script โดยย้ำว่าสถานะปัจจุบันพร้อม G0/G1 แต่ยังไม่พร้อม production cutover |
+| 1.20    | 29 ส.ค. 2569 | ทำ local real-data shadow run กับ Special-Allowances สำเร็จ 38 หน่วยงาน/267 บุคลากร/43 users; พบว่า `areaKey` เป็นระดับพื้นที่ที่ซ้ำได้ จึงแก้ target mapping ให้ใช้ source ID เป็น tenant identity/code และเก็บ `areaKey` เป็น classification; ยืนยัน idempotent re-sync และระบุว่ายังไม่มี user-to-employee mapping จาก source |
 
 ## วิธีอ่านระดับความมั่นใจ
 
@@ -53,9 +54,9 @@
 
 > เอกสารนี้สกัด “ความต้องการทางธุรกิจ” จากระบบอ้างอิง ไม่ใช่คำสั่งให้คัดลอกหน้าจอ โค้ด เทคโนโลยี หรือข้อจำกัดของระบบเดิมแบบ 1:1
 
-> **Effective implementation baseline:** ส่วน `Implementation Addendum v1.19` ท้ายเอกสารเป็น checkpoint/decision ล่าสุดของเจ้าของโครงการ; supersede เฉพาะรายละเอียด UAT/pilot/cutover ของ revision ก่อนหน้า และใช้ร่วมกับ migration/deployment ของ `Implementation Addendum v1.18`, security ของ `Implementation Addendum v1.17`, worker ของ `Implementation Addendum v1.16`, integration ของ `Implementation Addendum v1.15`, UI ของ `Implementation Addendum v1.14`, authorization ของ `Implementation Addendum v1.12`, provisional calculation ของ `Implementation Addendum v1.13` และ workflow ใบลาของ `Implementation Addendum v1.8`. `Implementation Addendum v1.18`, `v1.17`, `v1.16`, `v1.15`, `v1.14`, `v1.13`, `v1.12`, `v1.11`, `v1.10`, `v1.8`, `v1.7`, `v1.6` และ revision ก่อนหน้าเก็บไว้เพื่อ traceability โดย Laravel/Vue หมายถึง current implementation baseline ส่วน NestJS/NextJS หมายถึง target architecture.
+> **Effective implementation baseline:** ส่วน `Implementation Addendum v1.20` ท้ายเอกสารเป็น checkpoint/decision ล่าสุดของเจ้าของโครงการ; supersede เฉพาะรายละเอียด real-data local shadow run และ master-data mapping ของ revision ก่อนหน้า และใช้ร่วมกับ UAT/pilot/cutover ของ `Implementation Addendum v1.19`, migration/deployment ของ `Implementation Addendum v1.18`, security ของ `Implementation Addendum v1.17`, worker ของ `Implementation Addendum v1.16`, integration ของ `Implementation Addendum v1.15`, UI ของ `Implementation Addendum v1.14`, authorization ของ `Implementation Addendum v1.12`, provisional calculation ของ `Implementation Addendum v1.13` และ workflow ใบลาของ `Implementation Addendum v1.8`. `Implementation Addendum v1.19`, `v1.18`, `v1.17`, `v1.16`, `v1.15`, `v1.14`, `v1.13`, `v1.12`, `v1.11`, `v1.10`, `v1.8`, `v1.7`, `v1.6` และ revision ก่อนหน้าเก็บไว้เพื่อ traceability โดย Laravel/Vue หมายถึง current implementation baseline ส่วน NestJS/NextJS หมายถึง target architecture.
 
-> **Implementation checkpoint 29 สิงหาคม 2569:** target workspace เริ่มทำงานแบบแยกจาก Laravel/Vue แล้วที่ `apps/api`, `apps/web` และ `packages/contracts`. API foundation มี health/readiness, request-id, API envelope, problem-details, deny-by-default development auth boundary, tenant-context helper, HS256 Portal launch-token verifier/exchange, hashed local session/logout, Portal role/position → One Data capability mapping, server-side permission guard และ Special master-data projection boundary; web foundation มี Next.js dashboard shell, `/auth/portal/launch` bridge, runtime current-user read และ Paper-first leave page/server actions สำหรับสร้าง ส่ง ยกเลิก บันทึกผลกระดาษ และ void ตาม capability. Docker Compose target ใช้พอร์ต `3100/3101` และมี MySQL development แยกบน `13307` พร้อม Prisma schema/seed สังเคราะห์. People/Leave vertical slice มี read/create/state-transition API, capability checks และ audit/outbox ในฐานข้อมูลทดสอบแล้ว; leave draft คำนวณจำนวนวันฝั่ง server ด้วย provisional working/calendar-day rule, ตัดวันหยุดที่มีข้อมูล, เก็บค่าทศนิยมแบบ fixed-decimal และป้องกัน active-request overlap. กติกานี้เป็น development foundation เท่านั้น ยังต้องผูกกับ HR Rulebook/สิทธิ์โควตาที่รับรองก่อน production. Browser smoke ยืนยัน flow สร้าง → ส่ง → บันทึก `PAPER_APPROVED` โดยผู้ตรวจแยกบัญชี → `VOIDED` และคืนข้อมูลทดลองเป็นสถานะที่ไม่มีผลแล้ว. Master-data sync มี validated source-ID upsert, effective membership, soft-inactivate และ sync report แต่ยังไม่ตั้งค่า source/token จริง. Special leave snapshot adapter มี prepare/deliver แบบ immutable batch, source hash/idempotency, service-token client, response guard และ retry metadata แล้ว; worker foundation มี retry due delivery, optional monthly orchestration และ MySQL named lock โดยยังปิด scheduled execution เป็นค่าเริ่มต้น. Production security guard foundation มี fail-fast config, idle session timeout, secure-cookie check, CSRF origin policy, security headers และ per-process rate limit แล้ว. มี Prisma initial migration ที่ deploy ตรวจบน MySQL ชั่วคราว, production Compose template และ deployment runbook สำหรับ controlled migration, backup/restore, baseline ฐานข้อมูลเดิม และ rollback แล้ว แต่ยังต้องทำ staging/restore rehearsal, distributed replay/session revocation, edge rate limit, permission scope/delegation แบบละเอียด, schedule approval, reconciliation, DOCX และ real-data import ก่อน production sign-off.
+> **Implementation checkpoint 29 สิงหาคม 2569:** target workspace เริ่มทำงานแบบแยกจาก Laravel/Vue แล้วที่ `apps/api`, `apps/web` และ `packages/contracts`. API foundation มี health/readiness, request-id, API envelope, problem-details, deny-by-default development auth boundary, tenant-context helper, HS256 Portal launch-token verifier/exchange, hashed local session/logout, Portal role/position → One Data capability mapping, server-side permission guard และ Special master-data projection boundary; web foundation มี Next.js dashboard shell, `/auth/portal/launch` bridge, runtime current-user read และ Paper-first leave page/server actions สำหรับสร้าง ส่ง ยกเลิก บันทึกผลกระดาษ และ void ตาม capability. Docker Compose target ใช้พอร์ต `3100/3101` และมี MySQL development แยกบน `13307` พร้อม Prisma schema/seed สังเคราะห์. People/Leave vertical slice มี read/create/state-transition API, capability checks และ audit/outbox ในฐานข้อมูลทดสอบแล้ว; leave draft คำนวณจำนวนวันฝั่ง server ด้วย provisional working/calendar-day rule, ตัดวันหยุดที่มีข้อมูล, เก็บค่าทศนิยมแบบ fixed-decimal และป้องกัน active-request overlap. กติกานี้เป็น development foundation เท่านั้น ยังต้องผูกกับ HR Rulebook/สิทธิ์โควตาที่รับรองก่อน production. Browser smoke ยืนยัน flow สร้าง → ส่ง → บันทึก `PAPER_APPROVED` โดยผู้ตรวจแยกบัญชี → `VOIDED` และคืนข้อมูลทดลองเป็นสถานะที่ไม่มีผลแล้ว. Master-data sync มี validated source-ID upsert, effective membership, soft-inactivate และ sync report; local real-data shadow run กับ Special สำเร็จแล้ว แต่ยังไม่มี user-to-employee mapping ที่ยืนยันจาก source. Special leave snapshot adapter มี prepare/deliver แบบ immutable batch, source hash/idempotency, service-token client, response guard และ retry metadata แล้ว; worker foundation มี retry due delivery, optional monthly orchestration และ MySQL named lock โดยยังปิด scheduled execution เป็นค่าเริ่มต้น. Production security guard foundation มี fail-fast config, idle session timeout, secure-cookie check, CSRF origin policy, security headers และ per-process rate limit แล้ว. มี Prisma initial migration ที่ deploy ตรวจบน MySQL ชั่วคราว, production Compose template และ deployment runbook สำหรับ controlled migration, backup/restore, baseline ฐานข้อมูลเดิม และ rollback แล้ว แต่ยังต้องทำ staging/restore rehearsal, distributed replay/session revocation, edge rate limit, permission scope/delegation แบบละเอียด, schedule approval, reconciliation, DOCX และ production real-data acceptance ก่อน production sign-off.
 
 ## Target Product Baseline
 
@@ -3243,3 +3244,37 @@ source code ของ `Special-Allowances` ที่ตรวจในรอบ�
 ## 3. สถานะ checkpoint
 
 สถานะปัจจุบันคือ **พร้อมทำ G0 และเตรียม G1**. ยังไม่พร้อมทำ shadow run หรือ production cutover จนกว่าจะมี Portal/person mapping, HR Rulebook/แบบฟอร์มที่จำเป็น, real-data reconciliation, staging restore rehearsal, distributed session/replay/edge controls และ owner sign-off.
+
+---
+
+# Implementation Addendum v1.20 — local real-data shadow sync (29 สิงหาคม 2569)
+
+ภาคผนวกนี้บันทึกผลการเชื่อม target local กับ API จริงของ `Special-Allowances` เพื่อทดสอบ master data โดยไม่เปลี่ยนแปลงฐานข้อมูลของระบบต้นทางและไม่เปิด production cutover.
+
+## 1. สิ่งที่ตรวจพบจาก source จริง
+
+- เรียก `GET /internal/api/v1/master-data/health-centers`, `employees` และ `users` จาก Special ด้วย service token สำเร็จ.
+- source ส่งข้อมูล 38 หน่วยงาน, 267 บุคลากร และ 43 users.
+- `healthCenter.areaKey` เป็นระดับพื้นที่สำหรับเลือกอัตรา ฉ.10/11 (`HARD_LEVEL_A`, `HARD_LEVEL_B`, `SPECIAL_LEVEL_2`) จึงซ้ำกันได้หลายหน่วยงาน ไม่ใช่รหัส unique ของ รพ.สต.
+- source รุ่นปัจจุบันส่ง `employeeId: null` ใน users ทุกแถว จึงยังไม่ถือว่า Portal user ถูกจับคู่กับบุคลากรแล้ว.
+
+## 2. การปรับ target mapping
+
+- ยกเลิกสมมติฐานว่า `areaKey` ต้องไม่ซ้ำใน `PeopleSyncService`.
+- ใช้ source `healthCenter.id` เป็น identity หลักและสร้าง `tenant.code` แบบ deterministic เป็น `SPECIAL-{sourceId}`.
+- เก็บ `areaKey` แยกใน `Tenant.areaKey` เพื่อใช้อ้างอิงระดับพื้นที่และการคำนวณ.
+- ยังคง upsert ด้วย source ID, ปิด membership เดิมตาม effective date และบันทึก `MasterDataSyncRun` ภายใน transaction.
+
+## 3. ผลการทดสอบ local
+
+- sync ครั้งแรกสำเร็จ: 38 tenants, 267 employees, 43 users; สร้าง membership 267 รายการ.
+- sync ซ้ำสำเร็จโดยไม่สร้าง membership ซ้ำ: `membershipsCreated=0`, `membershipsClosed=0`.
+- เปิด Next.js Dashboard ด้วย scope ของ รพ.สต.จริงหนึ่งแห่ง เห็นบุคลากรจริงตามขอบเขตหน่วยงาน และหน้า Leave เปิดฟอร์มสำหรับ dev identity ที่ผูกกับ employee ใน target local.
+- automated target test ยังคงผ่าน 12 suites / 42 tests; typecheck/build ผ่าน.
+
+## 4. ขอบเขตและข้อห้าม
+
+- ข้อมูลจริงถูกเขียนเฉพาะ target local database เพื่อ shadow/read test; ไม่แก้ไข Laravel, Portal หรือ Special-Allowances.
+- service token ใช้ผ่าน runtime environment เท่านั้น ไม่เก็บใน repository และไม่พิมพ์ลง log.
+- local real-data shadow run ยังไม่ใช่ UAT, reconciliation sign-off หรือ production readiness.
+- ก่อนใช้งานจริงต้องทำ Portal user → employee mapping ที่ตรวจสอบได้, data-owner reconciliation, PII/log review, backup/restore rehearsal และ pilot ตาม G0–G5.

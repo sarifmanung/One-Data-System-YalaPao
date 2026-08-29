@@ -47,6 +47,14 @@ function errorMessage(error: unknown): string {
   return 'Master-data sync failed.';
 }
 
+function tenantCodeFor(sourceId: string): string {
+  const code = `SPECIAL-${sourceId}`;
+  if (code.length > 64) {
+    throw new BadGatewayException('Special health center id is too long to derive a tenant code.');
+  }
+  return code;
+}
+
 @Injectable()
 export class PeopleSyncService {
   constructor(
@@ -263,7 +271,7 @@ export class PeopleSyncService {
         where: { id: existing.id },
         data: {
           affiliationId,
-          code: healthCenter.areaKey,
+          code: tenantCodeFor(healthCenter.id),
           name: healthCenter.name,
           areaKey: healthCenter.areaKey,
           status: 'ACTIVE',
@@ -272,7 +280,7 @@ export class PeopleSyncService {
     }
 
     const existingByCode = await tx.tenant.findFirst({
-      where: { affiliationId, code: healthCenter.areaKey },
+      where: { affiliationId, code: tenantCodeFor(healthCenter.id) },
     });
     if (existingByCode) {
       if (existingByCode.sourceSystem && existingByCode.sourceSystem !== SPECIAL_ALLOWANCES_SOURCE_SYSTEM) {
@@ -294,7 +302,7 @@ export class PeopleSyncService {
       data: {
         id: randomUUID(),
         affiliationId,
-        code: healthCenter.areaKey,
+        code: tenantCodeFor(healthCenter.id),
         name: healthCenter.name,
         areaKey: healthCenter.areaKey,
         status: 'ACTIVE',
@@ -441,17 +449,13 @@ export class PeopleSyncService {
     }
 
     const healthCenterIds = new Set<string>();
-    const areaKeys = new Set<string>();
     for (const healthCenter of snapshot.healthCenters) {
       this.assertSourceIdLength(healthCenter.id, 'health center');
       if (healthCenterIds.has(healthCenter.id)) {
         throw new BadGatewayException(`Special returned duplicate health center ${healthCenter.id}.`);
       }
-      if (areaKeys.has(healthCenter.areaKey)) {
-        throw new BadGatewayException(`Special returned duplicate health center area key ${healthCenter.areaKey}.`);
-      }
       healthCenterIds.add(healthCenter.id);
-      areaKeys.add(healthCenter.areaKey);
+      tenantCodeFor(healthCenter.id);
     }
 
     const employeeIds = new Set<string>();

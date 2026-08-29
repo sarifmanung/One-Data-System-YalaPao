@@ -33,7 +33,7 @@ docker compose -f docker-compose.target.yml up --build -d
 
 แผน UAT/pilot/cutover และ test matrix อยู่ที่ [UAT/Pilot/Cutover Plan](docs/UAT_PILOT_CUTOVER_PLAN.md). ตรวจ target แบบ read-only ได้ด้วย `ONEDATA_UAT_BASE_URL=http://localhost:3100 ONEDATA_UAT_WEB_URL=http://localhost:3101 ./scripts/target-uat-smoke.sh`.
 
-เปิด dashboard preview ที่ `http://localhost:3101/tenant-dashboard`, Portal launch bridge ที่ `http://localhost:3101/auth/portal/launch?token=...` และ API ที่ `http://localhost:3100/api/health/live`. Compose target มีฐานข้อมูล development แยกที่ `13307` และ seed สังเคราะห์สำหรับทดสอบเท่านั้น; ไม่มีข้อมูลบุคลากรจริง และ authentication จะปฏิเสธโดยค่าเริ่มต้นจนกว่าจะตั้งค่า Portal secret และ launch token ตามแผน.
+เปิด dashboard preview ที่ `http://localhost:3101/tenant-dashboard`, Portal launch bridge ที่ `http://localhost:3101/auth/portal/launch?token=...` และ API ที่ `http://localhost:3100/api/health/live`. Compose target มีฐานข้อมูล development แยกที่ `13307` และ seed สังเคราะห์เป็นค่าเริ่มต้น; ใน local สามารถตั้งค่า Special URL/token แล้วสั่ง master-data sync เพื่อทำ real-data shadow run ได้ โดยข้อมูลจะถูกเขียนเฉพาะ target local database. Authentication จะปฏิเสธโดยค่าเริ่มต้นจนกว่าจะตั้งค่า Portal secret/launch token หรือเปิด development auth สำหรับ local test.
 
 ## เริ่มรันในเครื่อง
 

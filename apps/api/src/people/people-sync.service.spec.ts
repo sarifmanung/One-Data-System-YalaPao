@@ -10,7 +10,10 @@ describe('PeopleSyncService', () => {
     return {
       sourceStartedAt: new Date('2026-08-29T00:00:00.000Z'),
       sourceCompletedAt: new Date('2026-08-29T00:00:02.000Z'),
-      healthCenters: [{ id: 'special-hc-1', name: 'รพ.สต.ทดสอบ', areaKey: 'YALA-HC-001' }],
+      healthCenters: [
+        { id: 'special-hc-1', name: 'รพ.สต.ทดสอบ', areaKey: 'YALA-HC-001' },
+        { id: 'special-hc-2', name: 'รพ.สต.ทดสอบ 2', areaKey: 'YALA-HC-001' },
+      ],
       employees: [{
         id: 'special-employee-1',
         firstName: 'บุคลากร',
@@ -102,18 +105,30 @@ describe('PeopleSyncService', () => {
     expect(report).toMatchObject({
       sourceSystem: SPECIAL_ALLOWANCES_SOURCE_SYSTEM,
       status: 'SUCCEEDED',
-      healthCentersFetched: 1,
+      healthCentersFetched: 2,
       employeesFetched: 1,
       usersFetched: 2,
       usersWithEmployeeMapping: 1,
       usersWithoutEmployeeMapping: 1,
-      tenantsUpserted: 1,
+      tenantsUpserted: 2,
       employeesUpserted: 1,
       membershipsCreated: 1,
     });
     expect(transactionClient.person.create).toHaveBeenCalledTimes(1);
     expect(transactionClient.employee.create).toHaveBeenCalledTimes(1);
     expect(transactionClient.employmentMembership.create).toHaveBeenCalledTimes(1);
+    expect(transactionClient.tenant.create).toHaveBeenNthCalledWith(1, {
+      data: expect.objectContaining({
+        code: 'SPECIAL-special-hc-1',
+        areaKey: 'YALA-HC-001',
+      }),
+    });
+    expect(transactionClient.tenant.create).toHaveBeenNthCalledWith(2, {
+      data: expect.objectContaining({
+        code: 'SPECIAL-special-hc-2',
+        areaKey: 'YALA-HC-001',
+      }),
+    });
 
   });
 });

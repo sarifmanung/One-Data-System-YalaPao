@@ -15,13 +15,13 @@
 | Tenant boundary | guard เสร็จระดับ session foundation | session workspace derive จาก active employee membership; `x-tenant-id` เลือกได้เฉพาะ workspace ที่ identity มีสิทธิ์ |
 | Next.js web | เสร็จระดับ local development | `/tenant-dashboard`, `/leave`, `/auth/portal/launch`, runtime API health/current user และ server actions ของ Paper-first leave workflow ตาม reference direction |
 | Docker | เสร็จระดับ local foundation | `docker-compose.target.yml`, API `3100`, web `3101`, แยกจาก Laravel compose |
-| People master-data projection | เสร็จระดับ local integration foundation | `SpecialMasterDataClient`, transaction/idempotent upsert ด้วย source ID, effective membership, soft-inactivate และ `MasterDataSyncRun`; endpoint `POST /api/v1/people/sync/special` ยังรอ token/URL จริง |
+| People master-data projection | เสร็จระดับ local real-data shadow run | `SpecialMasterDataClient`, transaction/idempotent upsert ด้วย source ID, effective membership, soft-inactivate และ `MasterDataSyncRun`; local contract test กับ Special จริงผ่าน: 38 หน่วยงาน, 267 บุคลากร, 43 users และ idempotent re-sync ผ่าน; ยังไม่มี user-to-employee mapping จาก source |
 | Authorization | เสร็จระดับ local integration foundation | Portal role/position → One Data capability allowlist, session permission snapshot, server-side route guard และ self/requester paper-result separation |
 | Production security guard foundation | เสร็จระดับ local integration foundation | production config fail-fast, idle session timeout, secure-cookie validation, CSRF origin policy, security headers และ auth/mutation rate limit; distributed replay/revocation/edge limiter ยังไม่เสร็จ |
 | Special leave snapshot adapter | เสร็จระดับ local integration foundation | prepare complete snapshot จาก `PAPER_APPROVED`, source hash/idempotency, immutable batch, service-token client, delivery history, retry metadata และ period/version acknowledgement guard; ยังไม่เปิด real-data delivery |
 | Leave snapshot worker | เสร็จระดับ local integration foundation | API image มี `worker`/`worker:once`, MySQL named lock, retry due deliveries, optional previous-month cutoff orchestration และ affiliation-scoped system identity; ปิดด้วย `ONEDATA_WORKER_ENABLED=false` เป็นค่าเริ่มต้น |
 | Prisma migration/deployment foundation | เสร็จระดับ local integration foundation | initial migration `20260829210000_initial_target_schema`, `migrate deploy`, production Compose template และ [deployment runbook](DEPLOYMENT_RUNBOOK.md); ตรวจ deploy/status กับ MySQL ชั่วคราวแล้ว แต่ยังไม่ baseline ฐานข้อมูลเดิมหรือ restore rehearsal |
-| UAT/pilot operating foundation | เสร็จระดับ planning + local smoke | [UAT/Pilot/Cutover Plan](UAT_PILOT_CUTOVER_PLAN.md), test matrix, G0–G5 gate, reconciliation/rollback checklist และ `scripts/target-uat-smoke.sh`; local read-only smoke ผ่าน แต่ยังไม่มี staging/real-data pilot |
+| UAT/pilot operating foundation | เสร็จระดับ planning + local smoke/shadow | [UAT/Pilot/Cutover Plan](UAT_PILOT_CUTOVER_PLAN.md), test matrix, G0–G5 gate, reconciliation/rollback checklist และ `scripts/target-uat-smoke.sh`; local real-data shadow run ผ่าน แต่ยังไม่มี staging/real-data pilot |
 | Prisma/People/Leave vertical slice | เสร็จระดับ local development | schema + synthetic seed, People read, Leave `DRAFT → SUBMITTED → PAPER_APPROVED/PAPER_REJECTED`, `CANCELLED/VOIDED`, provisional server-side day calculation, fixed-decimal requested days, holiday exclusion, active-request overlap guard, Paper-first UI/server actions และ durable audit/outbox |
 | Regression checks | ผ่าน | target typecheck, target build, API 12 suites/42 tests, legacy Vite build, Docker health smoke และ browser workflow smoke ด้วยข้อมูลสังเคราะห์ |
 
@@ -30,12 +30,12 @@
 - production backup/restore rehearsal และการอนุมัติ baseline ฐานข้อมูลเดิม (migration policy, initial migration และ runbook มีแล้ว)
 - permission scope matrix แบบละเอียดครบทุกโมดูลและ delegated approver configuration (People/Leave capability guard รุ่นแรกทำแล้ว)
 - production session hardening ที่ยังเหลือ เช่น distributed replay/revocation strategy, session rotation, proxy trust policy และ operational cleanup (idle timeout/CSRF origin/security headers/rate-limit foundation มีแล้ว)
-- People import/reconciliation จาก Special-Allowances ด้วย URL/token จริง, real-data mapping และการ map Portal user กับ employee
+- People reconciliation จาก Special-Allowances, การ map Portal user กับ employee และการยืนยันผลกับ data owner (local shadow import ผ่านแล้ว)
 - HR-approved leave Rulebook, quota/balance engine, half-day policy, complete snapshot และ production acceptance rules (provisional day calculation/state machine/revision/audit/outbox foundation มีแล้ว; ห้ามถือ provisional rule เป็นกฎสิทธิ์จริง)
 - reconciliation UI, locked-period adjustment/correction contract และ production schedule approval (worker retry/monthly foundation มีแล้ว แต่ยังปิด scheduled delivery)
 - document/DOCX, report access และ operational observability (leave UI เป็น form workflow แล้ว แต่ยังไม่มีการสร้าง Word/DOCX; backup/restore ยังต้องซ้อมใน staging/production-like environment)
 - UAT กับข้อมูล/บัญชีจริงและ pilot 3 รพ.สต.
-- staging restore rehearsal, real-data shadow run, owner sign-off และ pilot ตาม [UAT/Pilot/Cutover Plan](UAT_PILOT_CUTOVER_PLAN.md)
+- staging restore rehearsal, production-like real-data shadow run, owner sign-off และ pilot ตาม [UAT/Pilot/Cutover Plan](UAT_PILOT_CUTOVER_PLAN.md)
 
 ## คำสั่งตรวจซ้ำ
 
@@ -51,7 +51,7 @@ DATABASE_URL="$ONEDATA_TARGET_DATABASE_URL" npm run target:db:migrate
 ONEDATA_UAT_BASE_URL=http://localhost:3100 ONEDATA_UAT_WEB_URL=http://localhost:3101 ./scripts/target-uat-smoke.sh
 ```
 
-การทดสอบรอบนี้ใช้เฉพาะข้อมูลที่สร้างจาก fixture และ health/contract/session/master-data unit endpoints ไม่อ่านหรือส่งข้อมูลลับ และไม่เปลี่ยนแปลงฐานข้อมูลของ Laravel, Portal หรือ Special-Allowances. Sync endpoint จะปฏิเสธเมื่อยังไม่ตั้งค่า Special URL/token; session เก็บเฉพาะ hash ในฐานข้อมูลและไม่คืน raw token ใน JSON response.
+ชุด automated tests ใช้ fixture และ unit/contract endpoints โดยไม่เปิดข้อมูลส่วนบุคคลใน log. เพิ่ม local real-data shadow run แบบอ่านจาก Special ผ่าน service token แล้วเขียนเฉพาะ target local database: ตรวจพบ 38 หน่วยงาน, 267 บุคลากร และ 43 users โดยไม่แก้ไขฐานข้อมูล Laravel, Portal หรือ Special-Allowances และไม่ทำ leave snapshot delivery. Token ถูกส่งผ่าน runtime environment เท่านั้น ไม่อยู่ใน repository หรือ JSON response.
 
 ## Security note
 

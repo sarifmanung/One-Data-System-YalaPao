@@ -60,6 +60,8 @@ Special ตรวจ token แบบ constant-time และตอบ `401` ห�
 }
 ```
 
+`areaKey` เป็นระดับพื้นที่สำหรับการเลือกอัตรา ฉ.10/11 ไม่ใช่รหัสหน่วยงานและสามารถซ้ำกันได้หลาย รพ.สต. One Data จึงใช้ `id` ของ Special เป็น source identity และสร้าง `tenant.code` ภายในเป็นค่า deterministic รูปแบบ `SPECIAL-{id}` ส่วน `areaKey` เดิมจะเก็บแยกไว้เป็นข้อมูลอ้างอิงการคำนวณ ห้ามใช้ `areaKey` เป็น unique key ของหน่วยงาน
+
 ### `GET /internal/api/v1/master-data/employees`
 
 ฟิลด์หลักที่ One Data ใช้:
