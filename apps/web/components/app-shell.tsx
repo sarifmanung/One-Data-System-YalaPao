@@ -202,7 +202,6 @@ export function AppShell({
             </button>
             <span className="topbar-title">{currentSection}</span>
           </div>
-          <div className="trial-banner"><Icon name="help" size={15} /><span>ทดลองใช้งานฟรีชั่วคราว จนถึงวันที่ 30 กันยายน 2569</span></div>
           <div className="topbar-actions">
             <button className="workspace-switcher" type="button">
               <Icon name="hospital" size={16} />

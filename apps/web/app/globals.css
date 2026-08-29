@@ -388,19 +388,6 @@ a {
   margin-right: 8px;
 }
 
-.trial-banner {
-  align-items: center;
-  background: #fff9eb;
-  border: 1px solid #f5d899;
-  border-radius: 999px;
-  color: #cf8a2e;
-  display: flex;
-  font-size: 11px;
-  gap: 6px;
-  padding: 7px 13px;
-  white-space: nowrap;
-}
-
 .topbar-actions {
   gap: 12px;
   justify-content: flex-end;
@@ -1645,13 +1632,6 @@ a {
     min-width: 0;
   }
 
-  .trial-banner {
-    font-size: 10px;
-    max-width: 300px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
   .dashboard-metric-grid,
   .module-summary-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1670,10 +1650,6 @@ a {
 @media (max-width: 700px) {
   .topbar {
     padding: 0 15px;
-  }
-
-  .trial-banner {
-    display: none;
   }
 
   .topbar-actions {
