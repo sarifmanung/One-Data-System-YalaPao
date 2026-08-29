@@ -2,7 +2,7 @@
 
 เอกสารวิเคราะห์ระบบเพื่อการสร้างใหม่แบบ Clean-Room
 
-- เวอร์ชันเอกสาร: 1.18 — Controlled Migration & Deployment Foundation Checkpoint
+- เวอร์ชันเอกสาร: 1.19 — UAT, Pilot & Cutover Operating Plan
 - แก้ไขล่าสุด: 29 สิงหาคม 2569 (2026)
 - วันที่สำรวจ: 10–11 สิงหาคม และ 29 สิงหาคม 2569 (2026)
 - ขอบเขตที่สำรวจ: หน่วยงาน รพ.สต. 1 แห่ง และสังกัดระดับองค์การบริหารส่วนจังหวัดที่เชื่อมกัน
@@ -33,6 +33,7 @@
 | 1.16    | 29 ส.ค. 2569 | เพิ่ม worker foundation ใน API image สำหรับ retry delivery ที่ถึงกำหนด, optional monthly previous-month prepare/deliver, affiliation-scoped system identity, MySQL named lock และ worker/once commands; ปิด scheduled execution เป็นค่าเริ่มต้นและเพิ่ม Docker worker profile |
 | 1.17    | 29 ส.ค. 2569 | เพิ่ม production security guard foundation: fail-fast environment validation, idle session timeout, secure-cookie checks, CSRF origin policy, security headers และ auth/mutation rate limit; เพิ่ม security test coverage และระบุ distributed replay/session revocation กับ edge limiter เป็นงานก่อน production sign-off |
 | 1.18    | 29 ส.ค. 2569 | เพิ่ม Prisma initial migration baseline ที่ตรวจ deploy บน MySQL ชั่วคราว, คำสั่ง `migrate deploy`, production Compose template และ deployment runbook สำหรับ migration, backup/restore, baseline ฐานข้อมูลเดิม, rollback และ worker activation; ย้ำว่ายังไม่ใช่ production sign-off จนกว่าจะทำ staging/restore rehearsal และ data-owner approval |
+| 1.19    | 29 ส.ค. 2569 | เพิ่มแผน UAT/pilot/cutover แบบ coexistence ตั้งแต่ G0 ถึง rollout 38 รพ.สต., test matrix ด้าน SSO/tenant/People/Leave/Special/operations, reconciliation checklist, exit criteria และ rollback triggers; เพิ่ม read-only UAT smoke script โดยย้ำว่าสถานะปัจจุบันพร้อม G0/G1 แต่ยังไม่พร้อม production cutover |
 
 ## วิธีอ่านระดับความมั่นใจ
 
@@ -52,7 +53,7 @@
 
 > เอกสารนี้สกัด “ความต้องการทางธุรกิจ” จากระบบอ้างอิง ไม่ใช่คำสั่งให้คัดลอกหน้าจอ โค้ด เทคโนโลยี หรือข้อจำกัดของระบบเดิมแบบ 1:1
 
-> **Effective implementation baseline:** ส่วน `Implementation Addendum v1.18` ท้ายเอกสารเป็น checkpoint/decision ล่าสุดของเจ้าของโครงการ; supersede เฉพาะรายละเอียด migration/deployment guard ของ revision ก่อนหน้า และใช้ร่วมกับ security ของ `Implementation Addendum v1.17`, worker ของ `Implementation Addendum v1.16`, integration ของ `Implementation Addendum v1.15`, UI ของ `Implementation Addendum v1.14`, authorization ของ `Implementation Addendum v1.12`, provisional calculation ของ `Implementation Addendum v1.13` และ workflow ใบลาของ `Implementation Addendum v1.8`. `Implementation Addendum v1.17`, `v1.16`, `v1.15`, `v1.14`, `v1.13`, `v1.12`, `v1.11`, `v1.10`, `v1.8`, `v1.7`, `v1.6` และ revision ก่อนหน้าเก็บไว้เพื่อ traceability โดย Laravel/Vue หมายถึง current implementation baseline ส่วน NestJS/NextJS หมายถึง target architecture.
+> **Effective implementation baseline:** ส่วน `Implementation Addendum v1.19` ท้ายเอกสารเป็น checkpoint/decision ล่าสุดของเจ้าของโครงการ; supersede เฉพาะรายละเอียด UAT/pilot/cutover ของ revision ก่อนหน้า และใช้ร่วมกับ migration/deployment ของ `Implementation Addendum v1.18`, security ของ `Implementation Addendum v1.17`, worker ของ `Implementation Addendum v1.16`, integration ของ `Implementation Addendum v1.15`, UI ของ `Implementation Addendum v1.14`, authorization ของ `Implementation Addendum v1.12`, provisional calculation ของ `Implementation Addendum v1.13` และ workflow ใบลาของ `Implementation Addendum v1.8`. `Implementation Addendum v1.18`, `v1.17`, `v1.16`, `v1.15`, `v1.14`, `v1.13`, `v1.12`, `v1.11`, `v1.10`, `v1.8`, `v1.7`, `v1.6` และ revision ก่อนหน้าเก็บไว้เพื่อ traceability โดย Laravel/Vue หมายถึง current implementation baseline ส่วน NestJS/NextJS หมายถึง target architecture.
 
 > **Implementation checkpoint 29 สิงหาคม 2569:** target workspace เริ่มทำงานแบบแยกจาก Laravel/Vue แล้วที่ `apps/api`, `apps/web` และ `packages/contracts`. API foundation มี health/readiness, request-id, API envelope, problem-details, deny-by-default development auth boundary, tenant-context helper, HS256 Portal launch-token verifier/exchange, hashed local session/logout, Portal role/position → One Data capability mapping, server-side permission guard และ Special master-data projection boundary; web foundation มี Next.js dashboard shell, `/auth/portal/launch` bridge, runtime current-user read และ Paper-first leave page/server actions สำหรับสร้าง ส่ง ยกเลิก บันทึกผลกระดาษ และ void ตาม capability. Docker Compose target ใช้พอร์ต `3100/3101` และมี MySQL development แยกบน `13307` พร้อม Prisma schema/seed สังเคราะห์. People/Leave vertical slice มี read/create/state-transition API, capability checks และ audit/outbox ในฐานข้อมูลทดสอบแล้ว; leave draft คำนวณจำนวนวันฝั่ง server ด้วย provisional working/calendar-day rule, ตัดวันหยุดที่มีข้อมูล, เก็บค่าทศนิยมแบบ fixed-decimal และป้องกัน active-request overlap. กติกานี้เป็น development foundation เท่านั้น ยังต้องผูกกับ HR Rulebook/สิทธิ์โควตาที่รับรองก่อน production. Browser smoke ยืนยัน flow สร้าง → ส่ง → บันทึก `PAPER_APPROVED` โดยผู้ตรวจแยกบัญชี → `VOIDED` และคืนข้อมูลทดลองเป็นสถานะที่ไม่มีผลแล้ว. Master-data sync มี validated source-ID upsert, effective membership, soft-inactivate และ sync report แต่ยังไม่ตั้งค่า source/token จริง. Special leave snapshot adapter มี prepare/deliver แบบ immutable batch, source hash/idempotency, service-token client, response guard และ retry metadata แล้ว; worker foundation มี retry due delivery, optional monthly orchestration และ MySQL named lock โดยยังปิด scheduled execution เป็นค่าเริ่มต้น. Production security guard foundation มี fail-fast config, idle session timeout, secure-cookie check, CSRF origin policy, security headers และ per-process rate limit แล้ว. มี Prisma initial migration ที่ deploy ตรวจบน MySQL ชั่วคราว, production Compose template และ deployment runbook สำหรับ controlled migration, backup/restore, baseline ฐานข้อมูลเดิม และ rollback แล้ว แต่ยังต้องทำ staging/restore rehearsal, distributed replay/session revocation, edge rate limit, permission scope/delegation แบบละเอียด, schedule approval, reconciliation, DOCX และ real-data import ก่อน production sign-off.
 
@@ -3216,3 +3217,29 @@ source code ของ `Special-Allowances` ที่ตรวจในรอบ�
 - initial migration deploy/status ผ่านกับ MySQL ชั่วคราวโดยไม่เหลือ container ตรวจค้าง.
 - production Compose template parse ได้เมื่อเติมค่าจำเป็นจาก secret store และแยก worker profile/role ถูกต้อง.
 - เอกสาร implementation status, architecture, migration plan และ README ชี้ไปที่ runbook เดียวกัน และระบุชัดว่า `db push` ใช้ได้เฉพาะ local disposable database.
+
+---
+
+# Implementation Addendum v1.19 — UAT, pilot & cutover operating plan (29 สิงหาคม 2569)
+
+ภาคผนวกนี้บันทึกแผนปฏิบัติการหลัง foundation สำหรับรับระบบ target เข้า UAT และ rollout แบบค่อยเป็นค่อยไป. รายละเอียด checklist และ test matrix ฉบับใช้งานอยู่ที่ [UAT/Pilot/Cutover Plan](docs/UAT_PILOT_CUTOVER_PLAN.md).
+
+## 1. สิ่งที่ลงมือทำแล้ว
+
+- เพิ่ม gate G0–G5: local/CI → staging → shadow run → pilot 1 รพ.สต. → pilot 3 รพ.สต. → 10/38 รพ.สต.
+- กำหนด coexistence/cutover โดยไม่บังคับหยุด Laravel/Vue หรือระบบจองรถ และกำหนดบทบาทผู้ยื่น/ผู้บันทึกผลกระดาษ/ผู้ดูแล/ผู้ตรวจให้ทดสอบแยกกัน.
+- เพิ่ม test matrix ครอบคลุม environment, Portal SSO, permission, tenant isolation, People sync, Paper-first leave, SoD, Special snapshot/retry/reconciliation และ rollback.
+- เพิ่ม read-only script `scripts/target-uat-smoke.sh` สำหรับตรวจ live/ready/contract/deny-by-default และตรวจ web/authenticated probe ได้เมื่อระบุ cookie file ภายนอก; script ไม่สร้างหรือแก้ข้อมูล.
+- ตรวจ script กับ local target Docker แล้ว: live, ready, contract `1.3`, protected endpoint 401 และ web 200 ผ่าน.
+
+## 2. กติกาที่ตัดสินใจ
+
+- ผล UAT ต้องบันทึกเป็น `PASS`, `FAIL`, `BLOCKED` หรือ `WAIVED` พร้อม environment/build/ผู้ทดสอบและหลักฐานที่ไม่เปิด PII.
+- ห้ามใช้บัญชีเดียวยืนยันทุกบทบาท; sample ต้องพิสูจน์ requester–paper-result-recorder separation และ cross-tenant denial.
+- ก่อนขยาย wave ต้องผ่าน reconciliation อย่างน้อย 2 รอบ ไม่มี Sev-1/Sev-2 และมี backup/restore/rollback evidence.
+- Word/DOCX แบบราชการที่ยังไม่มีถือเป็น `BLOCKED`; ไม่ใช้เอกสารทดลองเป็นเอกสารทางการ.
+- worker และ monthly delivery เปิดหลัง schedule owner, Special contract, alerting และ UAT approval เท่านั้น.
+
+## 3. สถานะ checkpoint
+
+สถานะปัจจุบันคือ **พร้อมทำ G0 และเตรียม G1**. ยังไม่พร้อมทำ shadow run หรือ production cutover จนกว่าจะมี Portal/person mapping, HR Rulebook/แบบฟอร์มที่จำเป็น, real-data reconciliation, staging restore rehearsal, distributed session/replay/edge controls และ owner sign-off.

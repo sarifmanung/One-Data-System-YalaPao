@@ -325,6 +325,7 @@ Shared private Docker network
 
 ### Release 3 — Pilot and Rollout
 
+- ใช้ [UAT/Pilot/Cutover Plan](docs/UAT_PILOT_CUTOVER_PLAN.md) เป็น gate เดียวสำหรับ staging, shadow run, pilot และ rollout
 - Pilot 3 รพ.สต. ที่มีขนาด/รูปแบบงานต่างกัน
 - ปรับจาก feedback และแก้ข้อมูล migration
 - ขยายเป็น 10 รพ.สต.
