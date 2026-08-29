@@ -527,7 +527,7 @@ stateDiagram-v2
     DRAFT --> CANCELLED: ผู้ใช้ยกเลิกแบบร่าง
     DOCUMENT_ISSUED --> CANCELLED: ยกเลิกก่อนทราบผล
     PAPER_APPROVED --> VOIDED: ยกเลิก/แก้ไขตามเอกสารภายนอก
-    PAPER_APPROVED --> [*]
+    PAPER_APPROVED --> SPECIAL_ELIGIBLE: รวมใน API ข้อมูลลา
     PAPER_REJECTED --> [*]
     CANCELLED --> [*]
     VOIDED --> [*]
