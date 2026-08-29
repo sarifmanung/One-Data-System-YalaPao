@@ -9,6 +9,8 @@
     "db:push": "prisma db push",
     "db:seed": "ts-node prisma/seed.ts",
     "start": "node dist/main.js",
+    "worker": "node dist/worker-main.js",
+    "worker:once": "node dist/worker-main.js --once",
     "start:dev": "ts-node-dev --respawn --transpile-only src/main.ts",
     "typecheck": "tsc --noEmit",
     "test": "jest --runInBand"

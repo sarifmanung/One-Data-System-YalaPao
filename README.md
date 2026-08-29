@@ -92,7 +92,15 @@ Target One Data API สำหรับ snapshot:
 - `POST /api/v1/integrations/special/leave-snapshots/{batchId}/deliver` — ส่ง batch ที่เตรียมไว้และบันทึกผลการส่ง
 - `GET /api/v1/integrations/special/leave-snapshots/{batchId}` — อ่านสถานะ batch/delivery สำหรับผู้ดูแล
 
-การส่งจริงยังเป็นคำสั่ง manual ใน checkpoint นี้; scheduled worker และ reconciliation UI เป็นงานถัดไป.
+การส่งจริงยังเป็นคำสั่ง manual ใน checkpoint นี้; worker foundation มีแล้วแต่ scheduled delivery ยังปิดไว้ และ reconciliation UI เป็นงานถัดไป.
+
+Target worker foundation มีคำสั่งดังนี้:
+
+- `npm run worker:once -w @onedata/api` — รัน retry/monthly orchestration หนึ่งรอบและจบ process
+- `npm run worker -w @onedata/api` — รัน loop ตาม `ONEDATA_WORKER_INTERVAL_MS`
+- Docker Compose ใช้ `--profile worker`; worker และ monthly delivery ปิดเป็นค่าเริ่มต้น ต้องเปิด `ONEDATA_WORKER_ENABLED=true` และ `ONEDATA_LEAVE_SNAPSHOT_MONTHLY_ENABLED=true` แยกกัน
+
+worker จะ retry เฉพาะ delivery ที่ถึงเวลา, ใช้ MySQL named lock กันหลาย instance และ monthly mode จะไม่สร้าง batch ซ้ำเมื่อ period/affiliation มี batch อยู่แล้ว. Reconciliation UI และ policy อนุมัติ schedule ยังต้องทำก่อน production.
 
 Target API มีคำสั่ง sync สำหรับผู้ดูแลที่มี capability `employee.master-data.sync` (Portal role/position จะถูก map เป็น allowlist ฝั่ง One Data; `PEOPLE_SYNC_ADMIN` หรือ role development ใช้ใน local test ได้):
 
@@ -121,5 +129,5 @@ npm run build
 - เชื่อม Portal module manifest/launch URL และจับคู่ organization code จริง
 - ทดสอบข้อมูลจริง 38 รพ.สต. และแก้ mapping บัญชี Portal ↔ บุคลากรให้ครบ
 - ตัดสินใจ/รับรองกฎวันลาและแบบ Word จริงก่อนสร้าง document module
-- เพิ่ม scheduled monthly snapshot, reconciliation UI และ retry worker ที่ใช้จริง (adapter รุ่นแรกมี manual prepare/deliver และบันทึก retry metadata แล้ว)
+- เพิ่ม scheduled monthly snapshot ที่ผ่านการอนุมัติ, reconciliation UI และ production alerting (worker/retry foundation มีแล้ว แต่ปิด scheduled delivery เป็นค่าเริ่มต้น)
 - เพิ่ม module อื่นภายหลัง เช่น จองรถ โดยรักษา module boundary และ data ownership เดิม

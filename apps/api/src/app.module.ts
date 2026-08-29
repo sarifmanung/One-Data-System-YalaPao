@@ -7,6 +7,7 @@ import { LeaveModule } from './leave/leave.module';
 import { PeopleModule } from './people/people.module';
 import { PlatformModule } from './platform/platform.module';
 import { SystemModule } from './system/system.module';
+import { WorkerModule } from './worker/worker.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { SystemModule } from './system/system.module';
     LeaveModule,
     PlatformModule,
     SystemModule,
+    WorkerModule,
   ],
 })
 export class AppModule {}

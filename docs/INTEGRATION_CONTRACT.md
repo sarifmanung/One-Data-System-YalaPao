@@ -23,7 +23,7 @@
 - `POST /api/v1/integrations/special/leave-snapshots/{batchId}/deliver` — ส่ง payload ที่เก็บไว้ไป Special และบันทึก delivery attempt/acknowledgement
 - `GET /api/v1/integrations/special/leave-snapshots/{batchId}` — ตรวจ batch, source hash, จำนวนรายการ และประวัติ delivery
 
-สถานะ batch คือ `PREPARED`, `DELIVERING`, `APPLIED`, `DUPLICATE`, `RETRYABLE_FAILURE` และ `FAILED`. Network/HTTP 408/429/5xx จะเก็บ retry metadata และเปิดให้ worker retry ได้ภายหลัง; configuration หรือ validation failure จะหยุดเป็น `FAILED` เพื่อให้แก้สาเหตุก่อน. Payload ของ batch immutable หากข้อมูลเปลี่ยนต้องสร้าง snapshot version ใหม่.
+สถานะ batch คือ `PREPARED`, `DELIVERING`, `APPLIED`, `DUPLICATE`, `RETRYABLE_FAILURE` และ `FAILED`. Network/HTTP 408/429/5xx จะเก็บ retry metadata และ worker จะเลือกเฉพาะรายการที่ถึง `nextAttemptAt`; configuration หรือ validation failure จะหยุดเป็น `FAILED` เพื่อให้แก้สาเหตุก่อน. Payload ของ batch immutable หากข้อมูลเปลี่ยนต้องสร้าง snapshot version ใหม่. Worker ใช้ MySQL named lock ต่อ database เพื่อให้มีผู้ส่งจริงเพียง process เดียวในแต่ละรอบ.
 
 ## Effective leave status rule
 

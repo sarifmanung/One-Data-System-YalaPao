@@ -68,6 +68,37 @@ services:
       timeout: 5s
       retries: 20
 
+  # Start with --profile worker after the monthly/retry policy is approved.
+  # The process uses the same reviewed API image and the same database boundary,
+  # but never exposes an HTTP port.
+  onedata-target-worker:
+    profiles: ["worker"]
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      APP_VERSION: ${APP_VERSION:-0.1.0}
+      DATABASE_URL: mysql://onedata:${TARGET_DB_PASSWORD:-onedata_dev_password}@onedata-target-db:3306/one_data_target
+      SPECIAL_ALLOWANCES_BASE_URL: ${SPECIAL_ALLOWANCES_BASE_URL:-}
+      SPECIAL_ALLOWANCES_INTEGRATION_TOKEN: ${SPECIAL_ALLOWANCES_INTEGRATION_TOKEN:-}
+      SPECIAL_ALLOWANCES_TIMEOUT_MS: ${SPECIAL_ALLOWANCES_TIMEOUT_MS:-10000}
+      SPECIAL_ALLOWANCES_LEAVE_CONTRACT_VERSION: ${SPECIAL_ALLOWANCES_LEAVE_CONTRACT_VERSION:-1.0}
+      ONEDATA_WORKER_ENABLED: ${ONEDATA_WORKER_ENABLED:-false}
+      ONEDATA_WORKER_MODE: ${ONEDATA_WORKER_MODE:-ALL}
+      ONEDATA_WORKER_INTERVAL_MS: ${ONEDATA_WORKER_INTERVAL_MS:-60000}
+      ONEDATA_WORKER_BATCH_SIZE: ${ONEDATA_WORKER_BATCH_SIZE:-10}
+      ONEDATA_WORKER_ID: ${ONEDATA_WORKER_ID:-onedata-worker}
+      ONEDATA_LEAVE_SNAPSHOT_MONTHLY_ENABLED: ${ONEDATA_LEAVE_SNAPSHOT_MONTHLY_ENABLED:-false}
+      ONEDATA_LEAVE_SNAPSHOT_PERIOD: ${ONEDATA_LEAVE_SNAPSHOT_PERIOD:-}
+      ONEDATA_LEAVE_SNAPSHOT_AFFILIATION_ID: ${ONEDATA_LEAVE_SNAPSHOT_AFFILIATION_ID:-}
+      ONEDATA_LEAVE_SNAPSHOT_SOURCE_CUTOFF: ${ONEDATA_LEAVE_SNAPSHOT_SOURCE_CUTOFF:-}
+      ONEDATA_LEAVE_SNAPSHOT_CUTOFF_DAYS: ${ONEDATA_LEAVE_SNAPSHOT_CUTOFF_DAYS:-3}
+    depends_on:
+      onedata-target-db:
+        condition: service_healthy
+    command: ["npm", "run", "worker", "-w", "@onedata/api"]
+
   onedata-target-web:
     build:
       context: .

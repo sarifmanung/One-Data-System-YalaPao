@@ -2,7 +2,7 @@
 
 เอกสารวิเคราะห์ระบบเพื่อการสร้างใหม่แบบ Clean-Room
 
-- เวอร์ชันเอกสาร: 1.15 — Special-Allowances Leave Snapshot Adapter Checkpoint
+- เวอร์ชันเอกสาร: 1.16 — Leave Snapshot Worker & Monthly Orchestration Checkpoint
 - แก้ไขล่าสุด: 29 สิงหาคม 2569 (2026)
 - วันที่สำรวจ: 10–11 สิงหาคม และ 29 สิงหาคม 2569 (2026)
 - ขอบเขตที่สำรวจ: หน่วยงาน รพ.สต. 1 แห่ง และสังกัดระดับองค์การบริหารส่วนจังหวัดที่เชื่อมกัน
@@ -30,6 +30,7 @@
 | 1.13    | 29 ส.ค. 2569 | เพิ่ม provisional server-side leave calculation: working/calendar-day mode, holiday exclusion, fixed two-decimal requested days, date-range validation, active-request overlap guard และ calculation basis; ย้ำว่ายังไม่ใช่ HR Rulebook หรือ quota engine ที่รับรองแล้ว |
 | 1.14    | 29 ส.ค. 2569 | เพิ่ม Next.js Paper-first leave page และ server actions สำหรับสร้าง/ส่ง/ยกเลิกใบลา บันทึกผลเอกสารกระดาษ และ void; เพิ่ม automated workflow tests และ browser smoke test บน Docker target โดย cleanup ข้อมูลสังเคราะห์แล้ว |
 | 1.15    | 29 ส.ค. 2569 | เพิ่ม Special-Allowances leave snapshot adapter รุ่นแรก: prepare complete snapshot จาก `PAPER_APPROVED`, immutable batch, SHA-256/idempotency, service-token delivery, response period/version guard และ retry/delivery history; ตรวจพบ source DTO ปัจจุบันยังรับ v1.0 จึงเพิ่ม compatibility mode ก่อนประสาน contract v1.1 |
+| 1.16    | 29 ส.ค. 2569 | เพิ่ม worker foundation ใน API image สำหรับ retry delivery ที่ถึงกำหนด, optional monthly previous-month prepare/deliver, affiliation-scoped system identity, MySQL named lock และ worker/once commands; ปิด scheduled execution เป็นค่าเริ่มต้นและเพิ่ม Docker worker profile |
 
 ## วิธีอ่านระดับความมั่นใจ
 
@@ -49,9 +50,9 @@
 
 > เอกสารนี้สกัด “ความต้องการทางธุรกิจ” จากระบบอ้างอิง ไม่ใช่คำสั่งให้คัดลอกหน้าจอ โค้ด เทคโนโลยี หรือข้อจำกัดของระบบเดิมแบบ 1:1
 
-> **Effective implementation baseline:** ส่วน `Implementation Addendum v1.15` ท้ายเอกสารเป็น checkpoint/decision ล่าสุดของเจ้าของโครงการ; supersede เฉพาะรายละเอียด implementation/integration ของ leave ที่เกี่ยวข้องใน revision ก่อนหน้า และใช้ร่วมกับ UI ของ `Implementation Addendum v1.14`, authorization ของ `Implementation Addendum v1.12`, provisional calculation ของ `Implementation Addendum v1.13` และ workflow ใบลาของ `Implementation Addendum v1.8`. `Implementation Addendum v1.14`, `v1.13`, `v1.12`, `v1.11`, `v1.10`, `v1.8`, `v1.7`, `v1.6` และ revision ก่อนหน้าเก็บไว้เพื่อ traceability โดย Laravel/Vue หมายถึง current implementation baseline ส่วน NestJS/NextJS หมายถึง target architecture.
+> **Effective implementation baseline:** ส่วน `Implementation Addendum v1.16` ท้ายเอกสารเป็น checkpoint/decision ล่าสุดของเจ้าของโครงการ; supersede เฉพาะรายละเอียด implementation/worker ของ leave ที่เกี่ยวข้องใน revision ก่อนหน้า และใช้ร่วมกับ integration ของ `Implementation Addendum v1.15`, UI ของ `Implementation Addendum v1.14`, authorization ของ `Implementation Addendum v1.12`, provisional calculation ของ `Implementation Addendum v1.13` และ workflow ใบลาของ `Implementation Addendum v1.8`. `Implementation Addendum v1.15`, `v1.14`, `v1.13`, `v1.12`, `v1.11`, `v1.10`, `v1.8`, `v1.7`, `v1.6` และ revision ก่อนหน้าเก็บไว้เพื่อ traceability โดย Laravel/Vue หมายถึง current implementation baseline ส่วน NestJS/NextJS หมายถึง target architecture.
 
-> **Implementation checkpoint 29 สิงหาคม 2569:** target workspace เริ่มทำงานแบบแยกจาก Laravel/Vue แล้วที่ `apps/api`, `apps/web` และ `packages/contracts`. API foundation มี health/readiness, request-id, API envelope, problem-details, deny-by-default development auth boundary, tenant-context helper, HS256 Portal launch-token verifier/exchange, hashed local session/logout, Portal role/position → One Data capability mapping, server-side permission guard และ Special master-data projection boundary; web foundation มี Next.js dashboard shell, `/auth/portal/launch` bridge, runtime current-user read และ Paper-first leave page/server actions สำหรับสร้าง ส่ง ยกเลิก บันทึกผลกระดาษ และ void ตาม capability. Docker Compose target ใช้พอร์ต `3100/3101` และมี MySQL development แยกบน `13307` พร้อม Prisma schema/seed สังเคราะห์. People/Leave vertical slice มี read/create/state-transition API, capability checks และ audit/outbox ในฐานข้อมูลทดสอบแล้ว; leave draft คำนวณจำนวนวันฝั่ง server ด้วย provisional working/calendar-day rule, ตัดวันหยุดที่มีข้อมูล, เก็บค่าทศนิยมแบบ fixed-decimal และป้องกัน active-request overlap. กติกานี้เป็น development foundation เท่านั้น ยังต้องผูกกับ HR Rulebook/สิทธิ์โควตาที่รับรองก่อน production. Browser smoke ยืนยัน flow สร้าง → ส่ง → บันทึก `PAPER_APPROVED` โดยผู้ตรวจแยกบัญชี → `VOIDED` และคืนข้อมูลทดลองเป็นสถานะที่ไม่มีผลแล้ว. Master-data sync มี validated source-ID upsert, effective membership, soft-inactivate และ sync report แต่ยังไม่ตั้งค่า source/token จริง. Special leave snapshot adapter มี prepare/deliver แบบ immutable batch, source hash/idempotency, service-token client, response guard และ retry metadata แล้ว; source code ปัจจุบันของ Special รับ contract v1.0 จึงยังอยู่ใน compatibility mode และยังไม่มี scheduled worker/reconciliation UI. Production migration/backup, permission scope/delegation แบบละเอียด, worker, DOCX และ real-data import ยังไม่พร้อม production และเป็นงานถัดไปตาม release plan.
+> **Implementation checkpoint 29 สิงหาคม 2569:** target workspace เริ่มทำงานแบบแยกจาก Laravel/Vue แล้วที่ `apps/api`, `apps/web` และ `packages/contracts`. API foundation มี health/readiness, request-id, API envelope, problem-details, deny-by-default development auth boundary, tenant-context helper, HS256 Portal launch-token verifier/exchange, hashed local session/logout, Portal role/position → One Data capability mapping, server-side permission guard และ Special master-data projection boundary; web foundation มี Next.js dashboard shell, `/auth/portal/launch` bridge, runtime current-user read และ Paper-first leave page/server actions สำหรับสร้าง ส่ง ยกเลิก บันทึกผลกระดาษ และ void ตาม capability. Docker Compose target ใช้พอร์ต `3100/3101` และมี MySQL development แยกบน `13307` พร้อม Prisma schema/seed สังเคราะห์. People/Leave vertical slice มี read/create/state-transition API, capability checks และ audit/outbox ในฐานข้อมูลทดสอบแล้ว; leave draft คำนวณจำนวนวันฝั่ง server ด้วย provisional working/calendar-day rule, ตัดวันหยุดที่มีข้อมูล, เก็บค่าทศนิยมแบบ fixed-decimal และป้องกัน active-request overlap. กติกานี้เป็น development foundation เท่านั้น ยังต้องผูกกับ HR Rulebook/สิทธิ์โควตาที่รับรองก่อน production. Browser smoke ยืนยัน flow สร้าง → ส่ง → บันทึก `PAPER_APPROVED` โดยผู้ตรวจแยกบัญชี → `VOIDED` และคืนข้อมูลทดลองเป็นสถานะที่ไม่มีผลแล้ว. Master-data sync มี validated source-ID upsert, effective membership, soft-inactivate และ sync report แต่ยังไม่ตั้งค่า source/token จริง. Special leave snapshot adapter มี prepare/deliver แบบ immutable batch, source hash/idempotency, service-token client, response guard และ retry metadata แล้ว; worker foundation มี retry due delivery, optional monthly orchestration และ MySQL named lock โดยยังปิด scheduled execution เป็นค่าเริ่มต้น. source code ปัจจุบันของ Special รับ contract v1.0 จึงยังอยู่ใน compatibility mode และยังไม่มี reconciliation UI. Production migration/backup, permission scope/delegation แบบละเอียด, schedule approval, reconciliation, DOCX และ real-data import ยังไม่พร้อม production และเป็นงานถัดไปตาม release plan.
 
 ## Target Product Baseline
 
@@ -3119,3 +3120,37 @@ source code ของ `Special-Allowances` ที่ตรวจในรอบ�
 - target API test ผ่าน 9 suites/29 tests รวม client URL/auth/idempotency/error mapping, snapshot hash/idempotency, v1.0/v1.1 compatibility, delivery success/duplicate และ retryable failure.
 - target typecheck/build ต้องผ่านหลัง regenerate Prisma client.
 - Docker target ต้อง start ได้ด้วย auth ปิดเป็นค่าเริ่มต้น, health/readiness ผ่าน และไม่มี batch ทดสอบค้างในสถานะที่มีผล.
+
+---
+
+# Implementation Addendum v1.16 — Leave snapshot worker & monthly orchestration (29 สิงหาคม 2569)
+
+ภาคผนวกนี้บันทึก worker รุ่นแรกสำหรับ integration ใบลา โดยตั้งใจให้เป็น database-backed process ที่ deploy แยกจาก HTTP API ได้ แต่ยังใช้ image และ module boundary เดียวกัน.
+
+## 1. สิ่งที่ลงมือทำแล้ว
+
+- เพิ่ม `npm run worker:once -w @onedata/api` สำหรับรันงานหนึ่งรอบ และ `npm run worker -w @onedata/api` สำหรับ loop ตาม `ONEDATA_WORKER_INTERVAL_MS`.
+- worker เลือกเฉพาะ `RETRYABLE_FAILURE` ที่ delivery ล่าสุดถึง `nextAttemptAt`, จำกัดจำนวนต่อรอบด้วย `ONEDATA_WORKER_BATCH_SIZE` และเรียก use case เดียวกับ manual delivery จึงรักษา idempotency/audit/period-version guard ชุดเดียวกัน.
+- ใช้ MySQL named lock `onedata:leave-snapshot-worker` ภายใน connection/transaction เพื่อป้องกัน worker หลาย instance ทำงานซ้ำพร้อมกัน.
+- สร้าง affiliation-scoped system identity เฉพาะใน process พร้อม capability `leave.snapshot.manage`; worker ไม่ใช้ Portal cookie หรือ development auth.
+- เพิ่ม optional monthly mode: หลัง cutoff configurable (ค่าเริ่มต้น 3 วันหลังสิ้นเดือน) จะเตรียมและส่ง snapshot ให้ active affiliation ที่ยังไม่มี batch ของ period นั้น. หาก period มี batch แล้วจะไม่สร้างซ้ำ; การแก้ข้อมูลย้อนหลังให้ผู้ดูแล prepare ใหม่โดยตั้งใจ.
+- เพิ่ม Docker Compose service ผ่าน `--profile worker`; `ONEDATA_WORKER_ENABLED=false` และ `ONEDATA_LEAVE_SNAPSHOT_MONTHLY_ENABLED=false` เป็นค่าเริ่มต้นเพื่อไม่ให้ local boot ส่งข้อมูลภายนอกโดยอัตโนมัติ.
+
+## 2. กฎการเปิดใช้งาน
+
+- เปิด `ONEDATA_WORKER_ENABLED=true` เฉพาะ environment ที่มี Special URL/token, period protocol, schedule owner และ alerting ที่อนุมัติแล้ว.
+- เปิด monthly mode แยกด้วย `ONEDATA_LEAVE_SNAPSHOT_MONTHLY_ENABLED=true`; ต้องเลือกว่าจะใช้ period ก่อนหน้าอัตโนมัติหรือกำหนด `ONEDATA_LEAVE_SNAPSHOT_PERIOD` แบบ explicit และต้องตรวจ cutoff/timezone ให้ตรงกับฝ่ายบุคคล.
+- Worker ไม่ retry configuration/validation/locked-period failure; สถานะจะค้างให้ผู้ดูแลแก้และสั่ง prepare/deliver ตาม policy. Network/408/429/5xx เท่านั้นที่อยู่ใน retry path.
+
+## 3. สิ่งที่ยังไม่เสร็จ
+
+- scheduler/calendar ที่นับ “3 วันทำการ” ตามปฏิทินจริง แทนค่า calendar-day foundation ปัจจุบัน.
+- reconciliation dashboard, alert/notification, dead-letter/manual recovery และ locked-period adjustment contract.
+- distributed lock/lease metrics, production migration/backup/restore และ runbook สำหรับ deploy/rollback.
+- real-data shadow run กับ 38 รพ.สต. และการอนุมัติ schedule ก่อนเปิด worker profile ใน production.
+
+## 4. Acceptance ของ checkpoint นี้
+
+- target API test ผ่าน 10 suites/32 tests รวม lock skip, retry due delivery, monthly cutoff/duplicate prevention และ affiliation-scoped system identity.
+- target typecheck/build ผ่าน และ `docker compose -f docker-compose.target.yml config --profiles` แสดง worker profile.
+- worker once/HTTP target ใช้ database development ได้ โดยไม่เปิด external delivery หรือทิ้งข้อมูลทดสอบที่มีผล.

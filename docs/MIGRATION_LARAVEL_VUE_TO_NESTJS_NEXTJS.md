@@ -19,7 +19,7 @@
 - Portal launch-token verifier/exchange ตรวจ HS256 signature, issuer, audience, expiry, required claims และ replay ภายใน process แล้วสร้าง local session แบบ opaque ที่เก็บเฉพาะ hash พร้อม permission snapshot จาก role/position allowlist; Next.js มี launch bridge ที่ `/auth/portal/launch` สำหรับ local integration แต่ยังไม่ใช่ production cutover
 - `docker-compose.target.yml` สร้าง API/web image แยกที่พอร์ต `3100/3101`; ใช้ฐานข้อมูล development แยกและยังไม่ผูกข้อมูลจริง
 
-จุดนี้เป็นการสร้างทางเดิน migration ไม่ใช่การประกาศว่า People/Leave พร้อม cutover. Prisma schema, local development database, synthetic seed, People read/create, Leave Paper-first state-transition slice, provisional server-side day calculation/overlap guard, Next.js leave page/server actions, local Portal session exchange, capability guard, Special master-data projection boundary และ Special leave snapshot adapter รุ่นแรกเริ่มทำแล้ว; adapter ทำ prepare/deliver แบบเก็บ batch immutable, idempotency/source hash และ retry metadata แต่ยังไม่มี scheduled worker, reconciliation UI หรือ real-data cutover. Provisional rule ยังไม่ใช่ HR Rulebook และยังไม่มี quota engine. ขั้นถัดไปคือ production migration/backup, permission scope/delegation ที่ละเอียดขึ้น, ตั้งค่าและ dry-run real People import, worker และ contract test กับ Special ก่อนเปิด write endpoint ให้ผู้ใช้จริง.
+จุดนี้เป็นการสร้างทางเดิน migration ไม่ใช่การประกาศว่า People/Leave พร้อม cutover. Prisma schema, local development database, synthetic seed, People read/create, Leave Paper-first state-transition slice, provisional server-side day calculation/overlap guard, Next.js leave page/server actions, local Portal session exchange, capability guard, Special master-data projection boundary, Special leave snapshot adapter และ worker foundation เริ่มทำแล้ว; adapter ทำ prepare/deliver แบบเก็บ batch immutable, idempotency/source hash และ retry metadata ส่วน worker มี database lock, retry due delivery และ optional monthly orchestration แต่ยังปิด scheduled delivery, ไม่มี reconciliation UI และยังไม่ real-data cutover. Provisional rule ยังไม่ใช่ HR Rulebook และยังไม่มี quota engine. ขั้นถัดไปคือ production migration/backup, permission scope/delegation ที่ละเอียดขึ้น, ตั้งค่าและ dry-run real People import, reconciliation และ contract test กับ Special ก่อนเปิด write endpoint ให้ผู้ใช้จริง.
 
 ## 1. คำตัดสินหลัก
 
@@ -222,7 +222,7 @@ Exit criteria:
 | Dashboard | เทียบข้อมูล Laravel กับ Nest read model | Next.js อ่าน Nest API |
 | People | current UI/reference + shadow projection | Next.js write ผ่าน NestJS command |
 | Leave | current workflow เป็น baseline | Next.js write ผ่าน NestJS state machine |
-| Special snapshot | contract เดิมเป็น reference | NestJS worker เป็นผู้ส่งจริงเพียงรายเดียว |
+| Special snapshot | contract เดิมเป็น reference | NestJS worker เป็นผู้ส่งจริงเพียงรายเดียว; worker foundation มีแล้วแต่ยังปิด scheduled delivery |
 | Reports/documents | ใช้ artifact/route เดิมที่ยังจำเป็น | ย้ายทีละ report หลัง source/query ผ่าน contract |
 | Vehicles/Stock/Assets/Finance | ยังแยก/ยังไม่เริ่ม | เพิ่มเป็น module ภายหลังตาม priority |
 
@@ -289,6 +289,8 @@ Exit criteria:
 - response มี stable envelope, error code, correlation ID และ validation details ที่ไม่เปิด secret/PII เกินจำเป็น
 - command ที่มีผลข้างเคียงใช้ชื่อชัด เช่น `/confirm`, `/cancel`, `/sync`, `/send` และตรวจ idempotency
 - OpenAPI เป็น artifact ที่ review และ test ได้ ไม่สร้าง type จาก implementation แบบอัตโนมัติโดยไม่มีการตรวจ
+
+worker ใช้ `npm run worker:once -w @onedata/api` สำหรับ manual run หรือ `npm run worker -w @onedata/api` สำหรับ loop ตาม interval. ต้องเปิด `ONEDATA_WORKER_ENABLED=true` เฉพาะ environment ที่ผ่านการอนุมัติ; monthly orchestration เปิดเพิ่มด้วย `ONEDATA_LEAVE_SNAPSHOT_MONTHLY_ENABLED=true`. ทุก run จำกัด scope ด้วย affiliation และใช้ MySQL named lock เพื่อไม่ให้หลาย process ส่ง batch เดียวกันพร้อมกัน.
 
 ### API compatibility
 

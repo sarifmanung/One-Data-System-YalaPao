@@ -17,9 +17,10 @@
 - `apps/web`: Next.js App Router dashboard shell, Paper-first leave page/server actions, Portal launch bridge ที่ `/auth/portal/launch`, และการอ่าน current user จาก API ตอน runtime
 - `packages/contracts`: shared TypeScript contract v1.3, capability permissions และ leave snapshot fixture ที่ห้ามส่ง `CONFIRMED`
 - `docker-compose.target.yml`: API/web แยกจาก compose เดิมบนพอร์ต `3100/3101`
+- worker command ใน API image: database lock, retry due delivery และ optional monthly prepare/deliver; target Compose เปิดผ่าน profile `worker` และปิดงานด้วย `ONEDATA_WORKER_ENABLED=false` เป็นค่าเริ่มต้น
 - automated checks: contracts/API/web typecheck, API unit/e2e smoke tests, target production build และ legacy Vite build
 
-สิ่งที่ยังไม่เปิดใช้จริงใน checkpoint นี้คือ production migration/backup policy, real-data People import (มี client/sync boundary แต่ยังไม่ตั้งค่า source จริง), permission scope matrix แบบละเอียดครบทุกโมดูล และ worker. Special-Allowances leave adapter รุ่นแรกมีแล้วในระดับ local integration foundation: prepare complete snapshot, เก็บ immutable batch, ส่งผ่าน service token, idempotency/source hash, delivery history และ retry metadata; ยังไม่เปิด scheduled delivery หรือ real-data cutover. Local session exchange, session guard, Portal-to-One Data capability mapping, route permission guard และ master-data projection boundary มีแล้วในระดับ development/integration foundation; Prisma schema, local development database, synthetic seed, People/Leave write/state-transition slice และ durable audit/outbox สำหรับ target database มีแล้ว แต่ยังไม่ใช้ข้อมูลหรือ identity จริง.
+สิ่งที่ยังไม่เปิดใช้จริงใน checkpoint นี้คือ production migration/backup policy, real-data People import (มี client/sync boundary แต่ยังไม่ตั้งค่า source จริง), permission scope matrix แบบละเอียดครบทุกโมดูล, reconciliation UI และ production schedule approval. Special-Allowances leave adapter และ worker รุ่นแรกมีแล้วในระดับ local integration foundation: prepare complete snapshot, เก็บ immutable batch, ส่งผ่าน service token, idempotency/source hash, delivery history, retry metadata, database lock และ optional monthly orchestration; ค่า worker และ monthly delivery ยังปิดเป็นค่าเริ่มต้นและยังไม่ทำ real-data cutover. Local session exchange, session guard, Portal-to-One Data capability mapping, route permission guard และ master-data projection boundary มีแล้วในระดับ development/integration foundation; Prisma schema, local development database, synthetic seed, People/Leave write/state-transition slice และ durable audit/outbox สำหรับ target database มีแล้ว แต่ยังไม่ใช้ข้อมูลหรือ identity จริง.
 
 ## 1. Architecture Decision
 
@@ -262,6 +263,7 @@ Period protocol:
 - งานสร้างเอกสารขนาดใหญ่ import/export และ retry integration ทำผ่าน queue เมื่อจำเป็น
 - Transactional outbox ถูกเขียนใน transaction เดียวกับ business change
 - Worker อ่าน outbox และส่งต่อแบบ idempotent
+- Leave snapshot worker รุ่นแรกใช้ database named lock ของ MySQL กันหลาย instance, query เฉพาะ delivery ที่ถึง `nextAttemptAt`, และไม่สร้าง monthly batch ซ้ำเมื่อ period นั้นมี batch แล้ว
 - ยังไม่ติดตั้ง message broker จนกว่าจะมีหลาย consumer ปริมาณงาน หรือ reliability requirement ที่ database queue รองรับไม่ได้
 - Event payload ส่งเฉพาะ ID, scope, version และข้อมูลขั้นต่ำ หลีกเลี่ยง PII
 

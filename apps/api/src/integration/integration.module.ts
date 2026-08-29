@@ -8,5 +8,6 @@ import { SpecialLeaveSnapshotClient } from './special-leave-snapshot.client';
   imports: [PlatformModule],
   controllers: [LeaveSnapshotController],
   providers: [LeaveSnapshotService, SpecialLeaveSnapshotClient],
+  exports: [LeaveSnapshotService, SpecialLeaveSnapshotClient],
 })
 export class IntegrationModule {}
