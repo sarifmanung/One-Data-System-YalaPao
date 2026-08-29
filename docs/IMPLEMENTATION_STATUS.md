@@ -17,8 +17,8 @@
 | Docker | เสร็จระดับ local foundation | `docker-compose.target.yml`, API `3100`, web `3101`, แยกจาก Laravel compose |
 | People master-data projection | เสร็จระดับ local integration foundation | `SpecialMasterDataClient`, transaction/idempotent upsert ด้วย source ID, effective membership, soft-inactivate และ `MasterDataSyncRun`; endpoint `POST /api/v1/people/sync/special` ยังรอ token/URL จริง |
 | Authorization | เสร็จระดับ local integration foundation | Portal role/position → One Data capability allowlist, session permission snapshot, server-side route guard และ self/requester paper-result separation |
-| Prisma/People/Leave vertical slice | เสร็จระดับ local development | schema + synthetic seed, People read, Leave `DRAFT → SUBMITTED → PAPER_APPROVED/PAPER_REJECTED`, `CANCELLED/VOIDED`, durable audit/outbox |
-| Regression checks | ผ่าน | target typecheck, target build, API 5 suites/13 tests, legacy Vite build, local และ Docker smoke test |
+| Prisma/People/Leave vertical slice | เสร็จระดับ local development | schema + synthetic seed, People read, Leave `DRAFT → SUBMITTED → PAPER_APPROVED/PAPER_REJECTED`, `CANCELLED/VOIDED`, provisional server-side day calculation, fixed-decimal requested days, holiday exclusion และ active-request overlap guard, durable audit/outbox |
+| Regression checks | ผ่าน | target typecheck, target build, API 6 suites/18 tests, legacy Vite build, local และ Docker smoke test |
 
 ## ยังไม่เสร็จและห้ามตีความว่า production-ready
 
@@ -26,7 +26,7 @@
 - permission scope matrix แบบละเอียดครบทุกโมดูลและ delegated approver configuration (People/Leave capability guard รุ่นแรกทำแล้ว)
 - production session hardening เช่น distributed replay/revocation strategy, CSRF policy, session rotation และ operational cleanup
 - People import/reconciliation จาก Special-Allowances ด้วย URL/token จริง, real-data mapping และการ map Portal user กับ employee
-- Leave quota/policy engine, complete snapshot และ production acceptance rules (state machine/revision/audit/outbox foundation มีแล้ว)
+- HR-approved leave Rulebook, quota/balance engine, half-day policy, complete snapshot และ production acceptance rules (provisional day calculation/state machine/revision/audit/outbox foundation มีแล้ว; ห้ามถือ provisional rule เป็นกฎสิทธิ์จริง)
 - Special-Allowances adapter, retry/outbox, monthly cutoff/locked-period adjustment และ reconciliation UI
 - worker process, document/DOCX, report access, backup/restore และ operational observability
 - UAT กับข้อมูล/บัญชีจริงและ pilot 3 รพ.สต.

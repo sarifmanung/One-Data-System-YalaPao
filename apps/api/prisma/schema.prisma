@@ -228,6 +228,7 @@ model LeaveRequest {
   startsOn            DateTime                @db.Date
   endsOn              DateTime                @db.Date
   requestedDays       Decimal?                @db.Decimal(8, 2)
+  calculationBasis    String?                 @db.VarChar(64)
   approvedDays        Decimal?                @db.Decimal(8, 2)
   reason              String?                 @db.Text
   submittedAt         DateTime?

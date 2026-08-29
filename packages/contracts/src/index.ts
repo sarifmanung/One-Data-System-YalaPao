@@ -155,6 +155,7 @@ export interface LeaveRequestSummary {
   startsOn: string;
   endsOn: string;
   requestedDays: number | null;
+  calculationBasis: string | null;
   approvedDays: number | null;
   reason: string | null;
   version: number;

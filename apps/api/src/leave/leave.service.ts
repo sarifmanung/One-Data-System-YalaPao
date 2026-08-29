@@ -23,6 +23,7 @@ import { hasOneDataPermission } from '../platform/auth/permissions';
 import { CreateLeaveRequestDto } from './dto/create-leave-request.dto';
 import { PaperResultDto } from './dto/paper-result.dto';
 import { VoidLeaveDto } from './dto/void-leave.dto';
+import { LeaveRulesService } from './leave-rules.service';
 
 const PORTAL_SYSTEM = 'yala-pao-public-health-portal';
 
@@ -45,7 +46,10 @@ function asNumber(value: Prisma.Decimal | null): number | null {
 
 @Injectable()
 export class LeaveService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly leaveRules: LeaveRulesService,
+  ) {}
 
   async listTypes(): Promise<LeaveTypeSummary[]> {
     const types = await this.prisma.leaveType.findMany({
@@ -111,14 +115,36 @@ export class LeaveService {
         employeeId,
         tenantId: context.workspace.id,
         effectiveFrom: { lte: startsOn },
-        OR: [{ effectiveTo: null }, { effectiveTo: { gte: startsOn } }],
+        OR: [{ effectiveTo: null }, { effectiveTo: { gte: endsOn } }],
       },
     });
     if (!membership) {
       throw new ForbiddenException('The employee is not assigned to the selected workspace.');
     }
 
+    const calculation = await this.leaveRules.calculate(
+      leaveType.code,
+      membership.affiliationId,
+      startsOn,
+      endsOn,
+    );
+
     const created = await this.prisma.$transaction(async (tx) => {
+      const overlapping = await tx.leaveRequest.findFirst({
+        where: {
+          employeeId,
+          status: { in: ['DRAFT', 'SUBMITTED', 'PAPER_APPROVED'] },
+          startsOn: { lte: endsOn },
+          endsOn: { gte: startsOn },
+        },
+        select: { id: true, status: true },
+      });
+      if (overlapping) {
+        throw new ConflictException(
+          'The employee already has an overlapping draft, submitted, or effective leave request.',
+        );
+      }
+
       const request = await tx.leaveRequest.create({
         data: {
           id: randomUUID(),
@@ -128,6 +154,8 @@ export class LeaveService {
           status: 'DRAFT',
           startsOn,
           endsOn,
+          requestedDays: calculation.requestedDays,
+          calculationBasis: calculation.calculationBasis,
           reason: input.reason ?? null,
           version: 1,
         },
@@ -143,6 +171,8 @@ export class LeaveService {
             leaveTypeId: leaveType.id,
             startsOn: input.startsOn.slice(0, 10),
             endsOn: input.endsOn.slice(0, 10),
+            requestedDays: calculation.requestedDays,
+            calculationBasis: calculation.calculationBasis,
             reason: input.reason ?? null,
           },
           createdBy: user.id,
@@ -235,6 +265,13 @@ export class LeaveService {
     }
 
     const approvedDays = input.result === 'PAPER_APPROVED' ? input.approvedDays! : null;
+    if (
+      approvedDays !== null
+      && request.requestedDays !== null
+      && new Prisma.Decimal(approvedDays).greaterThan(request.requestedDays)
+    ) {
+      throw new BadRequestException('Approved leave days cannot exceed requested leave days.');
+    }
     await this.prisma.$transaction(async (tx) => {
       const updated = await tx.leaveRequest.updateMany({
         where: { id, status: 'SUBMITTED', version: request.version },
@@ -477,6 +514,7 @@ export class LeaveService {
     startsOn: Date;
     endsOn: Date;
     requestedDays: Prisma.Decimal | null;
+    calculationBasis: string | null;
     approvedDays: Prisma.Decimal | null;
     reason: string | null;
     version: number;
@@ -504,6 +542,7 @@ export class LeaveService {
       startsOn: dateOnly(request.startsOn),
       endsOn: dateOnly(request.endsOn),
       requestedDays: asNumber(request.requestedDays),
+      calculationBasis: request.calculationBasis,
       approvedDays: asNumber(request.approvedDays),
       reason: request.reason,
       version: request.version,

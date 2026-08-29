@@ -2,7 +2,7 @@
 
 เอกสารวิเคราะห์ระบบเพื่อการสร้างใหม่แบบ Clean-Room
 
-- เวอร์ชันเอกสาร: 1.12 — Reference Audit, NestJS/NextJS Target Baseline, Master-data Projection & Authorization Checkpoint
+- เวอร์ชันเอกสาร: 1.13 — Reference Audit, NestJS/NextJS Target Baseline, Authorization & Provisional Leave Rules Checkpoint
 - แก้ไขล่าสุด: 29 สิงหาคม 2569 (2026)
 - วันที่สำรวจ: 10–11 สิงหาคม และ 29 สิงหาคม 2569 (2026)
 - ขอบเขตที่สำรวจ: หน่วยงาน รพ.สต. 1 แห่ง และสังกัดระดับองค์การบริหารส่วนจังหวัดที่เชื่อมกัน
@@ -27,6 +27,7 @@
 | 1.10    | 29 ส.ค. 2569 | เพิ่ม Portal launch-token exchange, local session แบบ opaque/hash, session guard, logout, Next.js launch bridge และทดสอบการ map external identity → employee → active workspace โดยยังไม่เปิดใช้ข้อมูลจริง |
 | 1.11    | 29 ส.ค. 2569 | เพิ่ม Special-Allowances master-data projection boundary: validated client, source-ID upsert, effective membership, soft-inactivate, durable sync run และ admin sync endpoint โดยยังไม่ตั้งค่า source/token จริง |
 | 1.12    | 29 ส.ค. 2569 | เพิ่ม One Data capability permission allowlist จาก Portal role/position, session permission snapshot, server-side route guard สำหรับ People/Leave และบังคับ SoD สำหรับผู้บันทึกผลใบลากระดาษ; เพิ่ม contract version 1.2 |
+| 1.13    | 29 ส.ค. 2569 | เพิ่ม provisional server-side leave calculation: working/calendar-day mode, holiday exclusion, fixed two-decimal requested days, date-range validation, active-request overlap guard และ calculation basis; ย้ำว่ายังไม่ใช่ HR Rulebook หรือ quota engine ที่รับรองแล้ว |
 
 ## วิธีอ่านระดับความมั่นใจ
 
@@ -46,9 +47,9 @@
 
 > เอกสารนี้สกัด “ความต้องการทางธุรกิจ” จากระบบอ้างอิง ไม่ใช่คำสั่งให้คัดลอกหน้าจอ โค้ด เทคโนโลยี หรือข้อจำกัดของระบบเดิมแบบ 1:1
 
-> **Effective implementation baseline:** ส่วน `Implementation Addendum v1.12` ท้ายเอกสารเป็น checkpoint/decision ล่าสุดของเจ้าของโครงการ; supersede เฉพาะรายละเอียด authorization ที่เกี่ยวข้องใน revision ก่อนหน้า และคง `Implementation Addendum v1.8` เป็น workflow ใบลาฐานปฏิบัติการ. `Implementation Addendum v1.11`, `v1.10`, `v1.8`, `v1.7`, `v1.6` และ revision ก่อนหน้าเก็บไว้เพื่อ traceability โดย Laravel/Vue หมายถึง current implementation baseline ส่วน NestJS/NextJS หมายถึง target architecture.
+> **Effective implementation baseline:** ส่วน `Implementation Addendum v1.13` ท้ายเอกสารเป็น checkpoint/decision ล่าสุดของเจ้าของโครงการ; supersede เฉพาะรายละเอียด leave calculation ที่เกี่ยวข้องใน revision ก่อนหน้า และใช้ร่วมกับ authorization ของ `Implementation Addendum v1.12` และ workflow ใบลาของ `Implementation Addendum v1.8`. `Implementation Addendum v1.12`, `v1.11`, `v1.10`, `v1.8`, `v1.7`, `v1.6` และ revision ก่อนหน้าเก็บไว้เพื่อ traceability โดย Laravel/Vue หมายถึง current implementation baseline ส่วน NestJS/NextJS หมายถึง target architecture.
 
-> **Implementation checkpoint 29 สิงหาคม 2569:** target workspace เริ่มทำงานแบบแยกจาก Laravel/Vue แล้วที่ `apps/api`, `apps/web` และ `packages/contracts`. API foundation มี health/readiness, request-id, API envelope, problem-details, deny-by-default development auth boundary, tenant-context helper, HS256 Portal launch-token verifier/exchange, hashed local session/logout, Portal role/position → One Data capability mapping, server-side permission guard และ Special master-data projection boundary; web foundation มี Next.js dashboard shell, `/auth/portal/launch` bridge และอ่าน current user จาก API ตอน runtime. Docker Compose target ใช้พอร์ต `3100/3101` และมี MySQL development แยกบน `13307` พร้อม Prisma schema/seed สังเคราะห์. People/Leave vertical slice มี read/create/state-transition API, capability checks และ audit/outbox ในฐานข้อมูลทดสอบแล้ว; master-data sync มี validated source-ID upsert, effective membership, soft-inactivate และ sync report แต่ยังไม่ตั้งค่า source/token จริง. Production migration/backup, permission scope/delegation แบบละเอียด, Special leave adapter, worker และ real-data import ยังไม่พร้อม production และเป็นงานถัดไปตาม release plan.
+> **Implementation checkpoint 29 สิงหาคม 2569:** target workspace เริ่มทำงานแบบแยกจาก Laravel/Vue แล้วที่ `apps/api`, `apps/web` และ `packages/contracts`. API foundation มี health/readiness, request-id, API envelope, problem-details, deny-by-default development auth boundary, tenant-context helper, HS256 Portal launch-token verifier/exchange, hashed local session/logout, Portal role/position → One Data capability mapping, server-side permission guard และ Special master-data projection boundary; web foundation มี Next.js dashboard shell, `/auth/portal/launch` bridge และอ่าน current user จาก API ตอน runtime. Docker Compose target ใช้พอร์ต `3100/3101` และมี MySQL development แยกบน `13307` พร้อม Prisma schema/seed สังเคราะห์. People/Leave vertical slice มี read/create/state-transition API, capability checks และ audit/outbox ในฐานข้อมูลทดสอบแล้ว; leave draft คำนวณจำนวนวันฝั่ง server ด้วย provisional working/calendar-day rule, ตัดวันหยุดที่มีข้อมูล, เก็บค่าทศนิยมแบบ fixed-decimal และป้องกัน active-request overlap. กติกานี้เป็น development foundation เท่านั้น ยังต้องผูกกับ HR Rulebook/สิทธิ์โควตาที่รับรองก่อน production. Master-data sync มี validated source-ID upsert, effective membership, soft-inactivate และ sync report แต่ยังไม่ตั้งค่า source/token จริง. Production migration/backup, permission scope/delegation แบบละเอียด, Special leave adapter, worker และ real-data import ยังไม่พร้อม production และเป็นงานถัดไปตาม release plan.
 
 ## Target Product Baseline
 
@@ -3020,3 +3021,33 @@ PAPER_APPROVED → VOIDED
 - แยก permission scope ระดับ affiliation/tenant/self/ทีม และ effective date ให้ละเอียดเมื่อมี fixture 38 รพ.สต.
 - เพิ่ม session revocation เมื่อ Portal role/position เปลี่ยน และ durable/distributed replay guard ก่อนขยายหลาย replica.
 - ทำ UAT matrix ด้วยบัญชี Portal sandbox ที่ได้รับอนุญาตและทดสอบ negative cases ข้าม tenant/affiliation.
+
+---
+
+# Implementation Addendum v1.13 — Provisional leave calculation foundation (29 สิงหาคม 2569)
+
+ภาคผนวกนี้บันทึกกติกาคำนวณจำนวนวันลารุ่น development foundation ที่ลงมือทำแล้วใน NestJS API. กติกานี้มีไว้เพื่อให้จำนวนวันใน `DRAFT` คำนวณจาก server อย่างสม่ำเสมอและป้องกันข้อมูลขัดแย้งระหว่างการพัฒนา **ยังไม่ใช่ Leave Rulebook ของฝ่ายบุคคล และยังไม่ใช่ quota/balance engine สำหรับ production**.
+
+## 1. สิ่งที่ลงมือทำแล้ว
+
+- ตรวจ `startsOn` และ `endsOn` ที่ server; วันที่สิ้นสุดต้องไม่ก่อนวันที่เริ่ม.
+- คำนวณช่วงวันแบบ inclusive ด้วย UTC date-only เพื่อไม่ให้ timezone ทำให้จำนวนวันคลาดเคลื่อน.
+- เก็บ `requestedDays` เป็น `Decimal(8,2)` และคืนค่าใน contract เป็นตัวเลขหลังผ่านการคำนวณจากค่าทศนิยมที่กำหนดรูปแบบแล้ว; ไม่ใช้ floating-point arithmetic เป็นแหล่งความจริงของการบันทึก.
+- มี counting mode สองแบบ: `WORKING_DAYS` ตัดวันเสาร์/อาทิตย์และวันหยุดที่มีอยู่ในปฏิทินของ affiliation; `CALENDAR_DAYS` นับทุกวันในช่วง.
+- กติกา provisional ที่ map ไว้ใน code ได้แก่ `ANNUAL`, `PERSONAL`, `SICK`, `VACATION_LEAVE`, `PERSONAL_LEAVE`, `SICK_LEAVE` เป็น working days และ `MATERNITY_LEAVE`, `HAJJ_LEAVE`, `ORDAIN_LEAVE` เป็น calendar days. หากประเภทใดไม่อยู่ใน rule map ระบบจะปฏิเสธ ไม่เดากติกาให้เอง.
+- เก็บ `calculationBasis` เช่น `PROVISIONAL_RULEBOOK_V1:WORKING_DAYS` เพื่อบอกว่าค่ามาจาก rule รุ่นใด.
+- ป้องกันใบลา `DRAFT`, `SUBMITTED` หรือ `PAPER_APPROVED` ของบุคลากรคนเดียวกันที่ช่วงวันทับซ้อนกัน; `PAPER_REJECTED`, `CANCELLED` และ `VOIDED` ไม่ block การสร้างรายการใหม่.
+- การบันทึกผลกระดาษที่ระบุ `approvedDays` ห้ามมากกว่า `requestedDays` ที่ server คำนวณไว้.
+
+## 2. ขอบเขตที่ยังไม่ถือว่าเสร็จ
+
+- ยังไม่ตัดสินสิทธิ์ตามประเภทบุคลากร อายุงาน สะสม/ยกยอด หรือจำนวนโควตา; ต้องรอ HR Rulebook ที่มีหน่วยงานผู้ออก เลขที่/ฉบับ วันมีผล และ scope ชัดเจน.
+- ยังไม่เปิด half-day/ช่วงเวลาใน request contract. การเพิ่มครึ่งวันต้องกำหนด field, rounding, วันเริ่ม/สิ้นสุด, การชนกัน และผลต่อ Special ให้เป็นคำตัดสินเดียวกันก่อน.
+- วันหยุดที่ใช้คำนวณต้องมาจากข้อมูล affiliation ที่เชื่อถือได้; ยังไม่มีหน้าจอ/worker สำหรับนำเข้าปฏิทินวันหยุดจริง.
+- overlap guard รุ่นนี้เป็น application-level transaction check; ก่อน production ต้องเพิ่ม constraint/locking strategy ที่รองรับ concurrent requests หลาย replica.
+- ยังไม่มี quota ledger ที่ตัด/คืนยอดอย่างครบวงจร และยังไม่มี complete monthly snapshot adapter ไป Special.
+
+## 3. Acceptance ของ checkpoint นี้
+
+- unit tests ครอบคลุม working days, calendar days, holiday exclusion, reversed range, unknown rule และ fixed calculation basis.
+- target typecheck และ API test suite ผ่านรวม 6 suites/18 tests; ต้อง rebuild Docker target และทดสอบ create/overlap/cancel กับฐานข้อมูล development ก่อนเริ่ม UI workflow.
