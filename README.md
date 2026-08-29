@@ -85,9 +85,10 @@ API contract ที่เปิดให้ One Data เรียกใช้:
 
 การ sync master data เป็นการดึงจาก Special เข้ามา One Data ส่วน leave snapshot เป็นการส่งจาก One Data ไป Special แบบ complete snapshot รายเดือน การ retry ใช้ idempotency key และ source hash ไม่ใช้การเขียนฐานข้อมูลข้ามระบบ
 
-Target API มีคำสั่ง sync สำหรับผู้ดูแลที่มี role `PEOPLE_SYNC_ADMIN` (หรือ role development ที่กำหนดไว้ชั่วคราว):
+Target API มีคำสั่ง sync สำหรับผู้ดูแลที่มี capability `employee.master-data.sync` (Portal role/position จะถูก map เป็น allowlist ฝั่ง One Data; `PEOPLE_SYNC_ADMIN` หรือ role development ใช้ใน local test ได้):
 
 - `POST /api/v1/people/sync/special`
+- `POST /api/v1/people/identity-mappings/portal` สำหรับผู้ดูแลจับคู่ Portal subject กับ employee ที่ตรวจสอบแล้ว
 
 คำสั่งนี้จะทำงานได้เมื่อกำหนด `SPECIAL_ALLOWANCES_BASE_URL` และ `SPECIAL_ALLOWANCES_INTEGRATION_TOKEN`; จะสร้าง projection ด้วย source ID, เก็บประวัติ membership และบันทึก `MasterDataSyncRun` โดยไม่ลบข้อมูลเดิม
 

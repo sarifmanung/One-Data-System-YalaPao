@@ -1,4 +1,30 @@
-export const API_CONTRACT_VERSION = '1.1' as const;
+export const API_CONTRACT_VERSION = '1.2' as const;
+
+export const DASHBOARD_VIEW = 'dashboard.view' as const;
+export const EMPLOYEE_PROFILE_READ = 'employee.profile.read' as const;
+export const EMPLOYEE_MASTER_DATA_SYNC = 'employee.master-data.sync' as const;
+export const EMPLOYEE_IDENTITY_MAPPING_MANAGE = 'employee.identity-mapping.manage' as const;
+export const LEAVE_REQUEST_READ = 'leave.request.read' as const;
+export const LEAVE_REQUEST_CREATE = 'leave.request.create' as const;
+export const LEAVE_REQUEST_SUBMIT = 'leave.request.submit' as const;
+export const LEAVE_REQUEST_CANCEL = 'leave.request.cancel' as const;
+export const LEAVE_PAPER_DECISION_RECORD = 'leave.paper-decision.record' as const;
+export const LEAVE_REQUEST_VOID = 'leave.request.void' as const;
+
+export const ONE_DATA_PERMISSIONS = [
+  DASHBOARD_VIEW,
+  EMPLOYEE_PROFILE_READ,
+  EMPLOYEE_MASTER_DATA_SYNC,
+  EMPLOYEE_IDENTITY_MAPPING_MANAGE,
+  LEAVE_REQUEST_READ,
+  LEAVE_REQUEST_CREATE,
+  LEAVE_REQUEST_SUBMIT,
+  LEAVE_REQUEST_CANCEL,
+  LEAVE_PAPER_DECISION_RECORD,
+  LEAVE_REQUEST_VOID,
+] as const;
+
+export type OneDataPermission = (typeof ONE_DATA_PERMISSIONS)[number];
 
 export const LEAVE_STATUSES = [
   'DRAFT',
@@ -49,6 +75,7 @@ export interface CurrentUser {
   username: string;
   displayName: string;
   roles: string[];
+  permissions: string[];
   workspaces: WorkspaceSummary[];
   employeeId?: string;
 }

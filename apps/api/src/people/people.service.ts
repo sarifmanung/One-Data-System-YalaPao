@@ -1,9 +1,12 @@
 import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { randomUUID } from 'node:crypto';
+import {
+  EMPLOYEE_IDENTITY_MAPPING_MANAGE,
+} from '@onedata/contracts';
 import type { CurrentUser, IdentityMappingSummary, PersonListItem } from '@onedata/contracts';
 import { PrismaService } from '../database/prisma.service';
-import { canManagePeopleMasterData } from './people-sync.service';
+import { hasOneDataPermission } from '../platform/auth/permissions';
 
 @Injectable()
 export class PeopleService {
@@ -72,7 +75,7 @@ export class PeopleService {
     externalSubject: string,
     employeeId: string,
   ): Promise<IdentityMappingSummary> {
-    if (!canManagePeopleMasterData(user)) {
+    if (!hasOneDataPermission(user, EMPLOYEE_IDENTITY_MAPPING_MANAGE)) {
       throw new ForbiddenException('The account cannot manage Portal identity mappings.');
     }
 

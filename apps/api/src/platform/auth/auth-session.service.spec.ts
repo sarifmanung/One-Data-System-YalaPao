@@ -71,6 +71,11 @@ describe('AuthSessionService', () => {
       username: 'portal.user',
       displayName: 'Portal User',
       roles: ['pcu_staff'],
+      permissions: expect.arrayContaining([
+        'dashboard.view',
+        'leave.request.create',
+        'leave.request.submit',
+      ]),
       employeeId: 'employee-1',
     });
     expect(session.user.workspaces.map((workspace) => workspace.kind)).toEqual([
@@ -83,6 +88,11 @@ describe('AuthSessionService', () => {
     expect(persisted.tokenHash).toMatch(/^[a-f0-9]{64}$/);
     expect(persisted.tokenHash).not.toBe(session.token);
     expect(persisted.roles).toEqual(['pcu_staff']);
+    expect(persisted.permissions).toEqual(expect.arrayContaining([
+      'dashboard.view',
+      'leave.request.create',
+      'leave.request.submit',
+    ]));
   });
 
   it('resolves a cookie session and revokes it without exposing the raw token', async () => {
@@ -94,6 +104,7 @@ describe('AuthSessionService', () => {
       username: 'portal.user',
       displayName: 'Portal User',
       roles: ['pcu_staff'],
+      permissions: ['dashboard.view', 'leave.request.read'],
       expiresAt,
       revokedAt: null,
     });

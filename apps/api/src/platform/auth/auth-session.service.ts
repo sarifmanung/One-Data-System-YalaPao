@@ -5,6 +5,7 @@ import type { CookieOptions, Request, Response } from 'express';
 import type { CurrentUser, WorkspaceSummary } from '@onedata/contracts';
 import { PrismaService } from '../../database/prisma.service';
 import type { PortalLaunchClaims } from '../sso/portal-launch-token.service';
+import { permissionsFromPortalClaims } from './permissions';
 
 export const PORTAL_EXTERNAL_SYSTEM = 'yala-pao-public-health-portal';
 export const DEFAULT_SESSION_COOKIE = 'onedata_session';
@@ -14,6 +15,7 @@ interface SessionUserFields {
   username: string;
   displayName: string;
   roles: string[];
+  permissions: string[];
 }
 
 export interface CreatedAuthSession {
@@ -67,6 +69,7 @@ export class AuthSessionService {
         username: user.username,
         displayName: user.displayName,
         roles: user.roles,
+        permissions: user.permissions,
         issuedAt,
         expiresAt,
         lastSeenAt: issuedAt,
@@ -97,6 +100,7 @@ export class AuthSessionService {
         username: session.username,
         displayName: session.displayName,
         roles: stringArray(session.roles),
+        permissions: stringArray(session.permissions),
       });
 
       await this.prisma.authSession.update({
@@ -215,17 +219,22 @@ export class AuthSessionService {
       username: fields.username || fields.externalSubject,
       displayName,
       roles,
+      permissions: fields.permissions,
       workspaces,
       employeeId: employee.id,
     };
   }
 
   private sessionUserFieldsFromClaims(claims: PortalLaunchClaims): SessionUserFields {
+    const roles = stringArray(claims.roles);
+    const positions = stringArray(claims.positions);
+
     return {
       externalSubject: claims.sub,
       username: nonEmptyString(claims.username) ?? claims.sub,
       displayName: nonEmptyString(claims.name) ?? '',
-      roles: stringArray(claims.roles),
+      roles,
+      permissions: permissionsFromPortalClaims({ roles, positions }),
     };
   }
 

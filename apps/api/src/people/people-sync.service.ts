@@ -15,16 +15,11 @@ import {
   SpecialMasterDataSnapshot,
   SpecialMasterDataClient,
 } from './special-master-data.client';
-
-const SYNC_ADMIN_ROLES = new Set([
-  'DEVELOPMENT_ONLY',
-  'PEOPLE_SYNC_ADMIN',
-  'health_admin',
-  'health_division_director',
-]);
+import { hasOneDataPermission } from '../platform/auth/permissions';
+import { EMPLOYEE_MASTER_DATA_SYNC } from '@onedata/contracts';
 
 export function canManagePeopleMasterData(user: CurrentUser): boolean {
-  return user.roles.some((role) => SYNC_ADMIN_ROLES.has(role));
+  return hasOneDataPermission(user, EMPLOYEE_MASTER_DATA_SYNC);
 }
 
 interface SyncCounters {

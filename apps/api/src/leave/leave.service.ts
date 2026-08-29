@@ -13,8 +13,13 @@ import type {
   LeaveStatus,
   LeaveTypeSummary,
 } from '@onedata/contracts';
+import {
+  LEAVE_PAPER_DECISION_RECORD,
+  LEAVE_REQUEST_VOID,
+} from '@onedata/contracts';
 import { PrismaService } from '../database/prisma.service';
 import type { AuthenticatedIdentity, TenantContext } from '../common/tenant/tenant-context';
+import { hasOneDataPermission } from '../platform/auth/permissions';
 import { CreateLeaveRequestDto } from './dto/create-leave-request.dto';
 import { PaperResultDto } from './dto/paper-result.dto';
 import { VoidLeaveDto } from './dto/void-leave.dto';
@@ -217,7 +222,7 @@ export class LeaveService {
     if (request.status !== 'SUBMITTED') {
       throw new ConflictException('Only a submitted leave request can receive a paper result.');
     }
-    if (!user.roles.includes('PAPER_RESULT_RECORDER') && !user.roles.includes('DEVELOPMENT_ONLY')) {
+    if (!hasOneDataPermission(user, LEAVE_PAPER_DECISION_RECORD)) {
       throw new ForbiddenException('The account cannot record a paper leave result.');
     }
 
@@ -349,7 +354,7 @@ export class LeaveService {
     if (request.status !== 'PAPER_APPROVED') {
       throw new ConflictException('Only an effective paper-approved leave can be voided.');
     }
-    if (!user.roles.includes('PAPER_RESULT_RECORDER') && !user.roles.includes('DEVELOPMENT_ONLY')) {
+    if (!hasOneDataPermission(user, LEAVE_REQUEST_VOID)) {
       throw new ForbiddenException('The account cannot void an effective leave request.');
     }
 

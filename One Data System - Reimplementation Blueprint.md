@@ -2,7 +2,7 @@
 
 เอกสารวิเคราะห์ระบบเพื่อการสร้างใหม่แบบ Clean-Room
 
-- เวอร์ชันเอกสาร: 1.11 — Reference Audit, NestJS/NextJS Target Baseline & Master-data Projection Checkpoint
+- เวอร์ชันเอกสาร: 1.12 — Reference Audit, NestJS/NextJS Target Baseline, Master-data Projection & Authorization Checkpoint
 - แก้ไขล่าสุด: 29 สิงหาคม 2569 (2026)
 - วันที่สำรวจ: 10–11 สิงหาคม และ 29 สิงหาคม 2569 (2026)
 - ขอบเขตที่สำรวจ: หน่วยงาน รพ.สต. 1 แห่ง และสังกัดระดับองค์การบริหารส่วนจังหวัดที่เชื่อมกัน
@@ -26,6 +26,7 @@
 | 1.9     | 29 ส.ค. 2569 | เริ่ม implementation target workspace แบบ coexistence: เพิ่ม shared contracts v1.1, NestJS API/Next.js web foundation, SSO verifier, API envelope, request-id, tenant-context boundary, audit sink, Docker Compose แยก และ automated smoke tests โดยคง Laravel/Vue เดิมไว้ |
 | 1.10    | 29 ส.ค. 2569 | เพิ่ม Portal launch-token exchange, local session แบบ opaque/hash, session guard, logout, Next.js launch bridge และทดสอบการ map external identity → employee → active workspace โดยยังไม่เปิดใช้ข้อมูลจริง |
 | 1.11    | 29 ส.ค. 2569 | เพิ่ม Special-Allowances master-data projection boundary: validated client, source-ID upsert, effective membership, soft-inactivate, durable sync run และ admin sync endpoint โดยยังไม่ตั้งค่า source/token จริง |
+| 1.12    | 29 ส.ค. 2569 | เพิ่ม One Data capability permission allowlist จาก Portal role/position, session permission snapshot, server-side route guard สำหรับ People/Leave และบังคับ SoD สำหรับผู้บันทึกผลใบลากระดาษ; เพิ่ม contract version 1.2 |
 
 ## วิธีอ่านระดับความมั่นใจ
 
@@ -45,9 +46,9 @@
 
 > เอกสารนี้สกัด “ความต้องการทางธุรกิจ” จากระบบอ้างอิง ไม่ใช่คำสั่งให้คัดลอกหน้าจอ โค้ด เทคโนโลยี หรือข้อจำกัดของระบบเดิมแบบ 1:1
 
-> **Effective implementation baseline:** ส่วน `Implementation Addendum v1.10` ท้ายเอกสารเป็น checkpoint/decision ล่าสุดของเจ้าของโครงการ; supersede ข้อความ workflow/source ของใบลาใน revision ก่อนหน้า. `Implementation Addendum v1.8`, `v1.7`, `v1.6` และ revision ก่อนหน้าเก็บไว้เพื่อ traceability โดย Laravel/Vue หมายถึง current implementation baseline ส่วน NestJS/NextJS หมายถึง target architecture.
+> **Effective implementation baseline:** ส่วน `Implementation Addendum v1.12` ท้ายเอกสารเป็น checkpoint/decision ล่าสุดของเจ้าของโครงการ; supersede เฉพาะรายละเอียด authorization ที่เกี่ยวข้องใน revision ก่อนหน้า และคง `Implementation Addendum v1.8` เป็น workflow ใบลาฐานปฏิบัติการ. `Implementation Addendum v1.11`, `v1.10`, `v1.8`, `v1.7`, `v1.6` และ revision ก่อนหน้าเก็บไว้เพื่อ traceability โดย Laravel/Vue หมายถึง current implementation baseline ส่วน NestJS/NextJS หมายถึง target architecture.
 
-> **Implementation checkpoint 29 สิงหาคม 2569:** target workspace เริ่มทำงานแบบแยกจาก Laravel/Vue แล้วที่ `apps/api`, `apps/web` และ `packages/contracts`. API foundation มี health/readiness, request-id, API envelope, problem-details, deny-by-default development auth boundary, tenant-context helper, HS256 Portal launch-token verifier/exchange, hashed local session/logout และ Special master-data projection boundary; web foundation มี Next.js dashboard shell, `/auth/portal/launch` bridge และอ่าน current user จาก API ตอน runtime. Docker Compose target ใช้พอร์ต `3100/3101` และมี MySQL development แยกบน `13307` พร้อม Prisma schema/seed สังเคราะห์. People/Leave vertical slice มี read/create/state-transition API และ audit/outbox ในฐานข้อมูลทดสอบแล้ว; master-data sync มี validated source-ID upsert, effective membership, soft-inactivate และ sync report แต่ยังไม่ตั้งค่า source/token จริง. Production migration/backup, permission matrix/role guard, Special leave adapter, worker และ real-data import ยังไม่พร้อม production และเป็นงานถัดไปตาม release plan.
+> **Implementation checkpoint 29 สิงหาคม 2569:** target workspace เริ่มทำงานแบบแยกจาก Laravel/Vue แล้วที่ `apps/api`, `apps/web` และ `packages/contracts`. API foundation มี health/readiness, request-id, API envelope, problem-details, deny-by-default development auth boundary, tenant-context helper, HS256 Portal launch-token verifier/exchange, hashed local session/logout, Portal role/position → One Data capability mapping, server-side permission guard และ Special master-data projection boundary; web foundation มี Next.js dashboard shell, `/auth/portal/launch` bridge และอ่าน current user จาก API ตอน runtime. Docker Compose target ใช้พอร์ต `3100/3101` และมี MySQL development แยกบน `13307` พร้อม Prisma schema/seed สังเคราะห์. People/Leave vertical slice มี read/create/state-transition API, capability checks และ audit/outbox ในฐานข้อมูลทดสอบแล้ว; master-data sync มี validated source-ID upsert, effective membership, soft-inactivate และ sync report แต่ยังไม่ตั้งค่า source/token จริง. Production migration/backup, permission scope/delegation แบบละเอียด, Special leave adapter, worker และ real-data import ยังไม่พร้อม production และเป็นงานถัดไปตาม release plan.
 
 ## Target Product Baseline
 
@@ -2810,7 +2811,7 @@ sequenceDiagram
 ### Phase 3 — Leave MVP
 
 - leave type/policy profile, holiday calendar, server-side date calculation, quota/read model และ overlap guard
-- `DRAFT → CONFIRMED → CANCELLED/VOID` ตาม decision ปัจจุบัน; ไม่ทำ online approval chain ใน MVP
+- `DRAFT → SUBMITTED → PAPER_APPROVED/PAPER_REJECTED` และ `CANCELLED/VOIDED` ตาม decision ปัจจุบัน; ไม่ทำ online approval chain ใน MVP
 - สถานะ `CONFIRMED` ที่ยังมีผลเป็น input ของ snapshot; Word/document module ยังรอแบบฟอร์มจริงตาม owner decision เดิม
 
 ### Phase 4 — Special integration
@@ -2961,3 +2962,61 @@ PAPER_APPROVED → VOIDED
 - ยังไม่มี scheduled worker, retry policy, reconciliation UI และ approval/permission matrix เต็มรูปแบบ.
 - ต้องทำ dry-run ด้วยข้อมูลจริงหรือสำเนาที่ได้รับอนุญาต ตรวจ count/hash/missing/extra/conflict แล้วจึงเปิด source URL/token ใน environment ที่ใช้งานจริง.
 - หาก source ส่งข้อมูลว่างหรือ schema ผิด ระบบจะ refuse ทั้ง sync และบันทึกสถานะ `FAILED`; ไม่ทำ partial apply.
+
+---
+
+# Implementation Addendum v1.12 — One Data capability authorization (29 สิงหาคม 2569)
+
+ภาคผนวกนี้บันทึก authorization รุ่นแรกของ target NestJS API โดยแยก “เข้าสู่ระบบได้” ออกจาก “ทำ action ใดได้” และไม่ใช้ค่าจาก browser เป็นแหล่งตัดสินสิทธิ์.
+
+## 1. หลักการ
+
+- Portal ยังคงเป็นเจ้าของบัญชี, module access และ role/position; One Data map role/position ที่อยู่ใน allowlist เป็น capability ของ One Data เอง.
+- role/position ที่ไม่รู้จักไม่ให้สิทธิ์โดยอัตโนมัติ. `entitlements` ที่เป็นเพียงข้อมูลเปิด module ไม่ถูกตีความเป็นสิทธิ์เขียนข้อมูล.
+- ตอนสร้าง local session จะเก็บ permission snapshot แยกจาก role snapshot; API route guard และ use case ตรวจ capability ฝั่ง server ทุกครั้ง.
+- ขอบเขตข้อมูลยังคง derive จาก active `EmploymentMembership`; capability ไม่ขยายขอบเขต tenant/affiliation ที่บัญชีไม่มี.
+- `DEVELOPMENT_ONLY` เป็น wildcard ได้เฉพาะ development fallback ที่เปิดด้วย explicit config และถูกปิดตายเมื่อ `NODE_ENV=production`.
+
+## 2. Capability รุ่นแรก
+
+| Capability | ขอบเขตการใช้ |
+| --- | --- |
+| `dashboard.view` | อ่านพื้นที่ภาพรวม |
+| `employee.profile.read` | อ่านบุคลากรใน workspace ที่มีสิทธิ์ |
+| `employee.master-data.sync` | สั่ง projection จาก Special-Allowances |
+| `employee.identity-mapping.manage` | จับคู่ Portal subject กับ employee ที่ตรวจสอบแล้ว |
+| `leave.request.read` | อ่านประเภทและรายการใบลาใน scope |
+| `leave.request.create` | สร้างใบลาแบบ DRAFT |
+| `leave.request.submit` | ส่ง DRAFT ไปดำเนินการเอกสารภายนอก |
+| `leave.request.cancel` | ยกเลิก DRAFT/SUBMITTED ของตนเอง |
+| `leave.paper-decision.record` | บันทึก PAPER_APPROVED/PAPER_REJECTED โดยผู้รับผิดชอบ |
+| `leave.request.void` | ทำให้ใบลาที่มีผลเป็น VOIDED โดยผู้มีอำนาจ |
+
+## 3. Mapping หลักจาก Portal
+
+| Portal role/position | สิทธิ์ target รุ่นแรก |
+| --- | --- |
+| `super_admin` | ทุก capability ที่ประกาศใน target (`*`) |
+| `health_admin`, `health_division_director`, `health_admin_officer` | People admin + Leave manager |
+| `pcu_director` | อ่าน People + สร้าง/ส่ง/ยกเลิกใบลา + บันทึกผลกระดาษ/void |
+| `pcu_staff`, `pcu_public_health_officer` | อ่าน/สร้าง/ส่ง/ยกเลิกใบลาตาม self workflow; อ่าน People ตาม mapping |
+| `health_staff`, `viewer`, `executive_viewer` | อ่าน dashboard, People และใบลา |
+| `PAPER_RESULT_RECORDER` | อ่านใบลา + บันทึกผลกระดาษ/void |
+| `PEOPLE_SYNC_ADMIN` | อ่าน People + sync master data + identity mapping |
+
+การรวมหลาย role/position ใช้ union ของ capability; ไม่มีการเดาสิทธิ์จากชื่อผู้ใช้ ตำแหน่งภาษาไทย หรือ `employeeId`.
+
+## 4. Route/use-case gate ที่ลงมือทำแล้ว
+
+- People list ต้องมี `employee.profile.read`.
+- Special sync ต้องมี `employee.master-data.sync` และ identity mapping ต้องมี `employee.identity-mapping.manage`.
+- Leave types/list ต้องมี `leave.request.read`; create/submit/cancel ใช้ capability แยกกัน.
+- Paper result และ void ตรวจทั้ง capability และกฎ requester–approver separation ใน Leave service; ผู้ยื่นไม่สามารถบันทึกผลหรือ void ใบลาของตนเอง.
+- การผ่าน route guard ไม่แทนการตรวจ tenant/affiliation scope และ state transition ใน service; ต้องผ่านทั้งสองชั้น.
+
+## 5. สิ่งที่ยังต้องทำต่อ
+
+- เพิ่ม delegated approver configuration จากข้อมูลจริงของฝ่ายบุคคล แทนการพึ่ง role/position แบบกว้าง.
+- แยก permission scope ระดับ affiliation/tenant/self/ทีม และ effective date ให้ละเอียดเมื่อมี fixture 38 รพ.สต.
+- เพิ่ม session revocation เมื่อ Portal role/position เปลี่ยน และ durable/distributed replay guard ก่อนขยายหลาย replica.
+- ทำ UAT matrix ด้วยบัญชี Portal sandbox ที่ได้รับอนุญาตและทดสอบ negative cases ข้าม tenant/affiliation.

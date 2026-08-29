@@ -8,7 +8,7 @@
 
 | Area | สถานะ | หลักฐาน |
 | --- | --- | --- |
-| Shared contract | เสร็จระดับ foundation | `packages/contracts`, contract version `1.1`, `PAPER_APPROVED` effective status, fixture ที่ไม่มี `CONFIRMED` |
+| Shared contract | เสร็จระดับ foundation | `packages/contracts`, contract version `1.2`, typed One Data capabilities, `PAPER_APPROVED` effective status, fixture ที่ไม่มี `CONFIRMED` |
 | NestJS API | เสร็จระดับ foundation | `apps/api`, `/api/health/live`, `/api/health/ready`, `/api/v1/system/contract` |
 | HTTP boundary | เสร็จระดับ foundation | request-id, API envelope, problem-details, validation configuration |
 | Auth boundary | เสร็จระดับ local integration foundation | Portal HS256 token verification/exchange, issuer/audience/expiry/jti replay checks, opaque session token ที่เก็บเฉพาะ SHA-256 hash, secure httpOnly cookie และ development fallback ที่ปิดเป็นค่าเริ่มต้น |
@@ -16,13 +16,14 @@
 | Next.js web | เสร็จระดับ shell + launch bridge | `/tenant-dashboard`, `/auth/portal/launch`, runtime API health/current user, responsive visual shell ตาม reference direction |
 | Docker | เสร็จระดับ local foundation | `docker-compose.target.yml`, API `3100`, web `3101`, แยกจาก Laravel compose |
 | People master-data projection | เสร็จระดับ local integration foundation | `SpecialMasterDataClient`, transaction/idempotent upsert ด้วย source ID, effective membership, soft-inactivate และ `MasterDataSyncRun`; endpoint `POST /api/v1/people/sync/special` ยังรอ token/URL จริง |
+| Authorization | เสร็จระดับ local integration foundation | Portal role/position → One Data capability allowlist, session permission snapshot, server-side route guard และ self/requester paper-result separation |
 | Prisma/People/Leave vertical slice | เสร็จระดับ local development | schema + synthetic seed, People read, Leave `DRAFT → SUBMITTED → PAPER_APPROVED/PAPER_REJECTED`, `CANCELLED/VOIDED`, durable audit/outbox |
-| Regression checks | ผ่าน | target typecheck, target build, API 5 tests, legacy Vite build, local และ Docker smoke test |
+| Regression checks | ผ่าน | target typecheck, target build, API 5 suites/13 tests, legacy Vite build, local และ Docker smoke test |
 
 ## ยังไม่เสร็จและห้ามตีความว่า production-ready
 
 - production Prisma migration/backup/restore policy (local schema + database แยกมีแล้ว)
-- permission matrix/role guard จริงสำหรับ affiliation, tenant, self และ paper-result recorder
+- permission scope matrix แบบละเอียดครบทุกโมดูลและ delegated approver configuration (People/Leave capability guard รุ่นแรกทำแล้ว)
 - production session hardening เช่น distributed replay/revocation strategy, CSRF policy, session rotation และ operational cleanup
 - People import/reconciliation จาก Special-Allowances ด้วย URL/token จริง, real-data mapping และการ map Portal user กับ employee
 - Leave quota/policy engine, complete snapshot และ production acceptance rules (state machine/revision/audit/outbox foundation มีแล้ว)

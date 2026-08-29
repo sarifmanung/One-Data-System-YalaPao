@@ -4,6 +4,7 @@ import { RequestContextMiddleware } from '../common/http/request-context.middlew
 import { AuthGuard } from './auth/auth.guard';
 import { AuthSessionService } from './auth/auth-session.service';
 import { DevAuthGuard } from './auth/dev-auth.guard';
+import { PermissionGuard } from './auth/permission.guard';
 import { AuthController } from './controllers/auth.controller';
 import { MeController } from './controllers/me.controller';
 import { WorkspacesController } from './controllers/workspaces.controller';
@@ -20,10 +21,18 @@ import {
     AuthSessionService,
     DevAuthGuard,
     InMemoryReplayGuard,
+    PermissionGuard,
     PortalLaunchTokenService,
     RequestContextMiddleware,
   ],
-  exports: [AuditLogService, AuthGuard, AuthSessionService, DevAuthGuard, PortalLaunchTokenService],
+  exports: [
+    AuditLogService,
+    AuthGuard,
+    AuthSessionService,
+    DevAuthGuard,
+    PermissionGuard,
+    PortalLaunchTokenService,
+  ],
 })
 export class PlatformModule implements NestModule {
   configure(consumer: MiddlewareConsumer): void {

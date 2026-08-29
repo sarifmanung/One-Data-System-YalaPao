@@ -15,11 +15,11 @@
 
 - `apps/api`: NestJS foundation, versioned API prefix, health/readiness, request-id, problem-details, Portal HS256 launch-token exchange, hashed local session/session guard และ Special master-data projection service
 - `apps/web`: Next.js App Router dashboard shell, Portal launch bridge ที่ `/auth/portal/launch`, และการอ่าน current user จาก API ตอน runtime
-- `packages/contracts`: shared TypeScript contract v1.1 และ leave snapshot fixture ที่ห้ามส่ง `CONFIRMED`
+- `packages/contracts`: shared TypeScript contract v1.2, capability permissions และ leave snapshot fixture ที่ห้ามส่ง `CONFIRMED`
 - `docker-compose.target.yml`: API/web แยกจาก compose เดิมบนพอร์ต `3100/3101`
 - automated checks: contracts/API/web typecheck, API unit/e2e smoke tests, target production build และ legacy Vite build
 
-สิ่งที่ยังไม่เปิดใช้จริงใน checkpoint นี้คือ production migration/backup policy, real-data People import (มี client/sync boundary แต่ยังไม่ตั้งค่า source จริง), permission matrix/role guard จริง, Special-Allowances leave adapter และ worker. Local session exchange, session guard, Portal launch bridge และ master-data projection boundary มีแล้วในระดับ development/integration foundation; Prisma schema, local development database, synthetic seed, People/Leave write/state-transition slice และ durable audit/outbox สำหรับ target database มีแล้ว แต่ยังไม่ใช้ข้อมูลหรือ identity จริง.
+สิ่งที่ยังไม่เปิดใช้จริงใน checkpoint นี้คือ production migration/backup policy, real-data People import (มี client/sync boundary แต่ยังไม่ตั้งค่า source จริง), permission scope matrix แบบละเอียดครบทุกโมดูล, Special-Allowances leave adapter และ worker. Local session exchange, session guard, Portal-to-One Data capability mapping, route permission guard และ master-data projection boundary มีแล้วในระดับ development/integration foundation; Prisma schema, local development database, synthetic seed, People/Leave write/state-transition slice และ durable audit/outbox สำหรับ target database มีแล้ว แต่ยังไม่ใช้ข้อมูลหรือ identity จริง.
 
 ## 1. Architecture Decision
 

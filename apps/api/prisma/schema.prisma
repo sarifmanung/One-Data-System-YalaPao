@@ -142,6 +142,7 @@ model AuthSession {
   username        String    @db.VarChar(255)
   displayName     String    @db.VarChar(255)
   roles           Json
+  permissions     Json      @default("[]")
   issuedAt        DateTime  @default(now())
   expiresAt       DateTime
   lastSeenAt      DateTime  @default(now())

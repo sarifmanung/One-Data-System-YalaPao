@@ -42,6 +42,7 @@ describe('PeopleSyncService', () => {
       username: 'staff',
       displayName: 'Staff',
       roles: ['pcu_staff'],
+      permissions: ['dashboard.view', 'leave.request.read'],
       workspaces: [],
     })).rejects.toThrow('cannot synchronize');
     expect(client.fetchSnapshot).not.toHaveBeenCalled();
@@ -94,6 +95,7 @@ describe('PeopleSyncService', () => {
       username: 'admin',
       displayName: 'Admin',
       roles: ['PEOPLE_SYNC_ADMIN'],
+      permissions: ['employee.master-data.sync'],
       workspaces: [],
     });
 

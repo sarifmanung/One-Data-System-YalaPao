@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import type { Request } from 'express';
 import type { CurrentUser, WorkspaceSummary } from '@onedata/contracts';
 import type { RequestWithContext } from '../../common/http/request-context.middleware';
+import { permissionsFromPortalClaims } from './permissions';
 
 @Injectable()
 export class DevAuthGuard implements CanActivate {
@@ -25,6 +26,15 @@ export class DevAuthGuard implements CanActivate {
       return false;
     }
 
+    const role = this.config.get<string>('ONEDATA_DEV_ROLE', 'DEVELOPMENT_ONLY');
+    const configuredPermissions = (this.config.get<string>('ONEDATA_DEV_PERMISSIONS') ?? '')
+      .split(',')
+      .map((permission) => permission.trim())
+      .filter(Boolean);
+    const permissions = configuredPermissions.length > 0
+      ? configuredPermissions
+      : permissionsFromPortalClaims({ roles: [role] });
+
     const workspace: WorkspaceSummary = {
       id: this.config.get<string>('ONEDATA_DEV_WORKSPACE_ID', 'tenant-dev'),
       kind: 'tenant',
@@ -37,7 +47,8 @@ export class DevAuthGuard implements CanActivate {
       id: this.config.get<string>('ONEDATA_DEV_USER_ID', 'dev-user'),
       username: this.config.get<string>('ONEDATA_DEV_USERNAME', 'developer'),
       displayName: this.config.get<string>('ONEDATA_DEV_DISPLAY_NAME', 'Local Developer'),
-      roles: [this.config.get<string>('ONEDATA_DEV_ROLE', 'DEVELOPMENT_ONLY')],
+      roles: [role],
+      permissions,
       workspaces: [workspace],
     };
 

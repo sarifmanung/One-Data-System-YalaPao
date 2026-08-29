@@ -8,12 +8,22 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
+import {
+  LEAVE_PAPER_DECISION_RECORD,
+  LEAVE_REQUEST_CANCEL,
+  LEAVE_REQUEST_CREATE,
+  LEAVE_REQUEST_READ,
+  LEAVE_REQUEST_SUBMIT,
+  LEAVE_REQUEST_VOID,
+} from '@onedata/contracts';
 import type { CurrentUser } from '@onedata/contracts';
 import type { Request } from 'express';
 import { toApiEnvelope } from '../common/http/api-envelope';
 import { tenantContextFromRequest } from '../common/tenant/tenant-context';
 import type { RequestWithContext } from '../common/http/request-context.middleware';
 import { AuthGuard } from '../platform/auth/auth.guard';
+import { PermissionGuard } from '../platform/auth/permission.guard';
+import { RequirePermission } from '../platform/auth/permission.decorator';
 import { CreateLeaveRequestDto } from './dto/create-leave-request.dto';
 import { PaperResultDto } from './dto/paper-result.dto';
 import { VoidLeaveDto } from './dto/void-leave.dto';
@@ -25,17 +35,23 @@ export class LeaveController {
   constructor(private readonly leaveService: LeaveService) {}
 
   @Get('types')
+  @UseGuards(PermissionGuard)
+  @RequirePermission(LEAVE_REQUEST_READ)
   async types(@Req() request: Request) {
     return toApiEnvelope({ items: await this.leaveService.listTypes() }, request);
   }
 
   @Get('requests')
+  @UseGuards(PermissionGuard)
+  @RequirePermission(LEAVE_REQUEST_READ)
   async requests(@Req() request: Request) {
     const user = this.userFrom(request);
     return toApiEnvelope({ items: await this.leaveService.listRequests(user) }, request);
   }
 
   @Post('requests')
+  @UseGuards(PermissionGuard)
+  @RequirePermission(LEAVE_REQUEST_CREATE)
   async create(
     @Req() request: Request,
     @Body() input: CreateLeaveRequestDto,
@@ -52,11 +68,15 @@ export class LeaveController {
   }
 
   @Post('requests/:id/submit')
+  @UseGuards(PermissionGuard)
+  @RequirePermission(LEAVE_REQUEST_SUBMIT)
   async submit(@Req() request: Request, @Param('id') id: string) {
     return toApiEnvelope(await this.leaveService.submit(id, this.userFrom(request)), request);
   }
 
   @Post('requests/:id/paper-result')
+  @UseGuards(PermissionGuard)
+  @RequirePermission(LEAVE_PAPER_DECISION_RECORD)
   async paperResult(
     @Req() request: Request,
     @Param('id') id: string,
@@ -69,11 +89,15 @@ export class LeaveController {
   }
 
   @Post('requests/:id/cancel')
+  @UseGuards(PermissionGuard)
+  @RequirePermission(LEAVE_REQUEST_CANCEL)
   async cancel(@Req() request: Request, @Param('id') id: string) {
     return toApiEnvelope(await this.leaveService.cancel(id, this.userFrom(request)), request);
   }
 
   @Post('requests/:id/void')
+  @UseGuards(PermissionGuard)
+  @RequirePermission(LEAVE_REQUEST_VOID)
   async void(
     @Req() request: Request,
     @Param('id') id: string,
