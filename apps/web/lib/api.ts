@@ -3,6 +3,7 @@ import type {
   CurrentUser,
   LeaveRequestSummary,
   LeaveTypeSummary,
+  PersonListItem,
 } from '@onedata/contracts';
 
 type ApiHealth = {
@@ -106,5 +107,13 @@ export function getLeaveRequests(
   tenantId?: string,
 ): Promise<LeaveRequestSummary[] | null> {
   return getFromApi<{ items: LeaveRequestSummary[] }>('/api/v1/leave/requests', cookieHeader, tenantId)
+    .then((data) => data?.items ?? null);
+}
+
+export function getPeople(
+  cookieHeader = '',
+  tenantId?: string,
+): Promise<PersonListItem[] | null> {
+  return getFromApi<{ items: PersonListItem[] }>('/api/v1/people', cookieHeader, tenantId)
     .then((data) => data?.items ?? null);
 }

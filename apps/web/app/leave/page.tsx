@@ -14,6 +14,7 @@ import {
   submitLeaveRequest,
   voidLeaveRequest,
 } from './actions';
+import { AppShell } from '../../components/app-shell';
 import { getCurrentUser, getLeaveRequests, getLeaveTypes } from '../../lib/api';
 
 export const dynamic = 'force-dynamic';
@@ -203,24 +204,8 @@ export default async function LeavePage({
   const requests = leaveRequests ?? [];
 
   return (
-    <main className="app-shell">
-      <header className="topbar">
-        <a className="brand" href="/tenant-dashboard">One Data</a>
-        <nav className="main-nav" aria-label="เมนูหลัก">
-          <a className="nav-link" href="/tenant-dashboard">ภาพรวม</a>
-          <a className="nav-link active" href="/leave">ระบบการลา</a>
-          <a className="nav-link" href="#people">บุคลากร</a>
-        </nav>
-        <div className="account-area">
-          <div className="account-copy">
-            <span className="account-name">{currentUser?.displayName ?? 'One Data Preview'}</span>
-            <span className="account-role">{currentUser?.roles[0] ?? 'ต้องเข้าสู่ระบบ'}</span>
-          </div>
-          <a className="outline-button topbar-link" href="/tenant-dashboard">กลับภาพรวม</a>
-        </div>
-      </header>
-
-      <section className="content leave-content" aria-labelledby="leave-page-title">
+    <AppShell currentUser={currentUser} currentPage="ระบบการลา">
+      <section className="leave-page" aria-labelledby="leave-page-title">
         <div className="page-heading leave-heading">
           <p className="eyebrow">LEAVE MANAGEMENT</p>
           <h1 id="leave-page-title">ระบบการลา</h1>
@@ -233,7 +218,7 @@ export default async function LeavePage({
 
         <div className="leave-layout">
           <section className="leave-panel leave-form-panel" aria-labelledby="new-leave-title">
-            <div className="panel-heading">
+            <div className="dashboard-panel-header">
               <div>
                 <h2 id="new-leave-title">บันทึกใบลา</h2>
                 <p>สร้างฉบับร่างก่อนตรวจสอบและส่งไปดำเนินการเอกสารภายนอก</p>
@@ -281,7 +266,7 @@ export default async function LeavePage({
           </section>
 
           <section className="leave-panel leave-list-panel" aria-labelledby="leave-list-title">
-            <div className="panel-heading">
+            <div className="dashboard-panel-header">
               <div>
                 <h2 id="leave-list-title">รายการใบลาของฉัน/ในขอบเขต</h2>
                 <p>เฉพาะสถานะ PAPER_APPROVED เท่านั้นที่ถือว่ามีผลต่อระบบ ฉ.10/11</p>
@@ -309,7 +294,7 @@ export default async function LeavePage({
           </section>
         </div>
 
-        <footer className="status-bar">
+        <footer className="dashboard-status-bar">
           <span className="status-dot connected" aria-hidden="true" />
           Paper-first workflow
           <span className="status-separator">•</span>
@@ -318,6 +303,6 @@ export default async function LeavePage({
           {tenant?.name ?? 'ยังไม่เลือกหน่วยงาน'}
         </footer>
       </section>
-    </main>
+    </AppShell>
   );
 }
