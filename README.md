@@ -9,12 +9,13 @@
 - Laravel 11 + Vue 3 + TypeScript + Inertia + Tailwind
 - local session login สำหรับ development และ Portal SSO launch token แบบ HS256
 - Organization/tenant scope, บุคลากร และ external ID mapping
-- ใบลา `DRAFT → CONFIRMED → CANCELLED/VOID` พร้อม revision, audit และ outbox
+- ใบลาใน Laravel/Vue spike ปัจจุบันยังใช้ `DRAFT → CONFIRMED → CANCELLED/VOID` (legacy เท่านั้น; ไม่ใช่ target state machine)
+- Target leave workflow สำหรับ NestJS/Next.js คือ Paper-first `DRAFT → SUBMITTED → PAPER_APPROVED/PAPER_REJECTED` พร้อม `CANCELLED/VOIDED`, revision, audit และ outbox
 - monthly leave snapshot แบบเต็มงวด มี version, SHA-256 source hash, idempotency และ delivery history
 - Special-Allowances internal API สำหรับอ่าน master data และรับ leave snapshot
 - Docker Compose สำหรับการพัฒนาแบบมี MySQL แยกฐานข้อมูล
 
-เฉพาะใบลา `CONFIRMED` เท่านั้นที่ถือว่ามีผลและถูกนำไปสร้าง snapshot ให้ระบบ ฉ. ระบบ Special ยังเป็นเจ้าของสูตร การคำนวณ period ผลลัพธ์ และรายงาน ส่วนการสร้าง Word ถูกเลื่อนไปหลังจากยืนยันกฎ/แบบฟอร์มจริง
+Target contract กำหนดให้เฉพาะใบลา `PAPER_APPROVED` ที่ยังมีผลเท่านั้นถูกนำไปสร้าง snapshot ให้ระบบ ฉ. ระบบ Special ยังเป็นเจ้าของสูตร การคำนวณ period ผลลัพธ์ และรายงาน ส่วนการสร้าง Word/DOCX ถูกเลื่อนไปหลังจากมีแบบฟอร์มมาตรฐานและกฎที่ฝ่ายบุคคลรับรอง
 
 ## เริ่มรันในเครื่อง
 

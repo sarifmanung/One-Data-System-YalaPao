@@ -2,13 +2,13 @@
 
 เอกสารวิเคราะห์ระบบเพื่อการสร้างใหม่แบบ Clean-Room
 
-- เวอร์ชันเอกสาร: 1.6 — MVP Implementation Baseline
+- เวอร์ชันเอกสาร: 1.7 — Reference Audit & NestJS/NextJS Target Baseline
 - แก้ไขล่าสุด: 29 สิงหาคม 2569 (2026)
-- วันที่สำรวจ: 10–11 สิงหาคม 2569 (2026)
+- วันที่สำรวจ: 10–11 สิงหาคม และ 29 สิงหาคม 2569 (2026)
 - ขอบเขตที่สำรวจ: หน่วยงาน รพ.สต. 1 แห่ง และสังกัดระดับองค์การบริหารส่วนจังหวัดที่เชื่อมกัน
 - บัญชีที่ใช้สำรวจ: บัญชีผู้ดูแลระบบซึ่งมองเห็นทั้งขอบเขต “หน่วยงาน” และ “สังกัด”
-- วิธีสำรวจ: ใช้งานหน้าจอตามปกติใน Chrome ทั้ง read-only discovery และ end-to-end mutation ด้วยข้อมูลสังเคราะห์ในระบบทดลองที่เจ้าของอนุญาต ครอบคลุม create/edit/approve/reject/cancel/delete/activate/lock-toggle ตาม workflow ที่เข้าถึงได้
-- ข้อจำกัดความปลอดภัย: ใช้ข้อมูลสังเคราะห์ที่มี tag เฉพาะ, ไม่แก้ระเบียนจริงที่มีอยู่ก่อน, คืนค่าการตั้งค่า/วงรอบและล้างระเบียนทดสอบที่ลบได้, ไม่ตรวจ cookie/token/local storage และไม่นำข้อมูลส่วนบุคคลมาใส่ในเอกสาร; ใบลาทดสอบสถานะ `ยกเลิก` และ `ไม่อนุมัติ` คงอยู่ 2 รายการเพราะระบบเก็บเป็นประวัติ audit โดยไม่มีคำสั่งลบ
+- วิธีสำรวจ: ใช้งานหน้าจอตามปกติใน Chrome ทั้ง read-only discovery และ end-to-end mutation ด้วยข้อมูลสังเคราะห์ในระบบทดลองที่เจ้าของอนุญาต ครอบคลุม create/edit/approve/reject/cancel/delete/activate/lock-toggle ตาม workflow ที่เข้าถึงได้ รวมถึงการตรวจ UX/UI, tenant/affiliation workspace, เอกสาร/รายงาน และการกระจายประกาศ
+- ข้อจำกัดความปลอดภัย: ใช้ข้อมูลสังเคราะห์ที่มี tag เฉพาะ, ไม่แก้ระเบียนจริงที่มีอยู่ก่อน, คืนค่าการตั้งค่า/วงรอบและล้างระเบียนทดสอบที่ลบได้, ไม่ตรวจ cookie/token/local storage และไม่นำข้อมูลส่วนบุคคลมาใส่ในเอกสาร; หลัง audit รอบ 29 สิงหาคมตรวจยืนยันว่า marker ถูกล้างครบและ dashboard กลับสู่ baseline บุคลากร 12 คน, ปฏิบัติงาน/ลา/ไปราชการวันนี้ 0 รายการ โดยไม่แตะประวัติเดิมของระบบ
 
 ## Revision History
 
@@ -21,6 +21,8 @@
 | 1.4     | 11 ส.ค. 2569 | ทดสอบ mutation แบบ end-to-end ด้วยข้อมูลสังเคราะห์ใน People, Leave/Duty, Schedule, Inventory, Assets, Vehicles, Finance gate, Settings และ Announcement; เพิ่มกฎที่ยืนยันจริง, defect/anti-requirement register, transactional/SoD/decimal/reversal guardrails และบันทึก cleanup |
 | 1.5     | 29 ส.ค. 2569 | ปิดทิศทาง MVP เป็น People Core + ระบบลาแบบ Word-first/ลงนามกระดาษ + เชื่อมระบบ Special-Allowances เดิมผ่าน API; เพิ่มฐานประกาศการลา อบจ. พ.ศ. 2569, paper-result verification, SSO Portal boundary, cutoff/lock/adjustment policy และตัดการสร้าง calculation engine ซ้ำใน One Data |
 | 1.6     | 29 ส.ค. 2569 | ปรับ implementation baseline ตามคำตัดสินล่าสุด: People/Organization + ระบบลาแบบเรียบง่าย + Special API ก่อน; เลื่อน Word/paper-result และ online approval; กำหนด `CONFIRMED` เป็นสถานะที่มีผล, complete reset snapshot, API master-data และ One Data เป็นผู้ส่ง snapshot |
+| 1.7     | 29 ส.ค. 2569 | สำรวจซ้ำแบบละเอียดทั้งสอง workspace และ workflow ที่เข้าถึงได้, ยืนยัน UX/UI เป้าหมายและ cleanup baseline; ล็อก target stack เป็น NestJS + Next.js, แยก current Laravel/Vue baseline ออกจาก migration target และเพิ่มแผนย้ายระบบแบบ incremental |
+| 1.8     | 29 ส.ค. 2569 | ล็อก workflow ใบลาแบบ Paper-first: `DRAFT → SUBMITTED → PAPER_APPROVED/PAPER_REJECTED`, ใช้ `PAPER_APPROVED` เป็นสถานะมีผลเพียงสถานะเดียว, เลิกใช้ `CONFIRMED` เป็นสถานะปฏิบัติการ และปรับเอกสาร/สัญญา integration ให้สอดคล้องกัน |
 
 ## วิธีอ่านระดับความมั่นใจ
 
@@ -40,7 +42,7 @@
 
 > เอกสารนี้สกัด “ความต้องการทางธุรกิจ” จากระบบอ้างอิง ไม่ใช่คำสั่งให้คัดลอกหน้าจอ โค้ด เทคโนโลยี หรือข้อจำกัดของระบบเดิมแบบ 1:1
 
-> **Effective implementation baseline:** ส่วน `Implementation Addendum v1.6` ท้ายเอกสารเป็นคำตัดสินล่าสุดของเจ้าของโครงการ และ supersede เฉพาะ workflow/ขอบเขต MVP ที่ขัดกับข้อความก่อนหน้า; ข้อความ revision 1.5 ที่เป็น historical discovery ยังคงไว้เพื่อ traceability.
+> **Effective implementation baseline:** ส่วน `Implementation Addendum v1.8` ท้ายเอกสารเป็นคำตัดสินล่าสุดของเจ้าของโครงการ; supersede ข้อความ workflow/source ของใบลาใน revision ก่อนหน้า. `Implementation Addendum v1.7`, `v1.6` และ revision ก่อนหน้าเก็บไว้เพื่อ traceability โดย Laravel/Vue หมายถึง current implementation baseline ส่วน NestJS/NextJS หมายถึง target architecture.
 
 ## Target Product Baseline
 
@@ -55,6 +57,8 @@
 | First production scope | People/Organization Core, ระบบลาแบบเรียบง่าย และเชื่อมระบบ ฉ.10/11 เดิมผ่าน API; Word/document module เป็นระยะถัดไป | [OWNER-CONFIRMED]                    |
 | ระบบคำนวณ ฉ.10/11      | ใช้ `Special-Allowances` ที่พัฒนาเสร็จแล้วเป็นเจ้าของสูตร รอบคำนวณ ผลลัพธ์ และรายงาน; One Data ส่งข้อมูลลาเท่านั้น | [OWNER-CONFIRMED + CODEBASE-VERIFIED] |
 | จุดเข้าใช้งาน/SSO       | เชื่อม `yala-pao-public-health-portal` ด้วย launch-token contract; ไม่สร้างบัญชี/รหัสผ่านข้ามระบบซ้ำ | [OWNER-CONFIRMED + CODEBASE-VERIFIED] |
+| Target application stack | NestJS + TypeScript สำหรับ API/domain และ Next.js + TypeScript สำหรับ web UI; ใช้ repository เดียวแต่แยก process/container | [OWNER-CONFIRMED] |
+| Current implementation baseline | Laravel 11 + Vue 3/TypeScript/Inertia ที่มีอยู่ใน repository ปัจจุบัน; ใช้เป็นหลักฐาน/ต้นแบบระหว่าง migration ไม่ใช่ target stack | [CODEBASE-VERIFIED + PROPOSED MIGRATION] |
 | การขยายระบบ            | เพิ่ม รพ.สต./บุคลากรและต่อโมดูลอื่นแบบ incremental                                   | [OWNER-CONFIRMED]                   |
 | Clinical/patient data  | ยังไม่ยืนยันว่าอยู่ในขอบเขต; baseline นี้ถือเฉพาะงานบริหารหลังบ้านจนกว่าจะมีคำตัดสิน | [OPEN]                              |
 
@@ -82,9 +86,9 @@ One Data System ที่สำรวจเป็นระบบบริหา�
 - ออกแบบเป็นแพลตฟอร์ม multi-organization ที่มีสองขอบเขตชัดเจน: `affiliation` และ `tenant/unit` **[CONFIRMED]**
 - ให้ `affiliation = อบจ.ยะลา` และ `tenant/unit = รพ.สต.` ในรุ่นแรก แต่ไม่ hard-code จำนวน 38 แห่งหรือสังกัดเดียวใน schema **[OWNER-CONFIRMED + PROPOSED]**
 - สร้าง People/Organization Core ให้ถูกต้องก่อน โดยแยกบุคคล โปรไฟล์ บัญชี การสังกัด และประวัติการจ้างออกจากกัน **[PROPOSED]**
-- ใช้ People Core และระบบลาแบบ Word-first เป็นความสามารถใหม่ของ One Data; ใช้ `Special-Allowances` เดิมเป็นเจ้าของการคำนวณ ฉ.10/11 และเชื่อมด้วย API แบบ versioned **[OWNER-CONFIRMED + CODEBASE-VERIFIED]**
-- รุ่นแรกไม่ทำ online approval สำหรับใบลา: ผู้ใช้สร้าง DOCX ตามแบบราชการ พิมพ์และลงนามภายนอก แล้วเจ้าหน้าที่ผู้รับผิดชอบบันทึกผลเอกสารกลับเข้าระบบ **[OWNER-CONFIRMED]**
-- ส่งให้ Special-Allowances เฉพาะวันลาที่บันทึกผลว่าได้รับอนุญาตจากเอกสารภายนอกแล้ว; Draft/ออกเอกสารแล้ว/ไม่อนุญาต/ยกเลิกไม่เป็น input การคำนวณ **[OWNER-CONFIRMED]**
+- ใช้ People Core และระบบลาแบบ Paper-first เป็นความสามารถใหม่ของ One Data; ใช้ `Special-Allowances` เดิมเป็นเจ้าของการคำนวณ ฉ.10/11 และเชื่อมด้วย API แบบ versioned **[OWNER-CONFIRMED + CODEBASE-VERIFIED]**
+- รุ่นแรกไม่ทำ online approval สำหรับใบลา: ผู้ใช้กรอกและส่งใบลาใน One Data แล้วดำเนินการพิมพ์/ลงนามภายนอกตามวิธีปฏิบัติงาน; เจ้าหน้าที่ผู้รับผิดชอบบันทึกผลเอกสารกลับเข้าระบบ **[OWNER-CONFIRMED]**
+- ส่งให้ Special-Allowances เฉพาะใบลาสถานะ `PAPER_APPROVED` ที่ยังมีผล; `DRAFT`, `SUBMITTED`, `PAPER_REJECTED`, `CANCELLED` และ `VOIDED` ไม่เป็น input การคำนวณ **[OWNER-CONFIRMED]**
 - แยก “สิทธิ์เข้าใช้ระบบ” ออกจาก “ตำแหน่ง/หน้าที่/ผู้ลงนามในเอกสาร” ตั้งแต่ต้น
 - ใช้ข้อมูลหลักร่วมกันและสร้างเอกสารจากข้อมูลที่มีโครงสร้าง แทนการกรอกซ้ำ
 - กำหนด workflow, state transition, audit trail และกติกาล็อกข้อมูลให้เป็นข้อกำหนดส่วนกลาง
@@ -131,7 +135,7 @@ flowchart LR
     User[บุคลากร/เจ้าหน้าที่] --> Portal[yala-pao-public-health-portal\nSSO และสิทธิ์เข้าโมดูล]
     Portal -->|launch token อายุสั้น| OneData[One Data Web + Core API]
     OneData --> People[People/Organization]
-    OneData --> Leave[Leave + DOCX]
+    OneData --> Leave[Leave Paper-first]
     Leave -->|เฉพาะผลเอกสารภายนอกที่ยืนยันแล้ว\nscoped internal API| Special[Special-Allowances API]
     OneData -->|BFF/adapter สำหรับหน้าจอรวม| Special
     Special --> Calc[สูตร ฉ.10/11 รอบคำนวณ\nlock adjustment และ report เดิม]
@@ -484,7 +488,7 @@ Identity
 - ผู้ดูแลสังกัดไม่ควรเห็น PII เกินจำเป็น; directory ข้ามหน่วยงานควรมี masking และเหตุผลการเข้าถึง.
 - ทุก API ต้องบังคับ scope ฝั่ง server แม้ UI จะซ่อนปุ่มแล้ว.
 
-สำหรับ MVP ผู้ใช้ทั่วไปมี `leave.request.self.create/read/cancel` และดาวน์โหลด DOCX ของตน; HR/เจ้าหน้าที่ที่มอบหมายมี `leave.paper-decision.record` ตาม tenant/affiliation; auditor อ่านประวัติได้แต่แก้ไม่ได้. Permission ที่พบในระบบอ้างอิงสำหรับ `leave.request.approve/reject` เป็นเพียง observed evidence และไม่ถูกนำมาใช้ใน target workflow รุ่นแรก.
+สำหรับ MVP ผู้ใช้ทั่วไปมี `leave.request.self.create/read/submit/cancel`; HR/เจ้าหน้าที่ที่มอบหมายมี `leave.paper-decision.record` ตาม tenant/affiliation; auditor อ่านประวัติได้แต่แก้ไม่ได้. การดาวน์โหลด DOCX และ permission `leave.document.issue` เป็น document module ระยะถัดไป. Permission ที่พบในระบบอ้างอิงสำหรับ `leave.request.approve/reject` เป็นเพียง observed evidence และไม่ถูกนำมาใช้ใน target workflow รุ่นแรก.
 
 ---
 
@@ -517,29 +521,28 @@ stateDiagram-v2
 - ผู้อนุมัติตามระเบียบ จำนวนขั้น delegation/acting, comment/evidence, SLA และ transition หลัง approved ยัง **[UNKNOWN]**
 - ไปราชการใช้ข้อมูลเรื่อง ยานพาหนะ และผู้ร่วมเดินทาง; subtype `ไปอบรม` เพิ่มเรื่อง หลักสูตร/โครงการ หน่วยงานผู้จัด สถานที่ ค่าใช้จ่าย และหมายเหตุ; สร้าง แก้ไข และลบได้จริงโดยไม่แสดง approval status **[MUTATION-VERIFIED]** จึงควรเป็น aggregate/workflow แยกต่างหาก.
 
-#### 7.1.2 Target workflow รุ่นแรก — Word-first และลงนามภายนอก
+#### 7.1.2 Target workflow รุ่นแรก — Paper-first และลงนามภายนอก
 
-ระบบใหม่ไม่คัดลอก online approval ของระบบอ้างอิงใน MVP. ผู้ใช้ต้องได้เอกสารราชการที่กรอกง่าย ส่วนการเสนอ ตรวจ และลงนามยังทำบนกระดาษตามวิธีปฏิบัติงานจริง **[OWNER-CONFIRMED]**.
+ระบบใหม่ไม่คัดลอก online approval ของระบบอ้างอิงใน MVP. ผู้ใช้กรอกและส่งข้อมูลใบลาใน One Data ส่วนการเสนอ ตรวจ และลงนามยังทำภายนอกตามวิธีปฏิบัติงานจริง. การสร้าง DOCX ตามแบบราชการเป็น document module ที่เปิดเพิ่มได้เมื่อได้รับแบบฟอร์มมาตรฐาน **[OWNER-CONFIRMED]**.
 
 ```mermaid
 stateDiagram-v2
     [*] --> DRAFT: เริ่มกรอกใบลา
-    DRAFT --> DOCUMENT_ISSUED: บันทึกและสร้าง DOCX
-    DOCUMENT_ISSUED --> PAPER_APPROVED: เจ้าหน้าที่บันทึกว่าเอกสารภายนอกได้รับอนุญาต
-    DOCUMENT_ISSUED --> PAPER_REJECTED: เจ้าหน้าที่บันทึกว่าไม่อนุญาต
+    DRAFT --> SUBMITTED: บันทึกและส่งใบลา
+    SUBMITTED --> PAPER_APPROVED: เจ้าหน้าที่บันทึกผลเอกสารภายนอกว่าได้รับอนุญาต
+    SUBMITTED --> PAPER_REJECTED: เจ้าหน้าที่บันทึกผลเอกสารภายนอกว่าไม่อนุญาต
     DRAFT --> CANCELLED: ผู้ใช้ยกเลิกแบบร่าง
-    DOCUMENT_ISSUED --> CANCELLED: ยกเลิกก่อนทราบผล
+    SUBMITTED --> CANCELLED: ยกเลิกก่อนทราบผล
     PAPER_APPROVED --> VOIDED: ยกเลิก/แก้ไขตามเอกสารภายนอก
-    PAPER_APPROVED --> SPECIAL_ELIGIBLE: รวมใน API ข้อมูลลา
     PAPER_REJECTED --> [*]
     CANCELLED --> [*]
     VOIDED --> [*]
 ```
 
 - `PAPER_APPROVED` หมายถึง “เจ้าหน้าที่บันทึกผลจากเอกสารที่ลงนามภายนอกแล้ว” ไม่ใช่การอนุมัติทางราชการในระบบ.
-- ผู้ยื่นสร้าง DOCX และพิมพ์ได้เอง แต่ห้ามยืนยัน `PAPER_APPROVED` ให้รายการของตน; สิทธิ์นี้เป็นของ HR/เจ้าหน้าที่ผู้รับผิดชอบที่กำหนด และต้องเก็บ actor, เวลา, เลขที่/วันที่เอกสาร และเหตุผลการแก้ไข.
-- ไฟล์สแกนฉบับลงนามเป็น attachment แบบ optional ใน MVP เพื่อลดภาระผู้ใช้; metadata การยืนยันและ audit เป็นข้อมูลบังคับ.
-- การแก้ข้อมูลหลังออก DOCX ต้องสร้าง document revision ใหม่และรักษาไฟล์/ค่าที่เคยออก; ห้ามเปลี่ยนเอกสารเดิมเงียบ ๆ.
+- ผู้ยื่นส่งใบลาได้ แต่ห้ามบันทึก `PAPER_APPROVED` หรือ `PAPER_REJECTED` ให้รายการของตน; สิทธิ์นี้เป็นของ HR/เจ้าหน้าที่ผู้รับผิดชอบที่กำหนด และต้องเก็บ actor, เวลา, เลขที่/วันที่เอกสาร และเหตุผลการแก้ไข.
+- ไฟล์ DOCX/สแกนฉบับลงนามยังไม่บังคับใน MVP; เมื่อเปิด document module แล้ว metadata, revision และ audit จะเป็นข้อมูลบังคับตามแบบฟอร์มที่รับรอง.
+- การแก้ข้อมูลหลัง `SUBMITTED` หรือหลังมีเอกสารต้องสร้าง revision ตามกฎที่กำหนด; ห้ามเปลี่ยนเอกสารหรือผลกระดาษเดิมเงียบ ๆ.
 - เฉพาะ `PAPER_APPROVED` ที่ยังไม่ `VOIDED/CANCELLED` และมีผลทับช่วงเดือนเป้าหมายเท่านั้นที่ Special-Allowances ใช้คำนวณ.
 - ไปราชการไม่อยู่ใน first production scope และยังคงเป็น aggregate แยกจาก Leave.
 
@@ -755,7 +758,7 @@ flowchart LR
 | TP-007 | การแก้ลาหลังล็อกสร้าง adjustment อ้างรอบเดิมใน Special-Allowances; ห้ามแก้ผลเดิมเงียบ ๆ                                                                | OWNER-CONFIRMED                          |
 | TP-008 | Excel/PDF ฉ.10/11 เป็น artifact ของ Special-Allowances; One Data แสดงหรือดาวน์โหลดผ่าน scoped API โดยไม่ regenerate ตัวเลขเอง                          | OWNER-CONFIRMED + CODEBASE-VERIFIED      |
 | TP-009 | ฐานกฎสำหรับข้าราชการ อบจ. รุ่นแรกคือประกาศ ก.จ. เรื่องมาตรฐานทั่วไปว่าด้วยการลาของข้าราชการองค์การบริหารส่วนจังหวัด พ.ศ. 2569 และแบบแนบท้าย         | LEGAL-SOURCE; HR SIGN-OFF REQUIRED       |
-| TP-010 | MVP ใช้ Word-first: กรอก → สร้าง DOCX → พิมพ์/ลงนามภายนอก → เจ้าหน้าที่บันทึกผล; ไม่มี online approval chain                                           | OWNER-CONFIRMED                          |
+| TP-010 | MVP ใช้ Paper-first: กรอก/ส่ง → พิมพ์หรือนำไปลงนามภายนอกตามวิธีปฏิบัติงาน → เจ้าหน้าที่บันทึกผล `PAPER_APPROVED/PAPER_REJECTED`; ไม่มี online approval chain และ DOCX เป็นส่วนขยายภายหลัง | OWNER-CONFIRMED |
 | TP-011 | บุคลากรต่างสถานะการจ้างต้องเลือก `LeavePolicyProfile` ตามฐานกฎหมาย/ช่วงมีผล; ห้ามใช้สิทธิ์ข้าราชการ อบจ. กับพนักงานจ้าง/ลูกจ้างโดยอัตโนมัติ          | LEGAL GUARDRAIL                          |
 | TP-012 | รอบเปิด sync ซ้ำได้; ค่าเริ่มต้นช่วงตรวจสอบคือ 3 วันทำการหลังสิ้นเดือนแบบ configurable; หลังจ่าย/ล็อกใช้ adjustment รอบถัดไป                         | OWNER-CONFIRMED DIRECTION + CONFIGURABLE |
 | TP-013 | Portal เป็นเจ้าของ login/module access และ One Data/Special-Allowances แยก session/authorization ของตน; ห้ามแชร์ password หรือ database               | CODEBASE-VERIFIED + PROPOSED ADOPTION    |
@@ -1135,8 +1138,8 @@ UI ยืนยันเส้นตรง 5 ปีจากราคาทุ�
 
 ### 11.5 First-production reporting — Leave และ ฉ.10/11
 
-- ใบลาต้องสร้าง DOCX จากแบบแนบท้ายประกาศ พ.ศ. 2569 โดยเก็บ `template_version`, source record version, document revision และ checksum; ผู้ใช้พิมพ์เพื่อลงนามภายนอก.
-- เอกสารใบลาแต่ละ revision ต้องพิมพ์ซ้ำได้ตรงกับข้อมูล ณ เวลาที่ออก แม้ People/Position/Leave จะถูกแก้ภายหลัง.
+- เมื่อเปิด document module แล้ว ใบลาต้องสร้าง DOCX จากแบบแนบท้ายประกาศ พ.ศ. 2569 โดยเก็บ `template_version`, source record version, document revision และ checksum; ผู้ใช้พิมพ์เพื่อลงนามภายนอก.
+- เมื่อเปิด document module แล้ว เอกสารใบลาแต่ละ revision ต้องพิมพ์ซ้ำได้ตรงกับข้อมูล ณ เวลาที่ออก แม้ People/Position/Leave จะถูกแก้ภายหลัง.
 - Excel/PDF ฉ.10/11 ยังคงสร้างโดย Special-Allowances จาก calculation run/period ที่ระบบนั้นเป็นเจ้าของ; One Data เพียงแสดงสถานะ/ลิงก์ดาวน์โหลดหรือ proxy ไฟล์ผ่าน scoped API.
 - ทุก leave export ไป Special-Allowances ต้องอ้าง source cutoff, leave revisions/source refs, person mapping, row count และ checksum; มี reconciliation ต่อ รพ.สต. และรวม อบจ.ยะลา.
 - เมื่อ period ใน Special-Allowances `LOCKED` แล้ว การแก้ People/Employment/Leave ภายหลังต้องไม่เปลี่ยนผลเดิม; ใช้ adjustment ที่เชื่อมกลับรอบเดิม.
@@ -1177,7 +1180,7 @@ UI ยืนยันเส้นตรง 5 ปีจากราคาทุ�
 
 ### 12.3 Export ที่แนะนำ
 
-- DOCX สำหรับใบลาตามแบบราชการ พร้อม immutable document revision; PDF เป็น optional preview/export ภายหลังและไม่แทนเอกสาร Word ที่ผู้ใช้ต้องนำไปลงนาม.
+- เมื่อเปิด document module ให้มี DOCX สำหรับใบลาตามแบบราชการพร้อม immutable document revision; PDF เป็น optional preview/export ภายหลังและไม่แทนเอกสาร Word ที่ผู้ใช้ต้องนำไปลงนาม.
 - PDF สำหรับเอกสารทางการอื่นพร้อม immutable report run.
 - XLSX สำหรับรายงานเชิงตาราง โดยแยกชีต `Metadata`, `Data Dictionary`, `Data`.
 - XLSX ฉ.10/11 ต้องสร้างและเก็บโดย Special-Allowances จาก locked period/run; One Data ดาวน์โหลดผ่าน API โดยไม่คำนวณหรือแก้ artifact.
@@ -1221,7 +1224,7 @@ UI ยืนยันเส้นตรง 5 ปีจากราคาทุ�
 flowchart LR
     Portal[yala-pao-public-health-portal] -->|signed launch token| IAM[One Data IAM adapter]
     IAM --> Core[One Data Core]
-    Core --> Leave[Leave + DOCX]
+    Core --> Leave[Leave Paper-first]
     Leave -->|period/person leave contract| SpecialAPI[Special-Allowances API]
     Core --> Adapter[Special-Allowances BFF adapter]
     Adapter -->|period status/results/reports| SpecialAPI
@@ -1283,7 +1286,7 @@ result, policy_decision, export_metadata
 - grant/revoke role และ functional assignment
 - อ่าน/ส่งออกข้อมูลอ่อนไหวจำนวนมาก
 - create/update/void/delete บุคลากร สต็อก ทรัพย์สิน รถ และการเงิน
-- issue/reissue/download DOCX, record paper decision, cancel/void/correct ใบลา; แยกจาก approve/reject ของรถ/การย้ายบุคลากร
+- record paper decision, cancel/void/correct ใบลา; issue/reissue/download DOCX เป็น document module ระยะถัดไป; แยกจาก approve/reject ของรถ/การย้ายบุคลากร
 - สร้าง/ส่ง/รับ acknowledgment/retry/reconcile leave export รวม period, cutoff, source hash, external period/request ID และผลรวมโดยไม่ log PII
 - อ่าน/download ผลหรือรายงาน ฉ.10/11 ผ่าน adapter และส่ง correction/adjustment request โดยอ้าง external original period/result; calculation transition audit ตัวจริงอยู่ใน Special-Allowances
 - เปิด/ปิด/ล็อก/ปลดล็อกวงรอบแผน
@@ -1492,7 +1495,7 @@ flowchart TB
 | --------------------- | ------------------------------------------------------------------------------------------ | ------------------------------------------------------ | ------------------------------------ |
 | Identity & Access     | identities, memberships, roles, permissions, sessions                                      | person display projection                              | HR profile/history                   |
 | Organization & People | affiliation, tenant, employee profile, job history, position                               | access grants                                          | session/credential                   |
-| Workforce             | shift, schedule, holiday, leave, official duty; รุ่นแรกใช้ Leave แบบ Word-first             | employee/workgroup, signer                             | employee master                      |
+| Workforce             | shift, schedule, holiday, leave, official duty; รุ่นแรกใช้ Leave แบบ Paper-first             | employee/workgroup, signer                             | employee master                      |
 | Special Integration   | external ID mapping, leave export batches, delivery/reconciliation, external period/report refs | effective People data, paper-approved leave, Special API | สูตร/period/result/report ใน Special |
 | Inventory             | supply master, receipt, issue, movement, vendor, annual plan                               | workgroup/actor                                        | finance actual without command/event |
 | Assets & Vehicles     | asset lifecycle, vehicle workflow                                                          | employee/tenant, finance categories                    | inventory/employee master            |
@@ -1502,7 +1505,7 @@ flowchart TB
 
 ### 16.4 Deployment evolution
 
-**First production release:** One Data เป็น modular monolith + relational database ของตน + object storage/document worker. เปิดใช้ Platform, People/Organization, Leave/DOCX และ Special-Allowances adapter ก่อน; Portal, Special-Allowances และ One Data เป็น deployable/database แยกแม้อยู่ server/network เดียวกัน. ใช้ transaction ภายใน One Data, scoped REST + reconciliation ข้ามระบบ และ outbox สำหรับ retry/future events **[OWNER-CONFIRMED DIRECTION + PROPOSED DESIGN]**.
+**First production release:** One Data เป็น modular monolith + relational database ของตน. เปิดใช้ Platform, People/Organization, Leave แบบ Paper-first และ Special-Allowances adapter ก่อน; Documents/DOCX เป็นส่วนขยายภายหลัง. Portal, Special-Allowances และ One Data เป็น deployable/database แยกแม้อยู่ server/network เดียวกัน. ใช้ transaction ภายใน One Data, scoped REST + reconciliation ข้ามระบบ และ outbox สำหรับ retry/future events **[OWNER-CONFIRMED DIRECTION + PROPOSED DESIGN]**.
 
 **Scale-out triggers:** แยก Report/Import worker ก่อนเพราะ workload หนัก; แยก Notification/Integration ต่อมา; แยก transactional domain เฉพาะเมื่อ team ownership, scaling หรือ regulatory isolation ชัดเจน. ห้ามเริ่ม microservices เพียงเพราะมีหลายเมนู.
 
@@ -1594,8 +1597,8 @@ voided_at, voided_by, void_reason -- แทน hard delete สำหรับข
 | `leave_policy_profiles`    | affiliation_id, code, employee_type_scope, legal_basis, effective_from/to, status                                                   | แยกข้าราชการ อบจ. ออกจากพนักงานจ้าง/ลูกจ้าง/สถานะอื่น                                 |
 | `leave_policies`           | policy_profile_id, leave_type_id, entitlement, period_basis, accumulation, effective dates, conditions                             | replaces hard-coded quotas; published version immutable                                 |
 | `leave_balances`           | person_id, policy_id, period, granted, used, reserved, adjusted                                                                    | projection/ledger backed                                                               |
-| `leave_requests`           | tenant_id, requester_id, policy_id, leave_type_id, start/end, calculated_days, reason, canonical_status, issued_at, cancelled/void fields | status `DRAFT/DOCUMENT_ISSUED/PAPER_APPROVED/PAPER_REJECTED/CANCELLED/VOIDED`; overlap/quota guards |
-| `leave_document_revisions` | request_id, revision_no, template_code/version, source_snapshot/hash, docx_object_id/checksum, generated_by/at                      | immutable published revision; regenerate from snapshot                                  |
+| `leave_requests`           | tenant_id, requester_id, policy_id, leave_type_id, start/end, calculated_days, reason, canonical_status, issued_at, cancelled/void fields | MVP status `DRAFT/SUBMITTED/PAPER_APPROVED/PAPER_REJECTED/CANCELLED/VOIDED`; `DOCUMENT_ISSUED` reserved for future document module |
+| `leave_document_revisions` | request_id, revision_no, template_code/version, source_snapshot/hash, docx_object_id/checksum, generated_by/at                      | optional/deferred in MVP; immutable published revision when document module is enabled |
 | `leave_external_decisions` | request_id, decision, external_document_no/date, recorded_by/at, note, attachment_id nullable, supersedes_id                       | บันทึกผลกระดาษ ไม่ใช่ online approval; requester != recorder โดย default                |
 | `official_duty_requests`   | tenant_id, requester_id, type, subject, start/end, vehicle_text/vehicle_id, lifecycle_status, updated/deleted/voided by/at/reason  | separate lifecycle from leave; deletion policy OPEN                                    |
 | `official_duty_companions` | request_id, person_id                                                                                                              | unique pair                                                                            |
@@ -1792,7 +1795,7 @@ POST   /v1/tenants/{tenantId}/official-duty-requests
 POST   /v1/official-duty-requests/{id}:approve
 ```
 
-`record-paper-decision` รับเฉพาะ `APPROVED/REJECTED` จากเจ้าหน้าที่ผู้รับผิดชอบและ metadata ของเอกสารภายนอก; เป็นการรับรองการบันทึกข้อมูล ไม่ใช่การอนุมัติออนไลน์. `issue-document` ต้อง snapshot ข้อมูลและสร้าง DOCX revision แบบ immutable.
+`record-paper-decision` รับเฉพาะ `APPROVED/REJECTED` จากเจ้าหน้าที่ผู้รับผิดชอบและ metadata ของเอกสารภายนอก; เป็นการรับรองการบันทึกข้อมูล ไม่ใช่การอนุมัติออนไลน์. เมื่อเปิด document module แล้ว `issue-document` ต้อง snapshot ข้อมูลและสร้าง DOCX revision แบบ immutable.
 
 **Special-Allowances integration — ฉ.10/11**
 
@@ -1921,8 +1924,8 @@ If-Match: "4"
   "type": "https://example.invalid/problems/invalid-transition",
   "title": "Invalid state transition",
   "status": 409,
-  "code": "LEAVE_NOT_DOCUMENT_ISSUED",
-  "detail": "Only a document-issued request can receive a paper decision.",
+  "code": "LEAVE_NOT_SUBMITTED",
+  "detail": "Only a submitted request can receive a paper decision.",
   "fields": [],
   "requestId": "req_..."
 }
@@ -1975,9 +1978,9 @@ Event payload ส่งเพียง ID, scope, version และข้อม�
 | --------------------------- | ------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------- | ---------------------- |
 | M1 Platform Foundation      | org scope, IAM, session, role/policy, audit, files, notification skeleton                  | secure shell, scope switch, permission SDK, audit viewer                | none                   |
 | M2 Organization & People    | affiliation/tenant, employee, job/license, access grants, org order                        | directory, forms, effective history, transfer foundation                | M1                     |
-| M3 Workforce                | leave first; shifts, holidays and official duty phased later                               | policy profile, balance, request, DOCX revision, paper-result record/cancel/void | M1–M2             |
+| M3 Workforce                | leave first; shifts, holidays and official duty phased later                               | policy profile, balance, request, paper-result record/cancel/void; DOCX boundary deferred | M1–M2             |
 | M4 Special Integration      | Portal identity mapping, Special-Allowances person mapping, leave sync, period/result/report adapter, reconciliation | reliable API boundary to systems already developed | M1–M3                  |
-| M5 Documents & Reporting    | templates, DOCX/report runs, artifacts and source snapshots                                | first: official Leave DOCX; ฉ.10/11 artifacts remain owned by Special   | M1 + M2–M4 read models |
+| M5 Documents & Reporting    | templates, DOCX/report runs, artifacts and source snapshots                                | later: official Leave DOCX; ฉ.10/11 artifacts remain owned by Special   | M1 + M2–M4 read models |
 | M6 Inventory                | supplies, vendors, receipt, issue, ledger, annual plan                                     | immutable movement, balances, reports                                   | M1–M2, M5              |
 | M7 Assets                   | asset/land lifecycle, depreciation, disposal, repair/custodian/benefit                     | พ.ด.1/พ.ด.2 registers                                                   | M1–M2, M5              |
 | M8 Vehicles                 | registry, asset link, authorizations, requests, usages, accidents, maintenance             | forms 2–6, calendar/conflict                                            | M1–M2, M7, M5          |
@@ -1989,7 +1992,7 @@ Event payload ส่งเพียง ID, scope, version และข้อม�
 
 - Platform/Security team owns M1, common libraries, policy and delivery platform.
 - People/Leave/Integration owners develop M2–M4 for first production release; ทีมเล็กสองคนสามารถแบ่งตาม module ownership ใน monorepo.
-- Reporting capability owner works with M5 and HR; first priority is official Leave DOCX. ฉ.10/11 Excel ใช้ implementation เดิมของ Special-Allowances.
+- Reporting capability owner works with M5 and HR; official Leave DOCX follows after forms are supplied. ฉ.10/11 Excel ใช้ implementation เดิมของ Special-Allowances.
 - Resource Operations team owns M6–M8 after pilot.
 - Finance team owns M9 while starting rule/report discovery early.
 - Enabling QA/Data team owns migration test data, report golden masters, tenant isolation and performance.
@@ -2017,7 +2020,7 @@ Event payload ส่งเพียง ID, scope, version และข้อม�
 
 ### 20.1 MVP goal
 
-สร้าง Core Personnel Platform ที่ถูกต้อง แล้วเปิดใช้ระบบลาแบบ DOCX/ลงนามภายนอกเป็น source of truth พร้อมส่งวันลาที่ได้รับอนุญาตแล้วไปยังระบบ Special-Allowances เดิมผ่าน API. เปิดใช้งานแบบ incremental โดยยังไม่สร้าง One Data System ทุกโมดูลและไม่สร้าง Calculation Engine ฉ.10/11 ซ้ำ **[OWNER-CONFIRMED]**.
+สร้าง Core Personnel Platform ที่ถูกต้อง แล้วเปิดใช้ระบบลาแบบ Paper-first/ลงนามภายนอกเป็น source of truth พร้อมส่งใบลาที่ได้รับอนุญาตแล้วไปยังระบบ Special-Allowances เดิมผ่าน API. เปิดใช้งานแบบ incremental โดยยังไม่สร้าง One Data System ทุกโมดูลและไม่สร้าง Calculation Engine ฉ.10/11 ซ้ำ. DOCX เป็น document module ระยะถัดไป **[OWNER-CONFIRMED]**.
 
 ### 20.2 In scope
 
@@ -2028,14 +2031,14 @@ Event payload ส่งเพียง ID, scope, version และข้อม�
 - effective-dated Employment History, Position, Workgroup, Employee Type และ Professional License เท่าที่จำเป็นต่อ Release 1.
 - Authentication/session และ baseline role/permission ที่บังคับฝั่ง server.
 - integration กับ SSO Portal launch token และ external identity mapping.
-- functional assignment ขั้นต้นสำหรับเจ้าหน้าที่บันทึกผลเอกสาร ผู้ตรวจข้อมูล และผู้ลงนามที่ต้องแสดงใน Word.
+- functional assignment ขั้นต้นสำหรับเจ้าหน้าที่บันทึกผลเอกสารและผู้ตรวจข้อมูล; ผู้ลงนาม/ข้อมูลที่ต้องแสดงใน Word เพิ่มเมื่อเปิด document module.
 - append-only audit, secure file/artifact storage และ fiscal/calculation period.
 - seed/migration framework สำหรับ 38 รพ.สต. และบุคลากร 267 คน.
 
 **Release 1 — First Production Modules**
 
 - Leave policy profile สำหรับข้าราชการ อบจ. ตามประกาศ พ.ศ. 2569; สถานะบุคลากรอื่นยังไม่เปิดจนมี Rulebook ของกลุ่มนั้น.
-- แบบร่างใบลา การคำนวณวัน/ยอดสิทธิ์ การออก DOCX ตามแบบราชการ และ document revision ที่พิมพ์ซ้ำได้.
+- แบบร่าง/ส่งใบลา การคำนวณวัน/ยอดสิทธิ์ และสถานะผลเอกสารกระดาษ; DOCX/document revision เป็นระยะถัดไปเมื่อมีแบบฟอร์มมาตรฐาน.
 - การบันทึกผลเอกสารกระดาษ `PAPER_APPROVED/PAPER_REJECTED`, การยกเลิก/void/correction และประวัติ audit; ไม่มี online approval chain.
 - Portal SSO integration และ permission สำหรับ requester, HR/paper-result verifier, affiliation viewer และ auditor.
 - External person mapping และ versioned leave API/adapter ไป Special-Allowances.
@@ -2067,10 +2070,10 @@ Event payload ส่งเพียง ID, scope, version และข้อม�
 - Target baseline ถูกต้อง: อบจ.ยะลา 1 แห่ง, รพ.สต. 38 แห่ง และบุคลากร 267 คน ณ migration cutoff พร้อม reconciliation ที่เจ้าของข้อมูลลงนาม.
 - UAT end-to-end อย่างน้อย 3 รพ.สต. ขนาดใหญ่/กลาง/เล็ก และ role/policy profiles ที่ได้รับอนุมัติ.
 - ไม่มี cross-tenant data leakage ใน automated suite/penetration test.
-- Leave balance/day counting, DOCX, paper-result/cancel/void ผ่าน golden cases/edge cases ที่ฝ่ายงานรับรอง.
+- Leave balance/day counting, paper-result/cancel/void ผ่าน golden cases/edge cases ที่ฝ่ายงานรับรอง; DOCX มี acceptance gate แยกเมื่อเปิด document module.
 - Employee onboarding ผ่าน atomicity/idempotency/failure-injection test และ correction-vs-real-change ย้อนหลังให้เอกสารถูก version.
 - ผู้ยื่นไม่สามารถบันทึกว่าเอกสารของตนได้รับอนุญาต; break-glass ทุกกรณีมีผู้อนุญาต เหตุผล หลักฐาน และ immutable audit.
-- DOCX golden-master ผ่านข้อความ ช่องข้อมูล หน้า ฟอนต์ และ checksum policy; ดาวน์โหลด revision เดิมให้ข้อมูลเหมือนเดิม.
+- เมื่อเปิด document module แล้ว DOCX golden-master ต้องผ่านข้อความ ช่องข้อมูล หน้า ฟอนต์ และ checksum policy; ดาวน์โหลด revision เดิมต้องให้ข้อมูลเหมือนเดิม.
 - API contract test ยืนยัน mapping วันลาจาก One Data ไป attendance projection ที่ Special-Allowances ใช้ทั้ง save และ period-lock path.
 - Reconciliation ก่อน lock รายงาน unmapped/rejected/changed/cancelled leave และ checksum; unresolved discrepancy ต้อง block lock หรือมี exception ที่ผู้มีอำนาจลงเหตุผล.
 - Locked/Paid period ใน Special-Allowances ไม่ถูก overwrite เมื่อแก้ข้อมูลบุคลากรหรือใบลาภายหลัง; adjustment ย้อนรอยถึง original period ได้.
@@ -2169,9 +2172,9 @@ Future enhancements ที่ไม่ผูกกับ release จนกว่
 
 - E03-F1 Leave policy/rule catalog and effective dates
 - E03-F2 Leave balances/usage ledger
-- E03-F3 Draft, DOCX issue, paper-result record, cancel/void and correction
+- E03-F3 Draft, submit, paper-result record, cancel/void and correction
 - E03-F4 Holiday/day-counting source
-- E03-F5 Official DOCX template/version/revision
+- E03-F5 Official DOCX template/version/revision (deferred until forms are provided)
 - E03-F6 Shift/official duty extension after pilot
 
 **Representative tasks**
@@ -2179,9 +2182,9 @@ Future enhancements ที่ไม่ผูกกับ release จนกว่
 - Convert the 2569 PAO announcement and official Word attachments into a signed Leave Rulebook/template inventory; confirm employee-type scope with HR.
 - Workshop all 11 leave groups and day-counting examples; implement effective-dated policy profiles rather than one global quota table.
 - Implement date/overlap/balance engine and immutable leave usage/correction history.
-- Build DRAFT→DOCUMENT_ISSUED→PAPER_APPROVED/PAPER_REJECTED→VOIDED/CANCELLED guards without an online approval chain.
+- Build DRAFT→SUBMITTED→PAPER_APPROVED/PAPER_REJECTED→VOIDED/CANCELLED guards without an online approval chain.
 - Enforce requester/paper-result-verifier separation and test permission/break-glass paths.
-- Generate versioned DOCX from official forms; golden-test fields, Thai layout, pagination, checksum and repeat download.
+- When official forms are provided, generate versioned DOCX; golden-test fields, Thai layout, pagination, checksum and repeat download.
 - Add cancel/void/correction handling that restores balance and emits integration changes.
 - Verify quota projection refreshes immediately after paper decision/cancel/void and repeated commands are idempotent with explicit feedback.
 - Defer shift matrix/official duty coding until first production workflow is stable.
@@ -2358,7 +2361,7 @@ E01 Platform
   ↓
 E02 People/Organization
   ↓
-E03 Leave + DOCX → E04 Special-Allowances API/SSO Integration → E05 Unified UI/Reports
+  E03 Leave Paper-first → E04 Special-Allowances API/SSO Integration → E05 Unified UI/Reports
   ↓
 Pilot 3 รพ.สต. → 10 → 38
   ↓
@@ -2367,7 +2370,7 @@ E08 Vehicles / E06 Inventory / E07 Assets / E09 Finance ตามผล pilot �
 E10 spans workflows; E11 spans all releases
 ```
 
-Leave Rulebook/official DOCX และ Special-Allowances integration contract ต้องเริ่มก่อน E03/E04 coding. สูตรและ report ฉ.10/11 ไม่ใช่งานสร้างใหม่ของ One Data; ใช้ implementation/golden tests ใน Special-Allowances และเพิ่ม cross-system contract/reconciliation tests. Finance discovery ควรเริ่มล่วงหน้าแม้ coding E09 มาภายหลัง เพราะกฎไม่ชัดและเสี่ยง rework สูง.
+Leave Rulebook/rule profile และ Special-Allowances integration contract ต้องเริ่มก่อน E03/E04 coding. Official DOCX และ golden template เป็นเงื่อนไขก่อนเปิด document module เท่านั้น. สูตรและ report ฉ.10/11 ไม่ใช่งานสร้างใหม่ของ One Data; ใช้ implementation/golden tests ใน Special-Allowances และเพิ่ม cross-system contract/reconciliation tests. Finance discovery ควรเริ่มล่วงหน้าแม้ coding E09 มาภายหลัง เพราะกฎไม่ชัดและเสี่ยง rework สูง.
 
 ---
 
@@ -2382,12 +2385,12 @@ Leave Rulebook/official DOCX และ Special-Allowances integration contract �
 | DR-003 | บุคลากร 267 คน ณ 10 ส.ค. 2569 และจะเพิ่ม                                                                                                                                     | OWNER-CONFIRMED                          | migration/capacity/test data                 |
 | DR-004 | กลุ่มเป้าหมายคือเจ้าหน้าที่ทุกคนของ รพ.สต. ในสังกัด                                                                                                                          | OWNER-CONFIRMED                          | identity/UX/training; login mapping ยัง OPEN |
 | DR-005 | พัฒนา incremental ไม่สร้างทุกโมดูลก่อนเปิดใช้                                                                                                                                | OWNER-CONFIRMED                          | release strategy                             |
-| DR-006 | First production direction คือ People/Organization Core → Leave/DOCX → Special-Allowances API → unified UI/report access                                                      | OWNER-CONFIRMED                          | MVP/backlog/data model                       |
+| DR-006 | First production direction คือ People/Organization Core → Leave แบบ Paper-first → Special-Allowances API → unified UI/report access                                      | OWNER-CONFIRMED                          | MVP/backlog/data model                       |
 | DR-007 | Rollout แบบ pilot 3 แห่ง แล้ว 10 และ 38                                                                                                                                      | PROPOSED — formal approval pending       | UAT/support/cutover                          |
-| DR-008 | Modular Monolith เป็น architecture baseline; technology stack ยังไม่ล็อก                                                                                                     | PROPOSED — ADR pending                   | implementation/deployment                    |
+| DR-008 | Modular Monolith เป็น architecture baseline; target stack คือ NestJS + Next.js + TypeScript ส่วน Laravel/Vue เป็น current migration baseline                                      | OWNER-CONFIRMED + PROPOSED DESIGN        | implementation/deployment/migration          |
 | DR-009 | ระบบใหม่ต้องไม่ลอก defect ของ reference: onboarding ต้อง atomic, approval ต้องมี SoD, เงินใช้ fixed decimal และข้อมูลราชการใช้ void/reversal/history แทน destructive cascade | PROPOSED — required engineering baseline | architecture, API, schema, acceptance gates  |
-| DR-010 | MVP ไม่มี online leave approval; ผู้ใช้สร้าง Word พิมพ์และลงนามภายนอก แล้วเจ้าหน้าที่บันทึกผลเอกสารกลับเข้าระบบ                                                                  | OWNER-CONFIRMED                          | leave workflow/API/permissions               |
-| DR-011 | เฉพาะใบลาสถานะ `PAPER_APPROVED` ที่ยังมีผลเป็น source input ให้ Special-Allowances                                                                                                 | OWNER-CONFIRMED                          | integration/filter/reconciliation            |
+| DR-010 | MVP ไม่มี online leave approval; ผู้ใช้กรอก/ส่งใบลา พิมพ์หรือนำไปลงนามภายนอก แล้วเจ้าหน้าที่บันทึกผลเอกสารกลับเข้าระบบ; DOCX เป็นส่วนขยายภายหลัง | OWNER-CONFIRMED | leave workflow/API/permissions |
+| DR-011 | เฉพาะใบลาสถานะ `PAPER_APPROVED` ที่ยังมีผลเป็น source input ให้ Special-Allowances ใน MVP; `CONFIRMED` เป็นชื่อ legacy ที่เลิกใช้และห้ามส่งใน contract | OWNER-CONFIRMED | integration/filter/reconciliation |
 | DR-012 | `Special-Allowances` เดิมเป็นเจ้าของสูตร ตัวแปรที่ไม่ใช่การลา period/result/lock/adjustment/report; One Data ห้าม reimplement calculation engine                                   | OWNER-CONFIRMED + CODEBASE-VERIFIED      | system boundary/development scope            |
 | DR-013 | ข้าราชการ อบจ. ใช้ประกาศมาตรฐานทั่วไปว่าด้วยการลาของข้าราชการองค์การบริหารส่วนจังหวัด พ.ศ. 2569 และแบบ Word แนบท้ายเป็น baseline                                                | LEGAL-SOURCE; HR SIGN-OFF REQUIRED       | policy profile/document templates            |
 | DR-014 | สถานะการจ้างอื่นต้องมี LeavePolicyProfile/ฐานกฎหมายแยก และยังไม่เปิดสิทธิ์จนฝ่ายบุคคลรับรอง                                                                                         | OWNER-CONFIRMED GUARDRAIL                | rollout/data model                           |
@@ -2410,7 +2413,7 @@ Leave Rulebook/official DOCX และ Special-Allowances integration contract �
 | ------ | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
 | VE-005 | Employee edit distinguishes correction from real change and requires effective date for the latter                  | People temporal model + document snapshot              |
 | VE-006 | Thai ID checksum/duplicate phone validation works, but failed employee create can leave a partial record            | Atomic onboarding/idempotency is P0 engineering gate   |
-| VE-007 | Leave approve/reject/cancel transitions and quota reversal work; same actor can submit and approve                  | Leave state machine confirmed; SoD policy remains P0   |
+| VE-007 | Leave approve/reject/cancel transitions and quota reversal work; same actor can submit and approve                  | Reference state machine confirmed; target basic requester–paper-result-recorder separation is locked, while exact role/break-glass policy remains P0 |
 | VE-008 | Holiday dates are disabled in leave selection; cancelled/rejected requests remain in history                        | Day-counting input + retention behavior                |
 | VE-009 | Schedule auto-saves one cell and calculates a tested hourly shift as hours × configured rate                        | Shift calculation evidence; rounding/rates remain open |
 | VE-010 | Stock blocks over-issue and blocks receipt deletion after downstream issue; issue reversal permits receipt reversal | Inventory reversal/dependency constraints              |
@@ -2428,14 +2431,14 @@ Leave Rulebook/official DOCX และ Special-Allowances integration contract �
 | P0-02 | ยืนยันการ map บุคลากร 267 คนกับบัญชี Portal, module role, account recovery/MFA และผู้ที่เป็น employee record แต่ไม่ต้อง login; Portal เป็น SSO baseline แล้ว                                                                                                                    | Product owner + Portal owner + IT/security              | Identity & Account Mapping Policy                  |
 | P0-03 | บุคลากรมีหลาย รพ.สต./หลายกลุ่มงาน/ช่วยราชการ/รักษาการพร้อมกันได้หรือไม่, ย้ายกลางงวดอย่างไร และ semantics “แก้ข้อมูลที่ผิด” เทียบ “เปลี่ยนแปลงจริง” ใช้ย้อนหลังกับเอกสาร/สูตรใด                                                                                               | HR owner                                                | People & Membership Rulebook + correction policy   |
 | P0-04 | Role matrix จริง: self/tenant/affiliation visibility, CRUD, approve, export, PII และ superadmin/auditor                                                                                                                                                                       | Process owners + security/DPO                           | signed Permission Matrix                           |
-| P0-05 | ปิด online approval ออกจาก MVP แล้ว; ต้องยืนยันว่า role ใดบันทึกผลกระดาษ, metadata/หลักฐานขั้นต่ำ, cancel/void/correct/backdate และ break-glass เมื่อ requester กับ verifier อาจเป็นคนเดียวกันในหน่วยงานเล็ก                                                                  | HR/process owner + auditor                              | Paper-result State Diagram + Permission/SoD matrix |
+| P0-05 | ปิด online approval ออกจาก MVP แล้ว; ล็อกหลักว่า requester ห้ามเป็นผู้บันทึกผลกระดาษของรายการตนเอง. ยังต้องยืนยัน role ผู้บันทึก, metadata/หลักฐานขั้นต่ำ, cancel/void/correct/backdate และ break-glass สำหรับกรณีพิเศษ                                                                  | HR/process owner + auditor                              | Paper-result State Diagram + Permission/SoD matrix |
 | P0-06 | ประกาศ ก.จ. พ.ศ. 2569 และ 11 กลุ่มเป็น baseline แล้ว; ยังต้องยืนยันวันหยุด ครึ่งวัน overlap อายุงาน สะสม ยกมา เอกสารประกอบ และ policy profile ของพนักงานจ้าง/ลูกจ้าง/สถานะอื่น                                                                                                  | HR/legal/process owner                                  | Signed Leave Rulebook + golden cases                |
 | P0-07 | ยืนยัน field/type mapping จาก `PAPER_APPROVED` leave ไป attendance contract ที่ Special-Allowances รองรับ รวม employee mapping, complete-snapshot/reset semantics และช่วงวันที่ข้ามเดือน; สูตร ฉ.10/11 ไม่ implement ซ้ำใน One Data                                             | Special owner + HR + integration owner                 | Versioned API mapping + contract tests              |
 | P0-08 | Direction cutoff/lock ปิดแล้ว: open sync ซ้ำ, grace 3 วันทำการ configurable, locked/paid ใช้ adjustment; ต้อง map exact status/API และสิทธิ์ controlled reopen ของ Special-Allowances                                                                                            | Allowance owner + auditor + integration owner          | Period Integration State Diagram                    |
 | P0-09 | Leave DOCX ใช้แบบแนบท้าย พ.ศ. 2569; ต้องอนุมัติ golden layout/field mapping. ฉ.10/11 report เป็น artifact ของ Special-Allowances; One Data ต้องตกลง API download, permission, retention และ checksum contract                                                                 | HR/document owner + Special owner                      | approved Leave DOCX + report-access contract        |
 | P0-10 | แหล่งข้อมูลบุคลากร 267 คน/38 รพ.สต., field mapping, duplicates, validation, migration cutoff และ reconciliation                                                                                                                                                               | Data owners + HR + IT                                   | migration inventory/mapping                        |
 
-ห้ามเริ่ม integration production หรือออก Leave DOCX ใช้งานจริงจน P0-05–P0-09 ได้รับอนุมัติ. สามารถพัฒนา skeleton/adapter test doubles ได้ แต่ห้ามสร้างสูตรหรือ report engine ฉ.10/11 ซ้ำใน One Data.
+ห้ามเริ่ม integration production จน P0-05–P0-08 และ API mapping/contract tests ได้รับอนุมัติ; ห้ามออก Leave DOCX ใช้งานจริงจน P0-09 ได้รับอนุมัติ. สามารถพัฒนา skeleton/adapter test doubles ได้ แต่ห้ามสร้างสูตรหรือ report engine ฉ.10/11 ซ้ำใน One Data.
 
 ### 23.2 Deferred domain unknowns — ต้องปิดก่อน release ของโมดูลนั้น
 
@@ -2605,7 +2608,7 @@ Observed evidence / Owner-confirmed decision
 
 # Implementation Addendum v1.6 — MVP decisions (29 สิงหาคม 2569)
 
-ส่วนนี้เป็น decision ล่าสุดจากเจ้าของระบบเพื่อใช้กำกับ implementation รอบแรก และ supersede เฉพาะ workflow/ขอบเขต MVP ที่ขัดกันในส่วนก่อนหน้า; รายละเอียด Word, paper-result และ Leave Rulebook ยังเก็บไว้เป็น backlog ระยะถัดไป
+ส่วนนี้เป็น historical decision จาก revision 1.6 เพื่อ traceability เท่านั้น. ข้อความเรื่องสถานะใบลาและ source input ถูก supersede โดย `Implementation Addendum v1.8` ท้ายเอกสาร; ห้ามใช้ `CONFIRMED` เป็นสถานะปฏิบัติการใหม่.
 
 ## MVP ที่เริ่มพัฒนา
 
@@ -2645,3 +2648,258 @@ DRAFT → CONFIRMED → CANCELLED
 # Conclusion
 
 แก่นของระบบใหม่ไม่ใช่การทำหน้าเว็บเหมือน One Data System แต่คือแพลตฟอร์มงานราชการระดับหน่วยบริการที่มี People Core ร่วม ข้อมูลที่ย้อนรอยได้ และ integration boundary ที่ชัดเจนสำหรับ 38 รพ.สต. ภายใต้ อบจ.ยะลา. ลำดับ implementation เริ่มต้นคือ Portal SSO/People Core → Leave MVP → Special-Allowances API/reconciliation → Pilot 3→10→38 แห่ง; Word/document module และโมดูลอื่นเพิ่มภายหลัง. One Data เป็น source of truth ของการลา ส่วน Special-Allowances เดิมเป็นเจ้าของสูตร รอบคำนวณ lock/adjustment ผล และรายงาน ฉ.10/11; ห้ามสร้างซ้ำหรือเชื่อมฐานข้อมูลตรง. ก่อนเปิด production เต็มรูปแบบต้องปิด Leave Rulebook ตามประกาศ ก.จ. พ.ศ. 2569, policy profile ตามสถานะการจ้าง, Portal/person mapping, Special API contract และ golden DOCX ตามลำดับความสำคัญ พร้อมนำ REF-DEF-001–012 ไปเป็น negative acceptance tests.
+
+---
+
+# Implementation Addendum v1.7 — Reference Re-audit & Target Stack (29 สิงหาคม 2569)
+
+ภาคผนวกนี้เป็น historical decision จาก revision 1.7 หลังทดสอบระบบอ้างอิงซ้ำแบบ end-to-end. ข้อความเรื่อง workflow/source ของใบลาถูก supersede โดย `Implementation Addendum v1.8`; ส่วน target stack, แผน migration และข้อค้นพบจาก audit ยังคงใช้ได้. ข้อมูลใน revision ก่อนหน้ายังคงไว้เพื่อ traceability. `Laravel + Vue` หมายถึง current implementation baseline ใน repository; `NestJS + Next.js` คือ target stack ที่เจ้าของโครงการเลือกสำหรับการพัฒนาต่อไป **[OWNER-CONFIRMED + CODEBASE-VERIFIED]**
+
+## 1. ขอบเขตและผลการทดสอบรอบล่าสุด
+
+ทดสอบที่ `https://onedata.gmtech.app/` โดยใช้บัญชีผู้ดูแลที่เข้าถึงทั้ง workspace ระดับหน่วยงานและระดับสังกัด ครอบคลุม:
+
+- tenant dashboard, บุคลากร, ตารางเวร, วันหยุด, ลา/ไปราชการ และเอกสาร/รายงาน
+- วัสดุ, นำเข้า, เบิก, แผนเบิกประจำปี, ร้านค้า/บริษัท
+- ครุภัณฑ์, ยานพาหนะ, การเงิน, รายงาน และตั้งค่าหน่วยงาน
+- affiliation dashboard, รายงาน, หน่วยงาน, พนักงาน, ย้ายบุคลากร, คำขอย้าย, การเงิน, ตั้งค่าสังกัด, ผลัด และประกาศ
+- mutation ที่ปลอดภัยด้วยข้อมูลสังเคราะห์: สร้าง/แก้ไข/ยกเลิก/ลบ/เปิดใช้งาน/ล็อกตามที่ workflow อนุญาต และตรวจ validation/error state
+
+Environment ที่ทดสอบมีเพียง 1 รพ.สต. และไม่ใช่ข้อมูลจำลองครบ 38 แห่ง จึงยืนยันหน้าจอและ workflow ระดับสังกัดได้ แต่ยังยืนยัน aggregate, transfer และ reconciliation ข้ามหลายหน่วยงานแบบ production-scale ไม่ได้ **[MUTATION-VERIFIED + LIMITATION]**
+
+หลังจบการทดสอบตรวจยืนยัน cleanup แล้ว:
+
+- dashboard กลับเป็นบุคลากร 12 คน และปฏิบัติงาน/ลา/ไปราชการวันนี้ 0 รายการ
+- marker จากบุคลากร ใบลา วัสดุ ใบรับ ใบเบิก แผน ร้านค้า รถ และประกาศไม่เหลือในหน้าที่ตรวจ
+- ไม่ลบหรือแก้ระเบียนเดิมที่มีอยู่ก่อน รวมถึงประวัติที่ระบบอ้างอิงเก็บไว้
+- ไม่ตรวจ cookie, token, local storage หรือข้อมูลลับของระบบอ้างอิง
+
+## 2. UX/UI baseline ที่ต้องนำไปเป็น product direction
+
+ระบบอ้างอิงมี shell เดียวที่สลับขอบเขตการทำงานได้:
+
+| ขอบเขต | ลักษณะ UX/UI ที่ยืนยัน | แนวทางของระบบใหม่ |
+| --- | --- | --- |
+| Tenant / หน่วยงาน | sidebar แบ่งกลุ่มงาน, header สีขาว, card มุมโค้ง, KPI และ empty state ที่อ่านง่าย | ใช้ shared web shell และ workspace context เดียวกัน |
+| Affiliation / สังกัด | dashboard รวมหลายหน่วยงาน, การเปิด/ปิดรอบแผน, รายงานรวม, การย้ายบุคลากร และประกาศ | ใช้ scope switcher และ permission-aware navigation |
+| แบบฟอร์ม | drawer/modal, field label ชัด, validation inline, confirmation ก่อนรายการที่ย้อนกลับยาก | ให้ Next.js มี form state ที่ชัด แต่ validation และ authorization อยู่ใน NestJS ด้วย |
+| รายงาน | document center รวมประเภทเอกสาร แยกหมวด และมี preview/print/PDF | แยก report definition, document snapshot และ artifact ออกจาก domain transaction |
+| ข้อมูลไม่มีรายการ | แสดง empty state และคำอธิบาย ไม่ปล่อยหน้าว่าง | ใช้ component มาตรฐานร่วมกันทุกโมดูล |
+
+เมนูและ visual language เป็นข้อกำหนดด้านประสบการณ์ผู้ใช้ ไม่ใช่เหตุผลให้คัดลอก source code หรือ defect ของระบบอ้างอิง **[OBSERVED + PROPOSED]**
+
+## 3. Mutation findings ที่ยืนยันเพิ่ม
+
+| Area | พฤติกรรมที่พบจากการทดสอบ | ข้อกำหนดของระบบใหม่ |
+| --- | --- | --- |
+| People | เพิ่ม/แก้ไขบุคลากรและข้อมูลที่ใช้กับ workflow อื่นได้; หน้าจอต้นแบบเคยมีความเสี่ยง partial save เมื่อเกิด failure | onboarding ต้องเป็น transaction เดียว, มี idempotency และ reconciliation |
+| Leave | มีประเภทการลาหลายประเภท, ปฏิทินปิดวันหยุด/เสาร์อาทิตย์, สถานะ pending/ไม่อนุมัติ/ยกเลิก และพิมพ์ใบลา | MVP ใช้ state ที่เรียบง่ายตาม owner decision; server คำนวณวันลาและเก็บ revision |
+| Schedule / ฉ.11 | เลือกผลัดแล้วบันทึกอัตโนมัติ; ตัวอย่าง 3.5 ชั่วโมงคูณ rate ได้ยอดทศนิยม; checkbox ตารางปฏิบัติงานเชื่อมกับรายงาน ฉ.11 | ไม่บันทึกเงียบโดยไม่มี feedback, ใช้ fixed decimal และมี calculation/source audit |
+| Stock | ป้องกันเบิกเกิน, ลบใบรับที่มีรายการเบิกต่อไม่ได้, เบิกนอกแผนต้องยืนยัน และแผนที่สร้างภายหลังนับยอดเดิมย้อนหลัง | ใช้ dependency/reversal rule, explicit exception และ ledger ที่ตรวจสอบย้อนกลับได้ |
+| Assets | ค่าเสื่อมแบบเส้นตรงแสดง floating-point artifact ในมูลค่าคงเหลือ | money/quantity ใช้ decimal และ rounding policy เดียวกันทั้ง API, DB, report |
+| Vehicles | แบบขอใช้รถ (แบบ ๓) มีผู้ขอ/ผู้ขับ/ปลายทาง/เวลา; ยกเลิกและลบได้; dialog ระบุว่าลบประวัติที่เกี่ยวข้องแบบถาวร | workflow ต้องแยก request/approval/usage และใช้ archive/void/history แทน cascade hard delete ของ official records |
+| Finance | tenant สร้างแผนไม่ได้เมื่อ affiliation ยังไม่เปิดรอบ; affiliation ควบคุมเปิด/ปิดประเภทแผน | cycle state ต้องเป็น policy ที่ตรวจจาก server และมี effective period/audit |
+| Announcement | ประกาศที่เปิดใช้งานจาก affiliation แสดงเป็น banner ใน tenant จริง; มีได้ทีละประกาศที่ active ตามพฤติกรรม UI | publish/visibility scope ต้องเป็น explicit และมี audit |
+| Transfer | workflow มีขั้นเลือกพนักงาน → หน่วยงานปลายทาง → ยืนยัน แต่ environment เดียวหน่วยงานทำให้ไม่มีปลายทาง | ออกแบบ effective-dated transfer/membership ตั้งแต่ต้น และทดสอบด้วย fixture หลาย tenant |
+
+ข้อค้นพบข้างต้นเป็น evidence สำหรับ acceptance tests ไม่ใช่คำสั่งให้ทำทุกโมดูลใน release แรก **[MUTATION-VERIFIED]**
+
+## 4. Anti-requirements จากรอบ audit
+
+ระบบใหม่ต้องไม่สืบทอดพฤติกรรมเหล่านี้:
+
+1. แจ้งบันทึกล้มเหลวแต่ commit บางส่วนของบุคลากรหรือ aggregate ที่เกี่ยวข้อง
+2. อนุญาตให้ผู้ขออนุมัติหรือผู้ยื่นตรวจสอบรายการของตนเองโดยไม่มี policy/break-glass audit
+3. คำนวณเงินด้วย binary floating point หรือปล่อยค่าทศนิยม artifact ลงรายงาน
+4. บันทึก schedule/ยอดคำนวณสำเร็จโดยไม่มี status, timestamp, actor และ feedback ที่ตรวจสอบได้
+5. ลบข้อมูลทางราชการแบบ cascade จนประวัติรถ/การใช้งาน/เอกสารหายถาวร
+6. ใช้ hard delete แทน cancel, void, reverse, archive หรือ correction ในรายการที่มีผลต่อยอด/รายงาน
+7. ให้ browser เป็นผู้ตัดสินวันลา โควตา ยอดคงเหลือ หรือ scope ของ tenant
+8. ให้ข้อมูลสรุปข้าม workspace ต่างกันโดยไม่มี reconciliation, source version และ freshness indicator
+9. ใช้ชื่อ เบอร์โทรศัพท์ หรือเลขประจำตัวประชาชนเป็น identity key เพียงอย่างเดียว
+10. ใช้ข้อความสำเร็จ/ผิดพลาดที่ไม่ตรงกับผลของ mutation หรือทำให้ผู้ใช้เข้าใจว่า transaction เสร็จแล้วทั้งที่ยังประมวลผลอยู่
+
+## 5. Target architecture decision: NestJS + Next.js
+
+### 5.1 รูปแบบการ deploy
+
+One Data ยังคงเป็น **Modular Monolith ในระดับ business/domain** แต่แยก presentation กับ API เป็นคนละ process เพื่อให้เหมาะกับ target stack:
+
+```text
+One Data repository / workspace
+├── apps/web        Next.js + TypeScript + App Router
+├── apps/api        NestJS + TypeScript + REST/OpenAPI
+├── apps/worker     NestJS worker หรือ API image ที่ใช้ command แยก
+└── packages
+    ├── contracts   generated API types / schemas
+    ├── ui          shared design-system components
+    └── config      lint, TypeScript และ test configuration
+```
+
+`apps/web`, `apps/api` และ worker อาจอยู่ repository เดียวและอยู่บน Docker network เดียวกัน แต่ต้องมี health check, log, secret, release และ rollback boundary ที่ระบุได้. การแยก process นี้ไม่ใช่การแยก business module เป็น microservice **[OWNER-CONFIRMED + PROPOSED]**
+
+### 5.2 Technology choices
+
+| Layer | Target decision |
+| --- | --- |
+| API/domain | NestJS + TypeScript, module/controller/use-case/repository boundary |
+| Web UI | Next.js + TypeScript + App Router; server components ใช้กับ read path และ client components ใช้กับ interactive form/table |
+| Validation | DTO/schema validation ที่ API และ shared schema สำหรับ web form; client validation เป็น UX ไม่ใช่ security boundary |
+| ORM/data access | Prisma เป็น default สำหรับ type-safe query/migration; ใช้ parameterized SQL/read model เมื่อ report ต้องการ query เฉพาะทาง |
+| Database | MySQL 8 ในฐานข้อมูล One Data แยกจาก Portal และ Special-Allowances; money/quantity ใช้ DECIMAL |
+| API contract | REST `/api/v1` สำหรับ web และ `/internal/api/v1` สำหรับ service integration พร้อม OpenAPI, correlation ID และ idempotency |
+| Session/SSO | NestJS ตรวจ Portal launch token แล้วออก secure httpOnly session cookie; Next.js ไม่เก็บ token ใน localStorage และไม่ตัดสิน permission เอง |
+| Async work | เริ่มจาก database-backed job/outbox; เพิ่ม BullMQ/Redis เมื่อมี workload/retry requirement จริง |
+| Documents | แยก document module/worker, private storage, template version, source snapshot และ checksum; ยังไม่ล็อก library จนได้แบบจริง |
+| Testing | Jest/Supertest สำหรับ API, Playwright สำหรับ web E2E, contract tests, tenant-isolation, migration/reconciliation และ document golden tests |
+| Deployment | Docker Compose/shared-infra; reverse proxy route web และ `/api` ไปยัง process ที่ถูกต้อง |
+
+### 5.3 Scope and ownership
+
+- Portal เป็นเจ้าของ login, SSO, account recovery และ module access; One Data สร้าง local session และประเมิน permission ของตนเองทุก request.
+- Special-Allowances เป็นเจ้าของ master data ในช่วง migration, สูตร ฉ.10/11, period, lock/adjustment, result และรายงาน; One Data ห้ามอ่าน/เขียน database โดยตรง.
+- One Data เป็นเจ้าของ leave source และ external mapping; ช่วงแรกดึง employee/organization master จาก Special ผ่าน API แล้วเก็บ projection ที่มี source revision.
+- `tenant_id`, `affiliation_id`, membership effective date และ permission scope ต้องถูกตรวจใน NestJS use case/repository ไม่เชื่อค่าจาก browser.
+
+### 5.4 Target application flow
+
+```mermaid
+sequenceDiagram
+    participant P as Portal SSO
+    participant W as Next.js Web
+    participant A as NestJS API
+    participant D as One Data MySQL
+    participant S as Special-Allowances API
+
+    P->>A: short-lived signed launch token
+    A->>A: verify issuer/audience/expiry/replay
+    A->>D: map external identity + create session
+    A-->>W: redirect + secure httpOnly session cookie
+    W->>A: scoped API request
+    A->>D: transaction/use case/audit/outbox
+    A->>S: versioned service call when integration command runs
+```
+
+## 6. ผลต่อแผน release
+
+ลำดับใหม่ที่เหมาะกับการพัฒนาโดยทีม 2 คน:
+
+### Phase 0 — Decision and migration boundary
+
+- freeze business contract ของ People, Leave และ Special integration
+- สร้าง migration document, API schema และ fixture ของ 1 tenant/12 คนสำหรับ local development
+- กำหนด feature flag, rollback และ coexistence ระหว่าง Laravel/Vue กับ NestJS/NextJS
+
+### Phase 1 — NestJS/Next.js foundation
+
+- monorepo/workspace, Docker, environment, health/readiness, logging และ error envelope
+- Portal launch-token exchange, local session, workspace context, scope guard, role/permission และ audit
+- Prisma schema baseline และ API contract ที่มี OpenAPI
+
+### Phase 2 — People/Organization projection
+
+- sync Special → One Data แบบ API พร้อม cursor/full sync, source revision, idempotency และ reconciliation
+- person/employee/membership/job history แยก aggregate; onboarding/merge/disable เป็น atomic use case
+- เตรียม fixture 38 tenant/267 employee ก่อนทดสอบ aggregate จริง
+
+### Phase 3 — Leave MVP
+
+- leave type/policy profile, holiday calendar, server-side date calculation, quota/read model และ overlap guard
+- `DRAFT → CONFIRMED → CANCELLED/VOID` ตาม decision ปัจจุบัน; ไม่ทำ online approval chain ใน MVP
+- สถานะ `CONFIRMED` ที่ยังมีผลเป็น input ของ snapshot; Word/document module ยังรอแบบฟอร์มจริงตาม owner decision เดิม
+
+### Phase 4 — Special integration
+
+- complete monthly snapshot, source hash, idempotency, delivery/retry, unmapped report และ reconciliation
+- period `OPEN`/`LOCKED` guard; locked-period correction ใช้ adjustment contract ของ Special
+- แสดง delivery status และ external result/report reference ใน One Data เมื่อ contract พร้อม
+
+### Phase 5 — UX parity and pilot
+
+- shared shell, tenant/affiliation switcher, dashboard, People และ Leave ตาม visual direction ที่ audit ยืนยัน
+- pilot 3 → 10 → 38 แห่ง พร้อม migration dry run, support playbook และ rollback rehearsal
+- หลัง core stable จึงเพิ่ม Word, Vehicles, Stock, Assets, Finance และโมดูลอื่นตาม priority
+
+## 7. ประเมิน implementation ปัจจุบัน
+
+สิ่งที่ทำมาถูกทิศทางและควรรักษาไว้เป็น reference:
+
+- ownership แยก One Data/Portal/Special และห้าม database coupling
+- model หลักของ tenant, affiliation, person, mapping, leave revision, export batch, audit และ outbox
+- API contract สำหรับ master data และ leave snapshot ที่มี source hash/idempotency
+- state transition ของ leave และการทดสอบ integration ระดับแรก
+- แนวคิด modular boundary, incremental rollout และใช้ระบบ Special คำนวณต่อ
+
+สิ่งที่ยังไม่ควรถือว่าเสร็จหรือเป็น target UI:
+
+- repository ปัจจุบันยังเป็น Laravel 11 + Vue/Inertia และมีเพียง dashboard, People, Leave และ integration slice ไม่ใช่ parity ของทุกเมนูในระบบอ้างอิง
+- authorization ยังต้องขยายเป็น explicit permission/scope matrix และทดสอบข้าม tenant/affiliation
+- leave service รุ่นปัจจุบันยังต้องย้าย server-side day calculation, holiday/quota/policy และ document boundary ให้ครบตาม acceptance criteria
+- Portal/person mapping, master-data movement, 38-tenant aggregate, locked-period correction และ report reconciliation ยังต้องใช้ fixture/contract จริง
+- การย้าย stack ไม่ควรแปลง controller/template ทีละไฟล์แบบไม่มี contract; ให้สร้าง NestJS API/Next.js shell แบบ strangler แล้วค่อยย้าย feature ที่มี acceptance test
+
+ข้อสรุปคือ implementation ปัจจุบันเป็น **MVP spike ที่มี foundation ถูกส่วนหนึ่ง** ไม่ใช่เหตุผลให้ทิ้งทุกอย่าง แต่ก็ยังไม่ควรขยาย Laravel/Vue ไปจนกลายเป็น target product ก่อนเริ่ม migration **[CODEBASE-VERIFIED + PROPOSED]**
+
+## 8. Decision register ที่อัปเดต
+
+| Decision | สถานะ | ผลกระทบ |
+| --- | --- | --- |
+| Target stack ของ One Data คือ NestJS + Next.js + TypeScript | OWNER-CONFIRMED | เริ่ม migration plan; Laravel/Vue เป็น current baseline เท่านั้น |
+| Business architecture ยังเป็น modular monolith | OWNER-CONFIRMED / PROPOSED DESIGN | ไม่แตก microservice; แยก web/API/worker เป็น process |
+| Web กับ API ใช้ repository/workspace เดียวได้ แต่ contract ต้องชัด | PROPOSED | เหมาะกับทีมเล็กและลด drift ของ types/UI |
+| `PAPER_APPROVED` เป็น leave state ที่มีผลใน MVP; `CONFIRMED` เป็น legacy/deprecated และไม่ใช่ source input | OWNER-CONFIRMED | ส่ง complete snapshot ไป Special เฉพาะใบลาที่มีผล; DRAFT/SUBMITTED ไม่ส่ง |
+| Word/document และ paper-result ยังรอแบบฟอร์มจริง | OWNER-CONFIRMED | กันการสร้าง template ผิดมาตรฐาน; เตรียม module boundary ไว้ก่อน |
+| Special เป็นเจ้าของสูตร/period/result/report | OWNER-CONFIRMED + CODEBASE-VERIFIED | One Data ทำ adapter/reconciliation ไม่ทำ calculation engine ซ้ำ |
+| Reference UX/UI เป็น visual/product direction | OWNER-CONFIRMED | ทำ shared shell และ workspace-aware navigation ใน Next.js |
+| รถ จัดซื้อ ครุภัณฑ์ การเงิน และโมดูลอื่นเพิ่มภายหลัง | OWNER-CONFIRMED | ต้องไม่ block pilot People/Leave/Special |
+
+## 9. เอกสารที่ใช้คู่กัน
+
+- แผนย้าย stack และ coexistence: [Migration Laravel/Vue → NestJS/NextJS](docs/MIGRATION_LARAVEL_VUE_TO_NESTJS_NEXTJS.md)
+- สถาปัตยกรรม target: [ARCHITECTURE.md](ARCHITECTURE.md)
+- contract ระหว่าง One Data กับ Special: [docs/INTEGRATION_CONTRACT.md](docs/INTEGRATION_CONTRACT.md)
+
+---
+
+# Implementation Addendum v1.8 — Leave Paper-first decision (29 สิงหาคม 2569)
+
+ภาคผนวกนี้เป็น decision ล่าสุดสำหรับ workflow ใบลาและการส่งข้อมูลไป `Special-Allowances`. ให้ใช้แทนข้อความเรื่อง `CONFIRMED`, `DOCUMENT_ISSUED`, Word-first และ paper-result ใน revision ก่อนหน้า. Revision เดิมยังคงไว้เพื่อ traceability เท่านั้น.
+
+## 1. สถานะมาตรฐานของใบลา
+
+```text
+DRAFT → SUBMITTED → PAPER_APPROVED
+                  └→ PAPER_REJECTED
+
+DRAFT/SUBMITTED → CANCELLED
+PAPER_APPROVED → VOIDED
+```
+
+ความหมายของสถานะ:
+
+- `DRAFT` — ผู้ใช้กำลังกรอกหรือแก้ไข; ยังไม่มีผลและไม่ส่งไป Special.
+- `SUBMITTED` — ผู้ใช้ส่งข้อมูลเพื่อดำเนินการตามเอกสารภายนอก; ยังไม่มีผลและไม่ส่งไป Special.
+- `PAPER_APPROVED` — เจ้าหน้าที่ผู้รับผิดชอบบันทึกผลว่าเอกสารภายนอกได้รับอนุญาตแล้ว; เป็นสถานะเดียวที่มีผลและส่งไป Special.
+- `PAPER_REJECTED` — เอกสารภายนอกไม่อนุญาต; ไม่มีผลและไม่ส่งไป Special.
+- `CANCELLED` — รายการถูกยกเลิกก่อนมีผล; เก็บประวัติไว้และไม่ส่งไป Special.
+- `VOIDED` — รายการที่เคยมีผลถูกทำให้เป็นโมฆะ/แก้ไขตามเหตุผลที่ตรวจสอบได้; ไม่ลบข้อมูลเดิม และต้องทำให้ snapshot รอบถัดไปสะท้อนผลปัจจุบัน.
+
+`CONFIRMED` เป็นชื่อสถานะ legacy/deprecated จากแผนเดิม ไม่ใช่สถานะปฏิบัติการของ MVP และห้ามใช้เป็น source input หรือส่งใน Integration Contract รุ่นใหม่. `DOCUMENT_ISSUED` เป็นสถานะที่อาจเพิ่มเมื่อเปิด document module; ไม่ใช่สถานะบังคับของ MVP.
+
+## 2. ขอบเขตการทำงานของ MVP
+
+- ไม่มี online approval chain และไม่เรียกการบันทึกผลเอกสารภายนอกว่า online approval.
+- ผู้ใช้กรอกและส่งใบลาใน One Data แล้วดำเนินการพิมพ์/ลงนามภายนอกตามวิธีปฏิบัติงาน. การสร้าง DOCX ตามแบบราชการและการแนบไฟล์สแกนเลื่อนไปจนกว่าจะมีแบบฟอร์มมาตรฐาน.
+- ผู้ยื่นห้ามบันทึก `PAPER_APPROVED` หรือ `PAPER_REJECTED` ให้รายการของตนเอง. ระบบต้องบันทึก actor, เวลา, เลขที่/วันที่เอกสาร และเหตุผลเมื่อมีการแก้ผล; break-glass ต้องมีผู้อนุญาตและ audit ที่ย้อนกลับได้.
+- ก่อน `PAPER_APPROVED` ไม่ตัดโควตาใช้งานจริง. เมื่ออนุมัติให้ปรับ balance/usage ใน transaction เดียว; เมื่อ `VOIDED` ให้สร้าง reversal/adjustment ตาม policy โดยไม่ hard delete.
+
+## 3. กติกา Integration กับ Special-Allowances
+
+- One Data เป็น source of truth ของใบลาและเป็นผู้ส่ง complete monthly snapshot.
+- Snapshot ต้องรวมเฉพาะ `PAPER_APPROVED` ที่ยังมีผล ณ `source_cutoff`; `DRAFT`, `SUBMITTED`, `PAPER_REJECTED`, `CANCELLED` และ `VOIDED` ไม่รวม.
+- รายการที่เคยส่งแล้วถูก `VOIDED` หรือถูกแก้ให้ไม่เข้าเงื่อนไข จะหายจาก complete snapshot รอบถัดไปเพื่อให้ Special คำนวณค่าปัจจุบันใหม่. ถ้า period ถูก lock/paid ให้ใช้ adjustment/correction contract ของ Special.
+- ส่งด้วย service token, source hash, revision, idempotency key และ delivery/reconciliation audit ตาม [Integration Contract](docs/INTEGRATION_CONTRACT.md); ห้ามอ่านหรือเขียนฐานข้อมูล Special โดยตรง.
+
+## 4. ผลต่อการพัฒนา
+
+ลำดับ implementation คือ schema/state transition และ audit ก่อน จากนั้นทำ UI สำหรับ `DRAFT/SUBMITTED`, หน้าบันทึกผลกระดาษสำหรับผู้รับผิดชอบ, quota projection และ snapshot/reconciliation. Document/DOCX module ทำเป็น boundary ที่เสียบเพิ่มภายหลังโดยไม่เปลี่ยนสถานะหรือ contract หลัก.

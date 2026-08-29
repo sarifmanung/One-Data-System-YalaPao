@@ -2,19 +2,20 @@
 
 เอกสารคำแนะนำด้านสถาปัตยกรรมก่อนเริ่มพัฒนาระบบ One Data System สำหรับองค์การบริหารส่วนจังหวัดยะลา
 
-- สถานะ: Implementation baseline — MVP implementation in progress
+- สถานะ: Target architecture baseline — NestJS/Next.js migration planned; current Laravel/Vue implementation remains the migration baseline
 - วันที่จัดทำ: 29 สิงหาคม 2569 (2026)
 - ขอบเขตรุ่นแรก: Organization & People Core, ระบบลาขั้นพื้นฐาน และเชื่อมระบบ Special-Allowances เดิม; Word/document module เป็นระยะถัดไป
 - ระบบที่เกี่ยวข้อง: `yala-pao-public-health-portal`, `Special-Allowances`, `shared-infra` และ `carbooking-yala-pao`
 
-เอกสารนี้ใช้ประกอบกับ `One Data System - Reimplementation Blueprint.md` โดยมุ่งตอบคำถามว่า One Data ควรสร้างและเชื่อมกับระบบที่มีอยู่ด้วยสถาปัตยกรรมแบบใด ไม่ได้แทนที่ business requirements ใน Blueprint
+เอกสารนี้ใช้ประกอบกับ `One Data System - Reimplementation Blueprint.md` โดยมุ่งตอบคำถามว่า One Data ควรสร้างและเชื่อมกับระบบที่มีอยู่ด้วยสถาปัตยกรรมแบบใด ไม่ได้แทนที่ business requirements ใน Blueprint. แผนย้ายจาก current stack อยู่ที่ [docs/MIGRATION_LARAVEL_VUE_TO_NESTJS_NEXTJS.md](docs/MIGRATION_LARAVEL_VUE_TO_NESTJS_NEXTJS.md)
 
 ## 1. Architecture Decision
 
-One Data ควรเริ่มเป็น **Modular Monolith แบบ API-first** ไม่เริ่มด้วย Microservices
+One Data ควรเริ่มเป็น **Modular Monolith แบบ API-first** ไม่เริ่มด้วย Microservices โดย target application แยกเป็น Next.js web และ NestJS API/worker คนละ process แต่ยังอยู่ใน product/repository boundary เดียวกัน
 
-- One Data เป็น application และ deployment เดียวในรุ่นแรก แต่แบ่งขอบเขตโมดูลภายในอย่างชัดเจน
+- One Data เป็น product เดียวและแบ่งขอบเขตโมดูลภายในอย่างชัดเจน; web, API และ worker เป็น deployable process ที่แยก health check และ rollback ได้
 - Portal, One Data และ Special-Allowances ยังคงเป็นคนละ deployable และถือครองฐานข้อมูลของตนเอง
+- One Data web ใช้ Next.js และ One Data API ใช้ NestJS; ทั้งคู่สื่อสารผ่าน versioned API แม้จะ deploy จาก repository เดียวกัน
 - ระบบเชื่อมกันด้วย versioned API และ signed launch token ไม่อ่านหรือเขียนฐานข้อมูลข้ามระบบ
 - ใช้ synchronous REST สำหรับ integration รุ่นแรก และเตรียม transactional outbox ไว้สำหรับ retry และ event consumers ในอนาคต
 - เพิ่มโมดูลใหม่ใน One Data ได้ทีละส่วนโดยไม่ต้องสร้างระบบทั้งหมดก่อนเปิดใช้งานจริง
@@ -26,20 +27,22 @@ One Data ควรเริ่มเป็น **Modular Monolith แบบ API-f
 ```mermaid
 flowchart LR
     User[ผู้ใช้งาน] --> Portal[Public Health Portal<br/>Login / SSO / Module Access]
-    Portal -->|Signed short-lived launch token| OneData[One Data<br/>Modular Monolith]
+    Portal -->|Signed short-lived launch token| OneDataWeb[One Data Web<br/>Next.js]
+    OneDataWeb -->|Same-origin REST| OneDataAPI[One Data API<br/>NestJS]
 
-    OneData --> People[Organization & People]
-    OneData --> Leave[Leave & DOCX]
-    OneData --> SpecialAdapter[Special-Allowances Adapter]
-    OneData --> Governance[Audit / Documents / Outbox]
+    OneDataAPI --> People[Organization & People]
+    OneDataAPI --> Leave[Leave & Documents]
+    OneDataAPI --> SpecialAdapter[Special-Allowances Adapter]
+    OneDataAPI --> Governance[Audit / Documents / Outbox]
 
     SpecialAdapter -->|Scoped REST API| Special[Special-Allowances<br/>Formula / Period / Result / Report]
 
-    OneData --> OneDB[(One Data Database)]
+    OneDataAPI --> OneDB[(One Data Database)]
     Special --> SpecialDB[(Special Database)]
 
     Portal -. Shared Docker network .-> Infra[shared-infra]
-    OneData -. Shared Docker network .-> Infra
+    OneDataWeb -. Shared Docker network .-> Infra
+    OneDataAPI -. Shared Docker network .-> Infra
     Special -. Shared Docker network .-> Infra
 ```
 
@@ -61,25 +64,26 @@ flowchart LR
 
 | Layer | Recommendation |
 | --- | --- |
-| Backend | Laravel 11 / PHP 8.2+ |
-| Frontend | Vue 3 + TypeScript + Inertia |
+| Backend/API | NestJS + TypeScript on Node.js LTS |
+| Frontend | Next.js + TypeScript + App Router |
 | Styling | Tailwind CSS |
 | Database | MySQL 8 |
-| Queue รุ่นแรก | Laravel Database Queue |
-| Document generation | Template-based DOCX ผ่าน PHPWord หรือ library ที่ผ่าน golden-file test |
+| ORM/data access | Prisma เป็น default; parameterized SQL/read model สำหรับรายงานที่เหมาะสม |
+| Queue รุ่นแรก | Database-backed outbox/job; เพิ่ม BullMQ/Redis เมื่อมี workload/retry requirement จริง |
+| Document generation | Dedicated document worker และ template-based DOCX/PDF เมื่อแบบฟอร์มจริงพร้อม; ต้องผ่าน golden-file test |
 | File storage รุ่นแรก | Private application storage พร้อม abstraction สำหรับ S3-compatible object storage |
 | API | REST ภายใต้ `/api/v1` และ `/internal/api/v1` |
-| Testing | PHPUnit, integration tests, tenant-isolation tests, API contract tests และ DOCX golden tests |
+| Testing | Jest/Supertest, Playwright, tenant-isolation tests, API contract tests และ DOCX golden tests |
 | Deployment | Docker บน network และ reverse proxy ของ `shared-infra` |
 
-Laravel + Inertia ทำให้ backend และ frontend อยู่ใน repository/deployment เดียว แต่ยังสร้าง responsive application ที่มี interactive forms, tables และ dashboards ได้ ลดภาระของทีมเมื่อเทียบกับการแยก SPA frontend และ API backend ตั้งแต่รุ่นแรก
+NestJS + Next.js แยก API/domain จาก presentation อย่างชัดเจน ทำให้เพิ่มโมดูลและ consumer ภายหลังได้ง่าย ขณะที่ยังคงความเรียบง่ายของ modular monolith สำหรับทีม 2 คน. Current Laravel + Vue/Inertia ยังเก็บไว้เป็น migration baseline และจะไม่ถูกถือเป็น target contract.
 
 ### 4.2 สิ่งที่ยังไม่จำเป็นในรุ่นแรก
 
 - ไม่ต้องมี Kafka หรือ RabbitMQ จนกว่าจะมีหลาย consumer หรือปริมาณงานที่ต้องใช้ message broker จริง
 - ไม่ต้องมี Redis หาก database queue และ application cache ตอบโจทย์การใช้งานเริ่มต้น
 - ไม่ต้องมี search cluster สำหรับข้อมูลระดับ 38 รพ.สต. และบุคลากรประมาณ 267 คน
-- ไม่ต้องแยก frontend และ backend เป็นคนละ repository/deployment
+- ไม่ต้องแยก business module เป็น microservice; web/API แยก process ได้ แต่ไม่จำเป็นต้องแยก repository ในช่วงแรก
 - ไม่ต้องแยกแต่ละ business module เป็น Microservice
 
 ## 5. Internal Module Boundaries
@@ -106,7 +110,7 @@ One Data
 | Platform | external identities, sessions, memberships, roles, permissions, audit, files, outbox | ไม่เป็นเจ้าของ HR profile หรือ business workflow |
 | Organization | affiliation, tenant, workgroup และโครงสร้างองค์กร | การเปลี่ยนโครงสร้างต้องมี effective date/history |
 | People | person, employee profile, employment และ job history | onboarding ต้อง atomic; ห้ามจับ identity ด้วยชื่อหรือ PII อย่างเดียว |
-| Leave | leave request, revision, status, cancellation/void และ monthly snapshot source | รุ่นแรกไม่ทำ online approval/Word; เฉพาะ `CONFIRMED` ที่ยังมีผลจึงส่งต่อได้ |
+| Leave | leave request, revision, status, cancellation/void และ monthly snapshot source | รุ่นแรกใช้ Paper-first ไม่ทำ online approval; เฉพาะ `PAPER_APPROVED` ที่ยังมีผลจึงส่งต่อได้ |
 | Documents | template version, document run, snapshot, artifact และ checksum | เอกสารที่ออกแล้วต้องสร้างซ้ำได้จาก snapshot เดิม |
 | SpecialAllowances Integration | external ID mapping, export batch, delivery, reconciliation และ external result/report references | ไม่สร้างสูตรหรือแก้ period/result ของ Special โดยตรง |
 
@@ -151,26 +155,29 @@ Portal เป็นผู้ยืนยันตัวตนและอนุ�
 
 ## 8. Leave Workflow for the First Release
 
-รุ่นแรกเน้นการเก็บข้อมูลการลาให้ใช้งานง่าย ผู้ใช้กรอกข้อมูลใน One Data แล้วบันทึกเป็นใบลาในระบบ ส่วน Word/การพิมพ์/การลงนามภายนอกยังไม่บังคับใน release นี้ และจะทำหลังจากได้แบบฟอร์มจริงกับกฎที่ฝ่ายบุคคลรับรอง
+รุ่นแรกเน้นการเก็บข้อมูลการลาให้ใช้งานง่าย ผู้ใช้กรอกและส่งข้อมูลใน One Data แล้วดำเนินการพิมพ์/ลงนามภายนอกตามวิธีปฏิบัติงาน ส่วน DOCX/document module ยังไม่บังคับใน release นี้ และจะทำหลังจากได้แบบฟอร์มจริงกับกฎที่ฝ่ายบุคคลรับรอง
 
 สถานะที่ใช้ใน MVP:
 
 ```mermaid
 stateDiagram-v2
     [*] --> DRAFT
-    DRAFT --> CONFIRMED: ยืนยันข้อมูล
-    CONFIRMED --> CANCELLED: ยกเลิกตามกฎที่อนุญาต
-    DRAFT --> VOID: รายการผิด/ไม่ใช้
-    CANCELLED --> VOID: เก็บเป็นโมฆะภายหลัง
+    DRAFT --> SUBMITTED: ส่งใบลา
+    SUBMITTED --> PAPER_APPROVED: บันทึกผลเอกสารภายนอกว่าอนุญาต
+    SUBMITTED --> PAPER_REJECTED: บันทึกผลเอกสารภายนอกว่าไม่อนุญาต
+    DRAFT --> CANCELLED: ยกเลิกก่อนส่ง/ก่อนมีผล
+    SUBMITTED --> CANCELLED: ยกเลิกก่อนมีผล
+    PAPER_APPROVED --> VOIDED: ยกเลิก/แก้ไขหลังมีผล
 ```
 
 กฎสำคัญ:
 
 - การบันทึกใหม่เริ่มที่ `DRAFT` และไม่ถูกส่งไปคำนวณ
-- `CONFIRMED` คือสถานะเดียวที่มีผลและเป็น input ของ Special-Allowances
-- `CANCELLED` ไม่ถูกส่งใน snapshot ใหม่; complete snapshot จะทำให้ปลายทางสะท้อนรายการที่มีผลล่าสุด
+- `SUBMITTED` หมายถึงส่งข้อมูลเพื่อดำเนินการตามเอกสารภายนอก แต่ยังไม่มีผล
+- `PAPER_APPROVED` คือสถานะเดียวที่มีผลและเป็น input ของ Special-Allowances; `PAPER_REJECTED` ไม่มีผล
+- `CANCELLED` และ `VOIDED` ไม่ถูกส่งใน snapshot ใหม่; complete snapshot จะทำให้ปลายทางสะท้อนรายการที่มีผลล่าสุด
 - ใช้ revision, cancel และ void แทน hard delete เพื่อรักษาประวัติ
-- รุ่นแรกไม่ทำ online approval และไม่บังคับ requester–approver separation ตามความต้องการของผู้ใช้
+- รุ่นแรกไม่ทำ online approval; ผู้ยื่นห้ามบันทึกผลกระดาษของรายการตนเอง และระบบต้องเก็บผู้บันทึก/เวลา/เหตุผลเพื่อ audit
 
 ## 9. Special-Allowances Integration
 
@@ -249,8 +256,9 @@ Period protocol:
 Internet
 └── Reverse Proxy / TLS
     ├── Portal container
-    ├── One Data web container
-    ├── One Data worker container
+    ├── One Data web container (Next.js)
+    ├── One Data API container (NestJS)
+    ├── One Data worker container (NestJS)
     └── Special-Allowances frontend/backend containers
 
 Shared private Docker network
@@ -264,7 +272,7 @@ Shared private Docker network
 หลักการ deployment:
 
 - แต่ละ application มี image, environment file, secret และ health/readiness endpoint ของตน
-- One Data web และ worker ใช้ image เดียวกันแต่รันคนละ process
+- One Data web ใช้ Next.js image, API ใช้ NestJS image และ worker ใช้ API image/worker image ตาม operational choice; ทุก process มี release tag และ health check ของตน
 - Database migration ทำผ่าน controlled deployment step
 - Backup ต้องทดสอบ restore แยกราย application และมีสำเนานอกเครื่องตามนโยบาย production
 - แยก development, test/UAT, staging และ production credentials/data
@@ -277,14 +285,14 @@ Shared private Docker network
 - Project skeleton และ module boundaries
 - Portal manifest/launch-token integration (One Data route ถูกเตรียมไว้ใน Portal seeder)
 - Organization hierarchy, tenant scope, local session, role/permission และ audit foundation
-- Laravel migration, Docker Compose, health checks และ test fixtures
+- NestJS/Next.js workspace, Docker Compose, health checks และ test fixtures; Laravel/Vue อยู่ร่วมเป็นระบบเดิมระหว่าง migration
 
-### Release 1 — People and Leave (กำลังพัฒนา)
+### Release 1 — People and Leave (target implementation)
 
 - People Core และ effective-dated employment/membership history
 - Import/reconciliation บุคลากรประมาณ 267 คน
-- Leave request, revision, `DRAFT → CONFIRMED → CANCELLED/VOID`, audit และ outbox
-- ยังไม่สร้าง DOCX/paper-result จนกว่าจะมีแบบฟอร์มและกฎที่ฝ่ายบุคคลรับรอง
+- Leave request, revision, `DRAFT → SUBMITTED → PAPER_APPROVED/PAPER_REJECTED`, audit และ outbox บน NestJS API/Next.js UI
+- รองรับการบันทึกผลเอกสารภายนอกและการ `CANCELLED/VOIDED`; DOCX/document module ทำภายหลังเมื่อมีแบบฟอร์มและกฎที่ฝ่ายบุคคลรับรอง
 
 ### Release 2 — Special-Allowances Integration (โครงสร้างเริ่มต้นทำแล้ว)
 
@@ -336,9 +344,9 @@ Shared private Docker network
 สำหรับ MVP ได้ล็อก decision ที่จำเป็นต่อการเริ่มพัฒนาแล้ว:
 
 1. master data บุคลากร/หน่วยงานดึงจาก Special-Allowances ผ่าน API; export/import เป็น fallback
-2. ใบลา `CONFIRMED` เท่านั้นที่มีผลและถูกส่งไปคำนวณ; `DRAFT` ไม่ถูกส่ง
+2. ใบลา `PAPER_APPROVED` เท่านั้นที่มีผลและถูกส่งไปคำนวณ; `DRAFT`, `SUBMITTED` และ `PAPER_REJECTED` ไม่ถูกส่ง
 3. One Data เป็นผู้ส่ง complete leave snapshot รายเดือน และ Special เป็นผู้รับ/คำนวณ/รายงาน
-4. รุ่นแรกใช้ role baseline และ local session/Portal SSO โดยไม่ทำ online approval หรือ SoD ที่ซับซ้อน
+4. รุ่นแรกใช้ role baseline และ local session/Portal SSO โดยไม่ทำ online approval; ใช้เพียง basic requester–paper-result-recorder separation และยังไม่ทำ workflow SoD ที่ซับซ้อน
 5. การย้าย/ช่วยราชการเก็บเป็น effective-dated membership; รายละเอียด edge case จะทดสอบกับข้อมูลจริงก่อน production
 
 สิ่งที่เลื่อนไปก่อน production เต็มรูปแบบ:
@@ -355,18 +363,18 @@ Shared private Docker network
 | ADR | Decision |
 | --- | --- |
 | ADR-001 | One Data ใช้ Modular Monolith ไม่เริ่มด้วย Microservices |
-| ADR-002 | Laravel 11 + Vue 3/TypeScript/Inertia เป็น application stack |
+| ADR-002 | NestJS + Next.js + TypeScript เป็น target application stack; Laravel/Vue เป็น current migration baseline |
 | ADR-003 | MySQL 8 แบบ shared schema พร้อม enforced tenant scope |
 | ADR-004 | Portal เป็น identity/module-entry; One Data มี local session และ authorization |
 | ADR-005 | Special-Allowances เป็นเจ้าของ formula/period/result/report และเชื่อมผ่าน REST API |
 | ADR-006 | แต่ละ application แยก database, user, secret และ backup boundary |
-| ADR-007 | Leave รุ่นแรกใช้ `DRAFT → CONFIRMED → CANCELLED/VOID`; Word/paper-result เป็นระยะถัดไป |
+| ADR-007 | Leave รุ่นแรกใช้ `DRAFT → SUBMITTED → PAPER_APPROVED/PAPER_REJECTED → CANCELLED/VOIDED`; ไม่มี online approval และ DOCX เป็นระยะถัดไป |
 | ADR-008 | REST + database queue/outbox ก่อน message broker |
 | ADR-009 | Official records ใช้ revision/void/reversal/history แทน destructive update/delete |
 | ADR-010 | Rollout แบบ incremental และ pilot 3 → 10 → 38 รพ.สต. |
 
 ## 19. Final Recommendation
 
-สถาปัตยกรรมเริ่มต้นที่แนะนำคือ **Laravel Modular Monolith + Vue/Inertia, API-first integration, database ownership แยกตามระบบ และ incremental rollout**
+สถาปัตยกรรม target ที่แนะนำคือ **NestJS Modular Monolith API + Next.js Web, API-first integration, database ownership แยกตามระบบ และ incremental rollout**. ให้ web/API/worker อยู่ใน repository เดียวได้ แต่แยก process, contract, health check และ deployment boundary.
 
 One Data เป็นเจ้าของ People/Organization และ Leave ขณะที่ Portal เป็นเจ้าของ Login/SSO และ Special-Allowances เป็นเจ้าของเครื่องคำนวณกับรายงาน ฉ.10/11 การแบ่งเช่นนี้ทำให้เริ่มใช้จริงได้ตั้งแต่มีเพียง People, Leave และการเชื่อม ฉ.10/11 แล้วค่อยเพิ่ม Stock, Vehicles, Assets, Finance และโมดูลใหม่โดยไม่ต้องรื้อสถาปัตยกรรมหลัก

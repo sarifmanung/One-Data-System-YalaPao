@@ -1,9 +1,9 @@
 # One Data ↔ Special-Allowances Integration Contract
 
-สถานะ: MVP contract v1.0
+สถานะ: MVP contract v1.1
 วันที่: 29 สิงหาคม 2569 (2026)
 
-เอกสารนี้เป็น contract ที่ implementation รอบแรกใช้งานจริงร่วมกันระหว่าง One Data และ `Special-Allowances` โดยยึด ownership ตาม [ARCHITECTURE.md](../ARCHITECTURE.md) และ decision ล่าสุดใน [One Data System - Reimplementation Blueprint.md](../One%20Data%20System%20-%20Reimplementation%20Blueprint.md)
+เอกสารนี้เป็น target contract สำหรับ implementation รอบแรกของ One Data และ `Special-Allowances` โดยยึด ownership ตาม [ARCHITECTURE.md](../ARCHITECTURE.md) และ decision ล่าสุดใน [One Data System - Reimplementation Blueprint.md](../One%20Data%20System%20-%20Reimplementation%20Blueprint.md). Laravel/Vue spike ปัจจุบันอาจยังใช้สถานะ legacy `CONFIRMED` จนกว่าจะย้าย Leave module และห้ามนำ legacy payload ไปปะปนกับ contract v1.1
 
 ## Boundary และทิศทางข้อมูล
 
@@ -12,6 +12,19 @@
 - One Data เป็นผู้ส่ง complete monthly leave snapshot
 - Special เป็นเจ้าของการคำนวณ ฉ.10/11, period, lock/adjustment และรายงาน
 - ห้ามอ่านหรือเขียนฐานข้อมูลของอีกระบบโดยตรง แม้อยู่ server เดียวกัน
+
+## Effective leave status rule
+
+ใบลาใช้สถานะมาตรฐานดังนี้:
+
+```text
+DRAFT → SUBMITTED → PAPER_APPROVED/PAPER_REJECTED
+```
+
+- เฉพาะ `PAPER_APPROVED` ที่ยังมีผลเท่านั้นเป็น input ของ snapshot และการคำนวณใน Special-Allowances
+- `DRAFT`, `SUBMITTED`, `PAPER_REJECTED`, `CANCELLED` และ `VOIDED` ไม่เป็น input
+- `CONFIRMED` เป็นสถานะ legacy/deprecated จาก contract/แผนเดิม ไม่ใช่สถานะที่ยอมรับใน v1.1; ห้ามแปลงหรือยอมรับแบบเงียบ ๆ
+- การบันทึก `PAPER_APPROVED/PAPER_REJECTED` เป็นการบันทึกผลเอกสารภายนอก ไม่ใช่ online approval chain
 
 ## Authentication
 
@@ -85,13 +98,13 @@ Special ตรวจ token แบบ constant-time และตอบ `401` ห�
 
 ### `POST /internal/api/v1/periods/{YYYY-MM}/leave-snapshot`
 
-One Data ส่งเฉพาะใบลาสถานะ `CONFIRMED` และรวมรายการที่มีผลในเดือนนั้น โดย v1 ใช้ **complete reset semantics**: Special จะคำนวณ monthly records ของบุคลากรทั้ง period ใหม่ และถือบุคลากรที่ไม่ปรากฏใน payload ว่าไม่มีวันลา (`0`) การส่งแบบ explicit employee rows ว่างทุกคนอาจเพิ่มใน contract รุ่นถัดไปได้หากต้องการตรวจ scope แบบเข้มขึ้น
+One Data ส่งเฉพาะใบลาสถานะ `PAPER_APPROVED` ที่ยังมีผล และรวมรายการที่มีผลในเดือนนั้น โดย v1.1 ใช้ **complete reset semantics**: Special จะคำนวณ monthly records ของบุคลากรทั้ง period ใหม่ และถือบุคลากรที่ไม่ปรากฏใน payload ว่าไม่มีวันลา (`0`) การส่งแบบ explicit employee rows ว่างทุกคนอาจเพิ่มใน contract รุ่นถัดไปได้หากต้องการตรวจ scope แบบเข้มขึ้น
 
 ตัวอย่าง:
 
 ```json
 {
-  "contract_version": "1.0",
+  "contract_version": "1.1",
   "period": "2026-08",
   "period_year": 2026,
   "period_month": 8,
@@ -105,11 +118,13 @@ One Data ส่งเฉพาะใบลาสถานะ `CONFIRMED` แล�
       "leave_entries": [
         {
           "one_data_leave_id": "leave-request-id",
+          "status": "PAPER_APPROVED",
           "type": "SICK_LEAVE",
           "starts_on": "2026-08-10",
           "ends_on": "2026-08-10",
           "dates": ["2026-08-10"],
           "duration_days": 1,
+          "paper_decision_recorded_at": "2026-08-12T03:15:00Z",
           "revision": 2
         }
       ]
@@ -118,7 +133,7 @@ One Data ส่งเฉพาะใบลาสถานะ `CONFIRMED` แล�
 }
 ```
 
-ประเภทลาที่รองรับใน v1.0:
+ประเภทลาที่รองรับใน v1.1:
 
 | One Data / Special type | ความหมาย |
 | --- | --- |
@@ -150,18 +165,20 @@ One Data ส่งเฉพาะใบลาสถานะ `CONFIRMED` แล�
 - Special รับเฉพาะ period `NORMAL` ที่ `OPEN`
 - `period` ใน path และ body ต้องตรงกับ `period_year`/`period_month`
 - `snapshot_version` ต้องมากกว่า version ล่าสุดของ period
+- ทุก `leave_entry.status` ต้องเป็น `PAPER_APPROVED`; หากพบสถานะอื่นรวมถึง `CONFIRMED` ให้ตอบ validation error และไม่ apply snapshot
 - ถ้า `idempotency_key` และ `source_hash` ซ้ำ จะตอบ `status: duplicate` โดยไม่เขียนข้อมูลซ้ำ
-- การยกเลิกใบลาใน One Data จะไม่ถูกส่งเป็นรายการใหม่; complete snapshot ครั้งถัดไปทำให้ Special คำนวณค่าปัจจุบันใหม่
-- หลัง Special lock period แล้ว ห้าม overwrite ด้วย v1.0; ต้องใช้ adjustment/correction contract ที่จะกำหนดเพิ่ม
+- การ `CANCELLED`/`VOIDED` ใบลาใน One Data จะไม่ถูกส่งเป็นรายการใหม่; complete snapshot ครั้งถัดไปทำให้ Special คำนวณค่าปัจจุบันใหม่
+- หลัง Special lock period แล้ว ห้าม overwrite ด้วย leave snapshot v1.1; ต้องใช้ adjustment/correction contract ที่จะกำหนดเพิ่ม
 
 ## ขั้นตอนปฏิบัติรายเดือน
 
 1. One Data sync master data ตามรอบที่กำหนด หรือสั่ง manual ก่อนทำงาน
-2. ผู้ใช้สร้างและยืนยันใบลาใน One Data
-3. ผู้ดูแลตรวจ unmapped employee, จำนวนรายการ และ source hash
-4. One Data prepare snapshot และส่งไป Special
-5. Special ตรวจ period, คำนวณตัวแปรการลา และบันทึก audit
-6. หากส่งซ้ำ ใช้ batch เดิม/เวอร์ชันใหม่ตามผลการแก้ไข ไม่สร้างข้อมูลซ้ำ
+2. ผู้ใช้สร้างและส่งใบลาใน One Data เพื่อดำเนินการตามเอกสารภายนอก
+3. ผู้รับผิดชอบบันทึกผล `PAPER_APPROVED` หรือ `PAPER_REJECTED` ใน One Data
+4. ผู้ดูแลตรวจ unmapped employee, จำนวนรายการ และ source hash
+5. One Data prepare snapshot และส่งไป Special
+6. Special ตรวจ period, คำนวณตัวแปรการลา และบันทึก audit
+7. หากส่งซ้ำ ใช้ batch เดิม/เวอร์ชันใหม่ตามผลการแก้ไข ไม่สร้างข้อมูลซ้ำ
 
 ## ข้อจำกัดที่ยังเปิดไว้
 
