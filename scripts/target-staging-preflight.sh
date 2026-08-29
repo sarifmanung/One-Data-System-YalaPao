@@ -29,6 +29,9 @@ compose_args=()
 if [[ -n "$env_file" ]]; then
   compose_args+=(--env-file "$env_file")
 fi
+# Include the disabled worker profile in the resolved configuration so the
+# preflight can verify that it also has no host port and uses the proxy network.
+compose_args+=(--profile worker)
 compose_args+=(-f "$production_compose" -f "$staging_compose")
 
 tmp_dir="$(mktemp -d "${TMPDIR:-/tmp}/onedata-staging-preflight.XXXXXX")"
@@ -52,6 +55,15 @@ service_env() {
 service_image() {
   local service="$1"
   jq -r --arg service "$service" '.services[$service].image // empty' "$resolved_file"
+}
+
+service_has_network() {
+  local service="$1"
+  local network="$2"
+  jq -e --arg service "$service" --arg network "$network" \
+    '.services[$service].networks
+      | if type == "array" then index($network) != null else has($network) end' \
+    "$resolved_file" >/dev/null
 }
 
 required_env_keys=(
@@ -86,6 +98,13 @@ proxy_allowlist="$(service_env onedata-target-api ONEDATA_TRUST_PROXY)"
 [[ -n "$proxy_allowlist" ]] || fail "ONEDATA_TRUST_PROXY is required"
 [[ "$proxy_allowlist" != "true" && "$proxy_allowlist" != "*" ]] || fail "ONEDATA_TRUST_PROXY must be an explicit IP/CIDR list"
 [[ ! "$proxy_allowlist" =~ ^[0-9]+$ ]] || fail "ONEDATA_TRUST_PROXY must not be a hop count"
+
+for service in onedata-target-api onedata-target-web onedata-target-worker; do
+  if jq -e --arg service "$service" '.services[$service].ports // [] | length > 0' "$resolved_file" >/dev/null; then
+    fail "$service must not publish a host port in staging; expose it through the reverse proxy"
+  fi
+  service_has_network "$service" webproxy || fail "$service must attach to the external webproxy network"
+done
 
 [[ "$(service_env onedata-target-api NODE_ENV)" == "staging" ]] || fail "API NODE_ENV must be staging"
 [[ "$(service_env onedata-target-api ONEDATA_DEV_AUTH_ENABLED)" == "false" ]] || fail "development auth must be disabled"

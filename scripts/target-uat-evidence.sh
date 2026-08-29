@@ -83,11 +83,19 @@ if [[ "$status_metrics" == "200" ]] && jq -e \
    (.data.startedAt | type == "string") and
    (.data.uptimeSeconds | type == "number") and
    (.data.requestsTotal | type == "number") and
-   (.data.responsesByClass | type == "object")' \
+   (.data.responsesByClass | type == "object") and
+   (any(.. | objects | keys[]?;
+      . == "path" or . == "ip" or . == "identity" or . == "cookie" or
+      . == "token" or . == "payload" or . == "password") | not)' \
   "$tmp_dir/metrics.json" >/dev/null 2>&1; then
   metrics_shape="PASS"
 else
   metrics_shape="FAIL"
+fi
+
+request_id_check="PASS"
+if ! grep -Eqi '^x-request-id:[[:space:]]*[A-Za-z0-9._:-]{1,100}[[:space:]]*$' "$tmp_dir/live.headers"; then
+  request_id_check="FAIL"
 fi
 
 security_headers="SKIPPED"
@@ -133,7 +141,7 @@ overall="PASS"
 if [[ "$status_live" != "200" || "$status_ready" != "200" || \
   "$status_contract" != "200" || "$status_metrics" != "200" || \
   "$status_me" != "$expected_me_status" || "$contract_check" != "PASS" || \
-  "$metrics_shape" != "PASS" || "$security_headers" == "FAIL" || \
+  "$metrics_shape" != "PASS" || "$request_id_check" != "PASS" || "$security_headers" == "FAIL" || \
   "$smoke_exit" != "0" ]]; then
   overall="FAIL"
 fi
@@ -156,6 +164,7 @@ STATUS_METRICS="$status_metrics" \
 STATUS_ME="$status_me" \
 CONTRACT_CHECK="$contract_check" \
 METRICS_SHAPE="$metrics_shape" \
+REQUEST_ID_CHECK="$request_id_check" \
 SECURITY_HEADERS="$security_headers" \
 WEB_CONFIGURED="$([[ -n "$web_url" ]] && echo true || echo false)" \
 WEB_STATUS="$web_status" \
@@ -180,6 +189,7 @@ const artifact = {
       result: value('CONTRACT_CHECK'),
     },
     metrics: { status: Number(value('STATUS_METRICS')), shape: value('METRICS_SHAPE') },
+    requestId: { result: value('REQUEST_ID_CHECK') },
     authProbe: { expectedStatus: Number(value('EXPECTED_ME_STATUS')), actualStatus: Number(value('STATUS_ME')) },
     securityHeaders: { result: value('SECURITY_HEADERS') },
     web: { configured: value('WEB_CONFIGURED') === 'true', status: value('WEB_STATUS') === 'SKIPPED' ? null : Number(value('WEB_STATUS')) },
@@ -200,6 +210,7 @@ const rows = [
   ['Ready', value('STATUS_READY')],
   ['Contract', `${value('CONTRACT_CHECK')} (HTTP ${value('STATUS_CONTRACT')})`],
   ['Metrics shape', `${value('METRICS_SHAPE')} (HTTP ${value('STATUS_METRICS')})`],
+  ['Request ID', value('REQUEST_ID_CHECK')],
   ['Auth probe', `expected ${value('EXPECTED_ME_STATUS')}, got ${value('STATUS_ME')}`],
   ['Security headers', value('SECURITY_HEADERS')],
   ['Web tenant dashboard', value('WEB_CONFIGURED') === 'true' ? `HTTP ${value('WEB_STATUS')}` : 'not configured'],

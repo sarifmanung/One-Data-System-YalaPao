@@ -28,7 +28,8 @@ export class SecurityHeadersMiddleware implements NestMiddleware {
     response.setHeader('X-Frame-Options', 'DENY');
     response.setHeader('Referrer-Policy', 'same-origin');
     response.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
-    if (this.config.get<string>('NODE_ENV', process.env.NODE_ENV ?? 'development') === 'production') {
+    const environment = this.config.get<string>('NODE_ENV', process.env.NODE_ENV ?? 'development');
+    if (environment === 'staging' || environment === 'production') {
       response.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
     }
     next();

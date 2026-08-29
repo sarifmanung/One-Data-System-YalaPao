@@ -3,13 +3,13 @@
 เอกสารคำแนะนำด้านสถาปัตยกรรมก่อนเริ่มพัฒนาระบบ One Data System สำหรับองค์การบริหารส่วนจังหวัดยะลา
 
 - สถานะ: Target architecture baseline — NestJS/Next.js foundation implemented in coexistence; current Laravel/Vue implementation remains the migration baseline
-- วันที่จัดทำ: 29 สิงหาคม 2569 (2026)
+- วันที่จัดทำ: 30 สิงหาคม 2569 (2026)
 - ขอบเขตรุ่นแรก: Organization & People Core, ระบบลาขั้นพื้นฐาน และเชื่อมระบบ Special-Allowances เดิม; Word/document module เป็นระยะถัดไป
 - ระบบที่เกี่ยวข้อง: `yala-pao-public-health-portal`, `Special-Allowances`, `shared-infra` และ `carbooking-yala-pao`
 
 เอกสารนี้ใช้ประกอบกับ `One Data System - Reimplementation Blueprint.md` โดยมุ่งตอบคำถามว่า One Data ควรสร้างและเชื่อมกับระบบที่มีอยู่ด้วยสถาปัตยกรรมแบบใด ไม่ได้แทนที่ business requirements ใน Blueprint. แผนย้ายจาก current stack อยู่ที่ [docs/MIGRATION_LARAVEL_VUE_TO_NESTJS_NEXTJS.md](docs/MIGRATION_LARAVEL_VUE_TO_NESTJS_NEXTJS.md)
 
-## Implementation checkpoint — 29 สิงหาคม 2569
+## Implementation checkpoint — 30 สิงหาคม 2569
 
 การลงมือรอบแรกสร้าง target workspace แบบ coexistence แล้ว โดยไม่ย้ายหรือเขียนทับ Laravel/Vue เดิม:
 
@@ -18,8 +18,9 @@
 - `packages/contracts`: shared TypeScript contract v1.4, capability permissions, leave snapshot reconciliation/schedule summaries และ fixture ที่ห้ามส่ง `CONFIRMED`
 - `docker-compose.target.yml`: API/web แยกจาก compose เดิมบนพอร์ต `3100/3101`
 - worker command ใน API image: database lock, retry due delivery และ optional monthly prepare/deliver; target Compose เปิดผ่าน profile `worker` และปิดงานด้วย `ONEDATA_WORKER_ENABLED=false` เป็นค่าเริ่มต้น
-- production guard foundation: fail-fast environment validation, idle session timeout, secure cookie requirement, mutation origin check, explicit trusted-proxy policy, API security headers, database-backed launch-token replay/session revocation, session rotation, maintenance cleanup และ in-memory rate limit; edge/shared rate limiting ยังต้องทำก่อนหลาย replica
+- production guard foundation: fail-fast environment validation, idle session timeout, secure cookie requirement, mutation origin check, explicit trusted-proxy policy, API security headers/HSTS, database-backed launch-token replay/session revocation, session rotation, maintenance cleanup และ in-memory rate limit; มี Compose port/network preflight กับ public edge/observability gate แล้ว แต่ edge/shared rate limiting ยังต้องทำและเก็บหลักฐานจาก gateway ก่อนหลาย replica
 - observability/migration tooling: aggregate response metrics ที่ไม่เก็บ PII, schema-drift/migration check, backup checksum และ restore-to-new-database verification script
+- G1 edge/observability tooling: staging preflight ตรวจ host-port/network boundary และ `target:edge:check` ตรวจ public HTTPS/HSTS/CORS/request-id, metrics privacy และ proxy-provided shared rate-limit marker/429 evidence; actual gateway configuration ยังต้องทำใน `shared-infra`
 - automated checks: contracts/API/web typecheck, API unit/e2e smoke tests, target production build และ legacy Vite build
 
 สิ่งที่ยังไม่เปิดใช้จริงใน checkpoint นี้คือ staging/production migration baseline approval, backup/restore rehearsal, production real-data reconciliation, permission scope matrix แบบละเอียดครบทุกโมดูล/owner sign-off และ production schedule approval. มี initial Prisma migration, production Compose template และ [deployment runbook](docs/DEPLOYMENT_RUNBOOK.md) แล้ว และตรวจ deploy/status กับ MySQL ชั่วคราวแล้ว แต่ยังไม่ถือเป็น production sign-off. Special-Allowances leave adapter และ worker รุ่นแรกมีแล้วในระดับ local integration foundation: prepare complete snapshot ที่มี employee rows ครบ scope, เก็บ immutable batch, ส่งผ่าน service token, idempotency/source hash, delivery history, reconciliation summary, retry metadata, database lock, schedule approval gate และ optional monthly orchestration; ค่า worker และ monthly delivery ยังปิดเป็นค่าเริ่มต้นและยังไม่ทำ real-data cutover. Local session exchange, session guard, Portal-to-One Data capability mapping, operation scope matrix รุ่นแรก (`self`/`tenant`/`affiliation`), delegated approver assignment foundation, route permission guard และ master-data projection boundary มีแล้วในระดับ development/integration foundation; local real-data shadow import ผ่านกับ 38 หน่วยงาน/267 บุคลากร/43 users แล้ว พร้อม source-user projection และ mapping reconciliation report แต่ยังไม่มี user-to-employee mapping ที่ยืนยันจาก source และยังไม่มี production acceptance.

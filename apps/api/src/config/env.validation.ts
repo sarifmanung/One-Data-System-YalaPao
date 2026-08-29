@@ -104,6 +104,17 @@ export function validateEnvironment(config: Environment): Environment {
     throw new Error(`ONEDATA_SESSION_COOKIE_SECURE must be true in ${environment}.`);
   }
 
+  for (const key of [
+    'ONEDATA_CSRF_ENABLED',
+    'ONEDATA_CSRF_REQUIRE_ORIGIN',
+    'ONEDATA_RATE_LIMIT_ENABLED',
+    'ONEDATA_METRICS_ENABLED',
+  ]) {
+    if (value(config, key) !== 'true') {
+      throw new Error(`${key} must be true in ${environment}.`);
+    }
+  }
+
   const sameSite = value(config, 'ONEDATA_SESSION_COOKIE_SAME_SITE') || 'lax';
   if (!['strict', 'lax', 'none'].includes(sameSite)) {
     throw new Error('ONEDATA_SESSION_COOKIE_SAME_SITE must be strict, lax, or none.');

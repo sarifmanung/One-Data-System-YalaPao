@@ -58,6 +58,10 @@ describe('validateEnvironment', () => {
       ONEDATA_DEV_AUTH_ENABLED: 'false',
       ONEDATA_SESSION_COOKIE_SECURE: 'true',
       ONEDATA_SESSION_COOKIE_SAME_SITE: 'lax',
+      ONEDATA_CSRF_ENABLED: 'true',
+      ONEDATA_CSRF_REQUIRE_ORIGIN: 'true',
+      ONEDATA_RATE_LIMIT_ENABLED: 'true',
+      ONEDATA_METRICS_ENABLED: 'true',
     })).toMatchObject({ NODE_ENV: 'production' });
   });
 
@@ -74,6 +78,10 @@ describe('validateEnvironment', () => {
       ONEDATA_SESSION_COOKIE_SECURE: 'true',
       ONEDATA_SESSION_COOKIE_SAME_SITE: 'lax',
       ONEDATA_ALLOW_PROVISIONAL_LEAVE_RULES: 'false',
+      ONEDATA_CSRF_ENABLED: 'true',
+      ONEDATA_CSRF_REQUIRE_ORIGIN: 'true',
+      ONEDATA_RATE_LIMIT_ENABLED: 'true',
+      ONEDATA_METRICS_ENABLED: 'true',
     })).toMatchObject({ NODE_ENV: 'staging' });
   });
 
@@ -97,10 +105,35 @@ describe('validateEnvironment', () => {
       ONEDATA_DEV_AUTH_ENABLED: 'false',
       ONEDATA_SESSION_COOKIE_SECURE: 'true',
       ONEDATA_SESSION_COOKIE_SAME_SITE: 'lax',
+      ONEDATA_CSRF_ENABLED: 'true',
+      ONEDATA_CSRF_REQUIRE_ORIGIN: 'true',
+      ONEDATA_RATE_LIMIT_ENABLED: 'true',
+      ONEDATA_METRICS_ENABLED: 'true',
     };
 
     expect(() => validateEnvironment(base)).toThrow('ONEDATA_TRUST_PROXY must be configured');
     expect(() => validateEnvironment({ ...base, ONEDATA_TRUST_PROXY: 'true' }))
       .toThrow('explicit proxy IPs or CIDR ranges');
+  });
+
+  it('rejects disabled staging security and observability controls', () => {
+    const base = {
+      NODE_ENV: 'staging',
+      DATABASE_URL: 'mysql://user:password@db/one_data',
+      PORTAL_SHARED_SECRET: 'a'.repeat(32),
+      PORTAL_TOKEN_ISSUER: 'portal-staging',
+      PORTAL_TOKEN_AUDIENCE: 'one_data-staging',
+      CORS_ORIGIN: 'https://staging.onedata.example.org',
+      ONEDATA_TRUST_PROXY: '10.0.0.0/8',
+      ONEDATA_DEV_AUTH_ENABLED: 'false',
+      ONEDATA_SESSION_COOKIE_SECURE: 'true',
+      ONEDATA_SESSION_COOKIE_SAME_SITE: 'lax',
+      ONEDATA_CSRF_ENABLED: 'true',
+      ONEDATA_CSRF_REQUIRE_ORIGIN: 'true',
+      ONEDATA_RATE_LIMIT_ENABLED: 'false',
+      ONEDATA_METRICS_ENABLED: 'true',
+    };
+
+    expect(() => validateEnvironment(base)).toThrow('ONEDATA_RATE_LIMIT_ENABLED must be true in staging');
   });
 });

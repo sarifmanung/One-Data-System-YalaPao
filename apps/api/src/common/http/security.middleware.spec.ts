@@ -69,6 +69,16 @@ describe('HTTP security middleware', () => {
     });
   });
 
+  it('sets HSTS for staging as well as production', () => {
+    const output = response();
+
+    new SecurityHeadersMiddleware(new ConfigService({ NODE_ENV: 'staging' }))
+      .use(request({ method: 'GET' }), output, jest.fn() as NextFunction);
+
+    expect(output.headers['Strict-Transport-Security'])
+      .toBe('max-age=31536000; includeSubDomains');
+  });
+
   it('rejects a cross-origin cookie mutation', () => {
     const middleware = new CsrfOriginMiddleware(new ConfigService({
       NODE_ENV: 'production',

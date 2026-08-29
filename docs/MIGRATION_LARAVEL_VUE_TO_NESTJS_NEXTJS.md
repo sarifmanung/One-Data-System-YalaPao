@@ -3,7 +3,7 @@
 ## Laravel + Vue/Inertia → NestJS + Next.js
 
 - สถานะ: Target migration plan — Phase 0/1 foundation เริ่มใช้งานแบบ coexistence แล้ว; domain migration ยังไม่เริ่ม cutover
-- วันที่: 29 สิงหาคม 2569 (2026)
+- วันที่: 30 สิงหาคม 2569 (2026)
 - เจ้าของระบบ: One Data System / Yala PAO
 - เอกสารที่เกี่ยวข้อง: [Blueprint](../One%20Data%20System%20-%20Reimplementation%20Blueprint.md), [Architecture](../ARCHITECTURE.md), [Integration Contract](INTEGRATION_CONTRACT.md)
 
@@ -11,7 +11,7 @@
 
 เอกสารนี้กำหนดวิธีเปลี่ยน stack ของ One Data จาก current implementation ที่เป็น Laravel 11 + Vue 3/TypeScript/Inertia ไปเป็น target architecture ที่เป็น NestJS + Next.js/TypeScript โดยรักษา business boundary, ข้อมูลที่ตรวจสอบย้อนหลังได้ และการเชื่อมกับ Portal/Special-Allowances ให้ต่อเนื่อง
 
-## Implementation checkpoint — 29 สิงหาคม 2569
+## Implementation checkpoint — 30 สิงหาคม 2569
 
 มี target workspace ที่ build และรันได้แยกจากระบบเดิมแล้ว:
 
@@ -19,9 +19,9 @@
 - `packages/contracts` ล็อก API/permission/leave status metadata v1.4
 - API smoke tests ตรวจ health, contract metadata, request-id, security headers และ deny-by-default `/api/v1/me`
 - Portal launch-token verifier/exchange ตรวจ HS256 signature, issuer, audience, expiry, required claims และ durable replay ด้วย unique `jti` แล้วสร้าง local session แบบ opaque ที่เก็บเฉพาะ hash พร้อม permission snapshot จาก role/position allowlist; มี session revoke/rotation audit และ trusted-proxy policy foundation; Next.js มี launch bridge ที่ `/auth/portal/launch` สำหรับ local integration แต่ยังไม่ใช่ production cutover
-- `docker-compose.target.yml` สร้าง API/web image แยกที่พอร์ต `3100/3101`; ใช้ฐานข้อมูล development แยกและยังไม่ผูกข้อมูลจริง. API มี production config validation, idle session timeout, CSRF origin policy และ per-process rate-limit foundation แล้ว แต่ยังไม่ใช่ production security sign-off
+- `docker-compose.target.yml` สร้าง API/web image แยกที่พอร์ต `3100/3101`; ใช้ฐานข้อมูล development แยกและยังไม่ผูกข้อมูลจริง. API มี staging/production config validation, idle session timeout, CSRF origin policy, security headers/HSTS และ per-process rate-limit foundation แล้ว แต่ยังไม่ใช่ production security sign-off
 
-จุดนี้เป็นการสร้างทางเดิน migration ไม่ใช่การประกาศว่า People/Leave พร้อม cutover. Prisma schema, local development database, synthetic seed, initial migration, production Compose template และ [deployment runbook](DEPLOYMENT_RUNBOOK.md) เริ่มทำแล้ว; People read/create, Leave Paper-first state-transition slice, provisional server-side day calculation/overlap guard, Next.js leave page/server actions, local Portal session exchange, capability guard, production security guard foundation, Special master-data projection boundary, Special leave snapshot adapter และ worker foundation เริ่มทำแล้ว. Adapter ทำ prepare/deliver แบบเก็บ batch immutable, idempotency/source hash, employee rows ครบ scope และ retry metadata; worker มี database lock, retry due delivery, approved schedule gate, reconciliation API/UI และ optional monthly orchestration แต่ยังปิด scheduled delivery และยังไม่ real-data cutover. Auth foundation เพิ่ม durable launch-token replay, database-backed session revocation, session rotation, trusted-proxy allowlist และ maintenance cleanup; edge/shared rate limit ยังต้องตั้งที่ gateway/WAF. Initial migration ผ่านการตรวจ deploy/status กับ MySQL ชั่วคราวแล้ว แต่ยังต้องทำ baseline ฐานข้อมูลเดิม, staging/restore rehearsal และ data-owner approval. Provisional rule ยังไม่ใช่ HR Rulebook และยังไม่มี quota engine. ขั้นถัดไปคือ UAT/pilot, permission scope/delegation ที่ละเอียดขึ้น, edge rate-limit/production alerting, ตั้งค่าและ dry-run real People import, production reconciliation และ contract test กับ Special ก่อนเปิด write endpoint ให้ผู้ใช้จริง.
+จุดนี้เป็นการสร้างทางเดิน migration ไม่ใช่การประกาศว่า People/Leave พร้อม cutover. Prisma schema, local development database, synthetic seed, initial migration, production Compose template และ [deployment runbook](DEPLOYMENT_RUNBOOK.md) เริ่มทำแล้ว; People read/create, Leave Paper-first state-transition slice, provisional server-side day calculation/overlap guard, Next.js leave page/server actions, local Portal session exchange, capability guard, production security guard foundation, Special master-data projection boundary, Special leave snapshot adapter และ worker foundation เริ่มทำแล้ว. Adapter ทำ prepare/deliver แบบเก็บ batch immutable, idempotency/source hash, employee rows ครบ scope และ retry metadata; worker มี database lock, retry due delivery, approved schedule gate, reconciliation API/UI และ optional monthly orchestration แต่ยังปิด scheduled delivery และยังไม่ real-data cutover. Auth foundation เพิ่ม durable launch-token replay, database-backed session revocation, session rotation, trusted-proxy allowlist และ maintenance cleanup; มี staging port/network preflight และ public edge/observability gate แล้ว แต่ shared rate limit ยังต้องตั้งและพิสูจน์ที่ gateway/WAF. Initial migration ผ่านการตรวจ deploy/status กับ MySQL ชั่วคราวแล้ว แต่ยังต้องทำ baseline ฐานข้อมูลเดิม, staging/restore rehearsal และ data-owner approval. Provisional rule ยังไม่ใช่ HR Rulebook และยังไม่มี quota engine. ขั้นถัดไปคือ UAT/pilot, permission scope/delegation ที่ละเอียดขึ้น, edge rate-limit/production alerting, ตั้งค่าและ dry-run real People import, production reconciliation และ contract test กับ Special ก่อนเปิด write endpoint ให้ผู้ใช้จริง.
 
 ## 1. คำตัดสินหลัก
 

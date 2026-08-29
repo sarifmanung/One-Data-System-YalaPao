@@ -39,6 +39,8 @@ Staging ใช้ `docker-compose.target.production.yml` ร่วมกับ `
 
 ตรวจ Special-Allowances leave snapshot contract ใน CI/local ได้ด้วย `npm run target:special:contract`. ชุดนี้ครอบคลุม response ที่ผิดรูปแบบ, period/version acknowledgement ที่ไม่ตรงกัน, network/timeout, HTTP 408/429/5xx ที่ retry ได้ และ validation/locked-period 4xx ที่ต้องหยุดโดยไม่ retry; การทดสอบกับ Special staging จริงยังต้องใช้ period และ credential สำหรับทดสอบที่ owner อนุมัติ.
 
+ตรวจ public reverse proxy และ observability gate ได้ด้วย `ONEDATA_EDGE_BASE_URL=https://staging.onedata.example.org ONEDATA_EDGE_EXPECTED_ORIGIN=https://staging.onedata.example.org npm run target:edge:check`. ค่าเริ่มต้นจะบังคับ HTTPS, HSTS, request ID, CORS, aggregate metrics และ header `X-RateLimit-Policy: shared` ที่ต้องถูกเติมโดย gateway/proxy (ไม่ใช่ให้แอปปลอมค่า); optional 429 probe ใช้ได้เฉพาะช่วงทดสอบ staging ที่กำหนดไว้.
+
 แผน UAT/pilot/cutover และ test matrix อยู่ที่ [UAT/Pilot/Cutover Plan](docs/UAT_PILOT_CUTOVER_PLAN.md). ตรวจ target แบบ read-only ได้ด้วย `scripts/target-uat-smoke.sh` และสร้างหลักฐาน aggregate-only สำหรับ gate ได้ด้วย `scripts/target-uat-evidence.sh` โดยไม่เก็บ payload, cookie, token หรือ PII.
 
 เปิด dashboard preview ที่ `http://localhost:3101/tenant-dashboard`, Portal launch bridge ที่ `http://localhost:3101/auth/portal/launch?token=...` และ API ที่ `http://localhost:3100/api/health/live`. Compose target มีฐานข้อมูล development แยกที่ `13307` และ seed สังเคราะห์เป็นค่าเริ่มต้น; ใน local สามารถตั้งค่า Special URL/token แล้วสั่ง master-data sync เพื่อทำ real-data shadow run ได้ โดยข้อมูลจะถูกเขียนเฉพาะ target local database. Authentication จะปฏิเสธโดยค่าเริ่มต้นจนกว่าจะตั้งค่า Portal secret/launch token หรือเปิด development auth สำหรับ local test.
@@ -117,7 +119,7 @@ Target worker foundation มีคำสั่งดังนี้:
 
 worker จะ retry เฉพาะ delivery ที่ถึงเวลา, ใช้ MySQL named lock กันหลาย instance และ monthly mode จะไม่สร้าง batch ซ้ำเมื่อ period/affiliation มี batch อยู่แล้ว. Monthly mode จะเลือกเฉพาะ affiliation ที่มี schedule `APPROVED`, contract version ตรงกับ configuration และถึง cutoff แล้ว; production ยังต้องผ่าน schedule owner/alerting/UAT approval.
 
-Target API จะ fail-fast หาก `NODE_ENV=production` แต่ขาด database/Portal secret/CORS/trusted-proxy allowlist หรือใช้ development auth/insecure cookie. Cookie-authenticated mutation ต้องมี origin ที่อยู่ใน `CORS_ORIGIN`; API มี security headers, idle session timeout, database-backed launch-token replay/session revocation, session rotation และ per-process rate limit เป็นชั้นป้องกันเบื้องต้น. ต้องวาง rate limiting ที่ reverse proxy/WAF/shared gateway ก่อนเปิดหลาย replica.
+Target API จะ fail-fast หาก `NODE_ENV=staging|production` แต่ขาด database/Portal secret/CORS/trusted-proxy allowlist, ปิด CSRF/rate-limit/metrics หรือใช้ development auth/insecure cookie. Cookie-authenticated mutation ต้องมี origin ที่อยู่ใน `CORS_ORIGIN`; API มี security headers, HSTS, idle session timeout, database-backed launch-token replay/session revocation, session rotation และ per-process rate limit เป็นชั้นป้องกันเบื้องต้น. ต้องวาง rate limiting ที่ reverse proxy/WAF/shared gateway ก่อนเปิดหลาย replica; รายละเอียด gate อยู่ที่ [Edge Gateway & Observability Gate](docs/EDGE_GATEWAY_OBSERVABILITY.md).
 
 Auth session มี `POST /api/v1/auth/rotate` สำหรับหมุน opaque cookie session โดยไม่ต่อ absolute expiry; `worker:once`/maintenance worker จะลบ session และ launch replay ที่หมดอายุตาม retention policy. ห้ามนำ token ดิบไปเก็บใน log หรือ audit metadata.
 
@@ -159,6 +161,9 @@ ONEDATA_SSO_ORIGIN=https://onedata-staging.example.org \
   ONEDATA_SSO_EXPECT_SECURE_COOKIE=true \
   npm run target:sso:negative
 npm run target:special:contract
+ONEDATA_EDGE_BASE_URL=https://staging.onedata.example.org \
+  ONEDATA_EDGE_EXPECTED_ORIGIN=https://staging.onedata.example.org \
+  npm run target:edge:check
 ONEDATA_BACKUP_DIR=/private/backup/onedata \
   ONEDATA_DB_HOST="$ONEDATA_DB_HOST" ONEDATA_DB_PORT="$ONEDATA_DB_PORT" \
   ONEDATA_DB_USER="$ONEDATA_DB_USER" ONEDATA_DB_NAME="$ONEDATA_DB_NAME" \

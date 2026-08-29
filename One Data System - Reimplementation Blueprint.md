@@ -2,7 +2,7 @@
 
 เอกสารวิเคราะห์ระบบเพื่อการสร้างใหม่แบบ Clean-Room
 
-- เวอร์ชันเอกสาร: 1.30 — Special Snapshot Contract Negative Checkpoint
+- เวอร์ชันเอกสาร: 1.31 — Edge Gateway & Observability Gate Checkpoint
 - แก้ไขล่าสุด: 30 สิงหาคม 2569 (2026)
 - วันที่สำรวจ: 10–11 สิงหาคม และ 29 สิงหาคม 2569 (2026)
 - ขอบเขตที่สำรวจ: หน่วยงาน รพ.สต. 1 แห่ง และสังกัดระดับองค์การบริหารส่วนจังหวัดที่เชื่อมกัน
@@ -45,6 +45,7 @@
 | 1.28    | 29 ส.ค. 2569 | เพิ่ม staging Compose overlay, production-like `NODE_ENV=staging` validation, staging env template และ preflight ที่ตรวจ resolved configuration โดยไม่พิมพ์ secret; ปิด dev-auth/provisional rules/worker/monthly delivery เป็นค่าเริ่มต้น |
 | 1.29    | 29 ส.ค. 2569 | เพิ่ม SSO test double และ negative authentication runner สำหรับ valid exchange, session/rotation/logout, invalid/expired issuer/audience/signature/future token และ durable replay โดยไม่ใช้ Portal credential จริง |
 | 1.30    | 30 ส.ค. 2569 | เพิ่ม Special-Allowances snapshot contract negative suite: strict response validation, retry/non-retry HTTP matrix, network failure handling และ guard เมื่อ period/version acknowledgement ไม่ตรงกัน; เพิ่ม focused command และปรับ G1/UAT readiness |
+| 1.31    | 30 ส.ค. 2569 | เพิ่ม edge/proxy/observability gate: staging ตรวจ host-port/network boundary, public HTTPS/HSTS/CORS/request-id, aggregate metrics privacy และ proxy-provided shared rate-limit marker/429 evidence; ปิด runtime security override ที่ไม่ควรปิดใน staging/production |
 
 ## วิธีอ่านระดับความมั่นใจ
 
@@ -64,7 +65,7 @@
 
 > เอกสารนี้สกัด “ความต้องการทางธุรกิจ” จากระบบอ้างอิง ไม่ใช่คำสั่งให้คัดลอกหน้าจอ โค้ด เทคโนโลยี หรือข้อจำกัดของระบบเดิมแบบ 1:1
 
-> **Effective implementation baseline:** ส่วน `Implementation Addendum v1.30` ท้ายเอกสารเป็น checkpoint/decision ล่าสุดของเจ้าของโครงการ และใช้ร่วมกับ Special contract negative gate, SSO test gate, staging/G1 preflight, release gate ใน [Release Readiness](docs/RELEASE_READINESS.md), UAT/pilot/cutover ของ `Implementation Addendum v1.19`, auth/session ของ `Implementation Addendum v1.25`, snapshot reconciliation/schedule ของ `Implementation Addendum v1.24`, versioned Leave Rulebook ของ `Implementation Addendum v1.23`, permission/delegation ของ `Implementation Addendum v1.22`, source-user reconciliation ของ `Implementation Addendum v1.21`, real-data shadow sync ของ `Implementation Addendum v1.20`, migration/deployment ของ `Implementation Addendum v1.18`, security ของ `Implementation Addendum v1.17`, worker ของ `Implementation Addendum v1.16`, integration ของ `Implementation Addendum v1.15`, UI ของ `Implementation Addendum v1.14`, authorization ของ `Implementation Addendum v1.12`, provisional calculation ของ `Implementation Addendum v1.13` และ workflow ใบลาของ `Implementation Addendum v1.8`. addenda ก่อนหน้าเก็บไว้เพื่อ traceability โดย Laravel/Vue หมายถึง current implementation baseline ส่วน NestJS/NextJS หมายถึง target architecture.
+> **Effective implementation baseline:** ส่วน `Implementation Addendum v1.31` ท้ายเอกสารเป็น checkpoint/decision ล่าสุดของเจ้าของโครงการ และใช้ร่วมกับ edge/proxy/observability gate, Special contract negative gate, SSO test gate, staging/G1 preflight, release gate ใน [Release Readiness](docs/RELEASE_READINESS.md), UAT/pilot/cutover ของ `Implementation Addendum v1.19`, auth/session ของ `Implementation Addendum v1.25`, snapshot reconciliation/schedule ของ `Implementation Addendum v1.24`, versioned Leave Rulebook ของ `Implementation Addendum v1.23`, permission/delegation ของ `Implementation Addendum v1.22`, source-user reconciliation ของ `Implementation Addendum v1.21`, real-data shadow sync ของ `Implementation Addendum v1.20`, migration/deployment ของ `Implementation Addendum v1.18`, security ของ `Implementation Addendum v1.17`, worker ของ `Implementation Addendum v1.16`, integration ของ `Implementation Addendum v1.15`, UI ของ `Implementation Addendum v1.14`, authorization ของ `Implementation Addendum v1.12`, provisional calculation ของ `Implementation Addendum v1.13` และ workflow ใบลาของ `Implementation Addendum v1.8`. addenda ก่อนหน้าเก็บไว้เพื่อ traceability โดย Laravel/Vue หมายถึง current implementation baseline ส่วน NestJS/NextJS หมายถึง target architecture.
 
 > **Implementation checkpoint 29 สิงหาคม 2569:** target workspace เริ่มทำงานแบบแยกจาก Laravel/Vue แล้วที่ `apps/api`, `apps/web` และ `packages/contracts`. API foundation มี health/readiness, request-id, API envelope, problem-details, deny-by-default development auth boundary, tenant-context helper, HS256 Portal launch-token verifier/exchange, hashed local session/logout, Portal role/position → One Data capability mapping, server-side permission guard และ Special master-data projection boundary; web foundation มี Next.js dashboard shell, `/auth/portal/launch` bridge, runtime current-user read และ Paper-first leave page/server actions สำหรับสร้าง ส่ง ยกเลิก บันทึกผลกระดาษ และ void ตาม capability. Docker Compose target ใช้พอร์ต `3100/3101` และมี MySQL development แยกบน `13307` พร้อม Prisma schema/seed สังเคราะห์. People/Leave vertical slice มี read/create/state-transition API, capability checks และ audit/outbox ในฐานข้อมูลทดสอบแล้ว; leave draft คำนวณจำนวนวันฝั่ง server ด้วย provisional working/calendar-day rule, ตัดวันหยุดที่มีข้อมูล, เก็บค่าทศนิยมแบบ fixed-decimal และป้องกัน active-request overlap. กติกานี้เป็น development foundation เท่านั้น ยังต้องผูกกับ HR Rulebook/สิทธิ์โควตาที่รับรองก่อน production. Browser smoke ยืนยัน flow สร้าง → ส่ง → บันทึก `PAPER_APPROVED` โดยผู้ตรวจแยกบัญชี → `VOIDED` และคืนข้อมูลทดลองเป็นสถานะที่ไม่มีผลแล้ว. Master-data sync มี validated source-ID upsert, effective membership, soft-inactivate และ sync report; local real-data shadow run กับ Special สำเร็จแล้ว แต่ยังไม่มี user-to-employee mapping ที่ยืนยันจาก source. Special leave snapshot adapter มี prepare/deliver แบบ immutable batch, source hash/idempotency, service-token client, response guard, complete employee rows, reconciliation summary และ retry metadata แล้ว; worker foundation มี retry due delivery, optional monthly orchestration, MySQL named lock และ approved schedule gate โดยยังปิด scheduled execution เป็นค่าเริ่มต้น. Production security foundation มี fail-fast config, idle session timeout, secure-cookie check, CSRF origin policy, security headers, explicit trusted-proxy policy, database-backed launch-token replay/session revocation, session rotation, auth audit/cleanup และ per-process rate limit แล้ว. Migration/operations foundation เพิ่ม schema-drift check, backup + SHA-256 sidecar, restore-to-new-database verification และ aggregate response metrics ที่ไม่เก็บ path/IP/identity/payload; ยังต้องต่อ monitoring/alerting กลาง. มี Prisma initial/forward migrations ที่ deploy ตรวจบน MySQL ชั่วคราว, production Compose template และ deployment runbook สำหรับ controlled migration, backup/restore, baseline ฐานข้อมูลเดิม และ rollback แล้ว แต่ยังต้องทำ staging/restore rehearsal, edge rate limit, Portal role/membership revocation propagation, schedule owner/permission sign-off, locked-period adjustment, production alerting, DOCX และ production real-data acceptance ก่อน production sign-off.
 
@@ -3589,3 +3590,36 @@ source code ของ `Special-Allowances` ที่ตรวจในรอบ�
 - adapter ไม่ยอมรับ response ที่ผิดรูปแบบหรือ acknowledgement ข้าม period/version แบบเงียบ ๆ.
 - retry policy แยก transient HTTP/network failure ออกจาก validation/locked-period failure และบันทึกสถานะ delivery/audit ตามผล.
 - G1 ยังคง `BLOCKED` จนกว่าจะมี Special staging evidence, proxy/edge checks, restore rehearsal และ alerting ตาม [Release Readiness](docs/RELEASE_READINESS.md).
+
+---
+
+# Implementation Addendum v1.31 — Edge gateway & observability gate (30 สิงหาคม 2569)
+
+ภาคผนวกนี้บันทึกการปิดช่องว่างด้าน reverse proxy, shared rate limit และหลักฐาน observability ระหว่างเตรียม G1 โดยไม่อ้างว่า local per-process limiter เป็น distributed security control.
+
+## 1. สิ่งที่ลงมือทำแล้ว
+
+- เพิ่ม `scripts/target-edge-observability-check.sh` และคำสั่ง `npm run target:edge:check` สำหรับตรวจ public edge response: HTTPS, HSTS, `X-Request-ID`, CORS, aggregate metrics privacy และ `X-RateLimit-Policy: shared` ที่ต้องมาจาก gateway/proxy.
+- เพิ่ม optional 429 probe ที่จำกัดอยู่เฉพาะ `POST /api/v1/auth/portal/exchange` โดยส่ง `{}` ไม่มี token และต้องเห็น `429` พร้อม `Retry-After` เมื่อผู้ดูแลกำหนดจำนวน probe ใน staging maintenance window.
+- ขยาย staging preflight ให้ resolve worker profile, ตรวจว่า API/Web/worker ไม่ publish host port และ API/Web/worker ต่อ external `webproxy`; ยังคงตรวจ configuration โดยไม่พิมพ์ secret.
+- ปรับ `SecurityHeadersMiddleware` ให้ staging ได้ HSTS เช่นเดียวกับ production และปรับ environment validation ให้ staging/production API ต้องเปิด CSRF, required origin, per-process rate limit และ aggregate metrics.
+- ขยาย UAT evidence ให้ตรวจ request ID และไม่ยอมรับ metrics ที่มี path/IP/identity/cookie/token/password/payload; เพิ่ม [Edge Gateway & Observability Gate](docs/EDGE_GATEWAY_OBSERVABILITY.md) เป็นสัญญาปฏิบัติการสำหรับ Nginx Proxy Manager/shared-infra.
+
+## 2. ผลการตรวจสอบ checkpoint นี้
+
+- target test ผ่าน 19 suites / 94 tests; target typecheck และ target build ผ่าน.
+- staging preflight ผ่านด้วย image/URL/secret จำลองและ `ONEDATA_STAGING_REQUIRE_WEBPROXY=false`; เมื่อไม่มี external `webproxy` จะ fail ตามที่ออกแบบไว้.
+- local public edge probe ผ่านเมื่อผ่อน `ONEDATA_EDGE_REQUIRE_HTTPS=false`, `ONEDATA_EDGE_REQUIRE_HSTS=false` และ `ONEDATA_EDGE_REQUIRE_SHARED_RATE_LIMIT=false`; probe แบบบังคับ shared marker หยุดด้วย failure เพราะ local ไม่ใช่ gateway.
+- local UAT evidence ผ่าน พร้อม request-ID check และ aggregate-only policy. ไม่มีการแก้ config ของ Nginx Proxy Manager และไม่มี secret/PII ใน artifact หรือ repository.
+
+## 3. สิ่งที่ยังไม่เสร็จและห้ามตีความว่า production-ready
+
+- `shared-infra`/Nginx Proxy Manager ยังต้องตั้งค่าและตรวจรับ shared rate-limit policy, marker header, 429/Retry-After behavior, TLS/redirect และ access restriction ของ admin/metrics ตาม change owner; repository นี้ตรวจได้แต่ไม่แก้ค่าให้เอง.
+- ยังต้องทดสอบ public edge gate ผ่าน staging จริงด้วยหลาย API replica เพื่อพิสูจน์ shared behavior, รวม monitoring sink, alert threshold และ alert delivery.
+- ยังต้องทำ restore rehearsal, Portal/Special staging contract, real mapping, HR Rulebook และ owner sign-off ก่อน G1/G2.
+
+## 4. Acceptance ของ checkpoint นี้
+
+- staging preflight จะไม่ผ่านหากปิด control สำคัญหรือเปิด host port ผิด boundary ก่อน deploy target.
+- public probe แยกสิ่งที่แอปตรวจเองออกจากสิ่งที่ gateway ต้องพิสูจน์ และไม่ปลอมหลักฐาน shared rate limit จากภายในแอป.
+- G1 ยังคง `BLOCKED` จนกว่าจะมีหลักฐานจาก reverse proxy/WAF และ monitoring จริงตาม [Release Readiness](docs/RELEASE_READINESS.md).

@@ -13,6 +13,7 @@
 - Staging ต้องใช้ `docker-compose.target.production.yml` ร่วมกับ `docker-compose.target.staging.yml`; รัน `ONEDATA_STAGING_ENV_FILE=/private/path/onedata-staging.env npm run target:staging:preflight` ก่อน deploy เพื่อให้ตรวจค่าที่ resolve แล้วโดยไม่พิมพ์ secret. Preflight จะยืนยัน API hardened mode, HTTPS, secure cookie, CSRF origin, rate limit, metrics, explicit trusted proxy และปิด worker/monthly delivery.
 - หลัง deploy staging ให้รัน `npm run target:sso:negative` ด้วย SSO test double และ test identity ที่ map ไว้เฉพาะ staging; ต้องเห็น valid exchange/rotation/logout ผ่าน และ invalid/expired/replay token ได้ `401` ก่อนนับ AUTH gate ผ่าน.
 - ก่อนนับ SPECIAL contract gate ให้รัน `npm run target:special:contract` ใน CI/local; จากนั้นทดสอบ request matrix กับ Special staging โดยใช้ period/test credential ที่ owner อนุมัติเท่านั้น ตรวจ malformed response, period/version mismatch, retryable 408/429/5xx และ non-retryable validation/locked-period 4xx โดยไม่ใช้ period production.
+- หลัง deploy staging ให้รัน `ONEDATA_EDGE_BASE_URL=https://<staging-domain> ONEDATA_EDGE_EXPECTED_ORIGIN=https://<staging-domain> npm run target:edge:check`; ต้องผ่าน HTTPS/HSTS, request ID, CORS, aggregate metrics และ `X-RateLimit-Policy: shared` ที่ reverse proxy เติมให้. ตั้ง `ONEDATA_EDGE_RATE_LIMIT_PROBE_PATH=/api/v1/auth/portal/exchange` และจำนวน probe เฉพาะ maintenance window ที่ใช้ test identity/ไม่มี token เพื่อยืนยัน `429` + `Retry-After`.
 - backup และทดสอบ restore ล่าสุดผ่านเกณฑ์; ตรวจ migration status บน staging ก่อน production.
 - ยืนยันว่า `Special-Allowances` period ที่จะรับ snapshot เป็น `NORMAL/OPEN`, contract version ตรงกับ source และมี owner ของ cutoff/schedule; หากเปิด monthly worker ต้องมี schedule ของ affiliation สถานะ `APPROVED`.
 
@@ -85,6 +86,7 @@ Worker เปิดใช้งานด้วย `--profile worker` และ `
 - API liveness/readiness, database connection และ container restart count
 - เก็บ `target:uat:evidence` ทุก gate โดยผูกกับ commit/build/environment และตรวจว่า artifact ไม่มีข้อมูลดิบ; หาก local development เปิด dev auth ให้บันทึก `ONEDATA_UAT_EXPECT_ME_STATUS=200` เป็นข้อยกเว้น ไม่ใช่ security approval
 - auth 401/403/429 rate, durable replay rejection, session revoke/idle expiry/rotation และ origin rejection
+- public edge probe result, proxy-added shared rate-limit policy marker, `429`/`Retry-After` evidence และ monitoring sink/alert delivery; ไม่ถือ per-process limiter เป็น shared enforcement
 - People sync run status, unmapped employee count และ leave snapshot batch status
 - delivery `RETRYABLE_FAILURE`/`FAILED`, locked-period responses, reconciliation `MISMATCH/BLOCKED`, source hash/row-count mismatch และ schedule ที่หมดอายุ/ถูก pause
 - worker lock contention, run duration, last successful retry/monthly run และ alertเมื่อไม่มี successful run ตาม SLA
