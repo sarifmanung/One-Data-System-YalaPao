@@ -29,7 +29,8 @@ function optionalBoolean(config: Environment, key: string): boolean | undefined 
 
 /**
  * Keep local/test startup permissive, but fail before serving traffic when a
- * production deployment is missing a security boundary or uses an unsafe one.
+ * staging/production deployment is missing a security boundary or uses an
+ * unsafe one.
  */
 export function validateEnvironment(config: Environment): Environment {
   const environment = value(config, 'NODE_ENV') || 'development';
@@ -41,12 +42,13 @@ export function validateEnvironment(config: Environment): Environment {
   positiveInteger(config, 'ONEDATA_MUTATION_RATE_LIMIT_PER_MINUTE', 120);
   const provisionalRulesAllowed = optionalBoolean(config, 'ONEDATA_ALLOW_PROVISIONAL_LEAVE_RULES');
 
-  if (environment !== 'production') {
+  const hardenedEnvironment = environment === 'staging' || environment === 'production';
+  if (!hardenedEnvironment) {
     return config;
   }
 
   if (provisionalRulesAllowed === true) {
-    throw new Error('ONEDATA_ALLOW_PROVISIONAL_LEAVE_RULES must be false in production.');
+    throw new Error(`ONEDATA_ALLOW_PROVISIONAL_LEAVE_RULES must be false in ${environment}.`);
   }
 
   const processRole = value(config, 'ONEDATA_PROCESS_ROLE') || 'api';
@@ -56,15 +58,15 @@ export function validateEnvironment(config: Environment): Environment {
 
   if (processRole === 'worker') {
     if (!value(config, 'DATABASE_URL')) {
-      throw new Error('DATABASE_URL must be configured in production.');
+      throw new Error(`DATABASE_URL must be configured in ${environment}.`);
     }
     if (value(config, 'ONEDATA_DEV_AUTH_ENABLED') === 'true') {
-      throw new Error('ONEDATA_DEV_AUTH_ENABLED must be false in production.');
+      throw new Error(`ONEDATA_DEV_AUTH_ENABLED must be false in ${environment}.`);
     }
     if (value(config, 'ONEDATA_WORKER_ENABLED') === 'true'
       && (!value(config, 'SPECIAL_ALLOWANCES_BASE_URL')
         || !value(config, 'SPECIAL_ALLOWANCES_INTEGRATION_TOKEN'))) {
-      throw new Error('Special-Allowances URL/token must be configured for an enabled production worker.');
+      throw new Error(`Special-Allowances URL/token must be configured for an enabled ${environment} worker.`);
     }
     return config;
   }
@@ -78,28 +80,28 @@ export function validateEnvironment(config: Environment): Environment {
   ];
   for (const key of required) {
     if (!value(config, key)) {
-      throw new Error(`${key} must be configured in production.`);
+      throw new Error(`${key} must be configured in ${environment}.`);
     }
   }
 
   if (value(config, 'PORTAL_SHARED_SECRET').length < 32) {
-    throw new Error('PORTAL_SHARED_SECRET must contain at least 32 characters in production.');
+    throw new Error(`PORTAL_SHARED_SECRET must contain at least 32 characters in ${environment}.`);
   }
   if (value(config, 'CORS_ORIGIN').split(',').some((origin) => origin === '*')) {
-    throw new Error('CORS_ORIGIN must not be wildcard in production.');
+    throw new Error(`CORS_ORIGIN must not be wildcard in ${environment}.`);
   }
   if (value(config, 'ONEDATA_DEV_AUTH_ENABLED') === 'true') {
-    throw new Error('ONEDATA_DEV_AUTH_ENABLED must be false in production.');
+    throw new Error(`ONEDATA_DEV_AUTH_ENABLED must be false in ${environment}.`);
   }
   const trustedProxy = value(config, 'ONEDATA_TRUST_PROXY');
   if (!trustedProxy) {
-    throw new Error('ONEDATA_TRUST_PROXY must be configured in production.');
+    throw new Error(`ONEDATA_TRUST_PROXY must be configured in ${environment}.`);
   }
   if (trustedProxy === 'true' || trustedProxy === '*' || /^\d+$/.test(trustedProxy)) {
-    throw new Error('ONEDATA_TRUST_PROXY must use explicit proxy IPs or CIDR ranges in production.');
+    throw new Error(`ONEDATA_TRUST_PROXY must use explicit proxy IPs or CIDR ranges in ${environment}.`);
   }
   if (value(config, 'ONEDATA_SESSION_COOKIE_SECURE') !== 'true') {
-    throw new Error('ONEDATA_SESSION_COOKIE_SECURE must be true in production.');
+    throw new Error(`ONEDATA_SESSION_COOKIE_SECURE must be true in ${environment}.`);
   }
 
   const sameSite = value(config, 'ONEDATA_SESSION_COOKIE_SAME_SITE') || 'lax';

@@ -17,7 +17,7 @@
 | Gate | ขอบเขต | ข้อมูล | ผู้อนุมัติ | เกณฑ์ผ่าน |
 | --- | --- | --- | --- | --- |
 | G0 | Local/CI | synthetic | ผู้พัฒนา | test, typecheck, build, migration check, smoke script และ aggregate-only UAT evidence ผ่าน |
-| G1 | Staging | synthetic หรือ de-identified | ผู้พัฒนา + IT | deploy/restore rehearsal, SSO test double, Special contract test และ negative security test ผ่าน |
+| G1 | Staging | synthetic หรือ de-identified | ผู้พัฒนา + IT | staging preflight, deploy/restore rehearsal, SSO test double, Special contract test และ negative security test ผ่าน |
 | G2 | Shadow run | ข้อมูลจริงเท่าที่ได้รับอนุญาต แบบไม่เปิด write ให้ผู้ใช้ | เจ้าของข้อมูล + HR + IT | People reconciliation และ leave snapshot เทียบระบบเดิมโดยไม่มี mismatch ที่อธิบายไม่ได้ |
 | G3 | Pilot wave 1 | 1 รพ.สต. ที่มีผู้รับผิดชอบครบ | ผู้บริหาร/เจ้าของกระบวนงาน | ใช้งานใบลาจริงตาม paper-first process อย่างน้อย 1 รอบ และ Special snapshot ผ่าน |
 | G4 | Pilot wave 2 | 3 รพ.สต. ต่างรูปแบบ | เจ้าของระบบ | ไม่มี Sev-1/Sev-2 ค้าง, reconciliation ผ่าน 2 รอบ และผู้ใช้ยืนยันขั้นตอน |
@@ -47,6 +47,7 @@
 | ENV-001 | API liveness/readiness และ web health | API มีชีวิต, database ready และ web ตอบได้ตาม health check |
 | ENV-002 | contract/version | `contractVersion`, effective leave status และ target stack ตรงกับ release ที่อนุมัติ |
 | ENV-003 | UAT evidence artifact | มี JSON/Markdown ที่เก็บเฉพาะ status/aggregate shape ไม่เก็บ payload, cookie, token หรือ PII; local dev-auth override ต้องถูกระบุชัดเจน |
+| ENV-004 | staging configuration | resolved Compose ใช้ API `NODE_ENV=staging`, ปิด dev-auth/provisional rules/worker/monthly delivery, ใช้ HTTPS/secure cookie/CSRF origin/rate limit/metrics และ explicit trusted proxy |
 | AUTH-001 | Portal launch token ถูกต้อง | token ที่ยังไม่หมดอายุและ claims ถูกต้องสร้าง session ได้; ไม่แสดง token ใน URL หลัง redirect |
 | AUTH-002 | token invalid/expired/replay | ถูกปฏิเสธ, durable `jti` replay ใช้ซ้ำไม่ได้ข้าม API replica และไม่สร้าง session บางส่วน |
 | AUTH-003 | logout/idle expiry/rotation | session เดิมใช้ต่อไม่ได้หลัง logout หรือเกิน idle timeout; rotate ออก token ใหม่โดยไม่ต่อ absolute expiry |

@@ -10,12 +10,23 @@
 - ตั้ง `ONEDATA_TRUST_PROXY` เป็นรายการ IP/CIDR ของ reverse proxy ที่ตรวจสอบแล้วเท่านั้น; ห้ามใช้ `true`, `*` หรือจำนวน hop ใน production.
 - กำหนด `ONEDATA_AUTH_RETENTION_SECONDS` ตามนโยบายเก็บหลักฐาน session/replay และเตรียม restricted worker/cron สำหรับ cleanup.
 - ตรวจว่า `ONEDATA_DEV_AUTH_ENABLED=false`, `ONEDATA_PROCESS_ROLE=api` ใน API และ `ONEDATA_PROCESS_ROLE=worker` ใน worker.
+- Staging ต้องใช้ `docker-compose.target.production.yml` ร่วมกับ `docker-compose.target.staging.yml`; รัน `ONEDATA_STAGING_ENV_FILE=/private/path/onedata-staging.env npm run target:staging:preflight` ก่อน deploy เพื่อให้ตรวจค่าที่ resolve แล้วโดยไม่พิมพ์ secret. Preflight จะยืนยัน API hardened mode, HTTPS, secure cookie, CSRF origin, rate limit, metrics, explicit trusted proxy และปิด worker/monthly delivery.
 - backup และทดสอบ restore ล่าสุดผ่านเกณฑ์; ตรวจ migration status บน staging ก่อน production.
 - ยืนยันว่า `Special-Allowances` period ที่จะรับ snapshot เป็น `NORMAL/OPEN`, contract version ตรงกับ source และมี owner ของ cutoff/schedule; หากเปิด monthly worker ต้องมี schedule ของ affiliation สถานะ `APPROVED`.
 
 ## 2. Migration policy
 
-Local disposable target ใช้ `prisma db push --accept-data-loss` ได้เฉพาะใน `docker-compose.target.yml`. Production ห้ามใช้ `db push`, `--accept-data-loss` หรือ `prisma migrate dev`.
+Local disposable target ใช้ `prisma db push --accept-data-loss` ได้เฉพาะใน `docker-compose.target.yml`. Staging และ production ห้ามใช้ `db push`, `--accept-data-loss` หรือ `prisma migrate dev`.
+
+Staging ใช้ migration path เดียวกับ production:
+
+```bash
+docker compose \
+  -f docker-compose.target.production.yml \
+  -f docker-compose.target.staging.yml \
+  config --quiet
+DATABASE_URL="$ONEDATA_TARGET_DATABASE_URL" npm run target:db:migrate
+```
 
 ฐานข้อมูลใหม่:
 

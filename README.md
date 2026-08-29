@@ -33,6 +33,8 @@ docker compose -f docker-compose.target.yml up --build -d
 
 สำหรับ migration/deployment ของ target ให้ดู [deployment runbook](docs/DEPLOYMENT_RUNBOOK.md). ฐานข้อมูลใหม่ใช้ `DATABASE_URL="$ONEDATA_TARGET_DATABASE_URL" npm run target:db:migrate`; production ห้ามใช้ `prisma db push` หรือ `--accept-data-loss`.
 
+Staging ใช้ `docker-compose.target.production.yml` ร่วมกับ `docker-compose.target.staging.yml` โดยรับ image, database URL และ secret จาก environment/secret store. ตรวจค่าที่ resolve แล้วโดยไม่พิมพ์ secret ด้วย `ONEDATA_STAGING_ENV_FILE=/private/path/onedata-staging.env npm run target:staging:preflight`; preflight จะบังคับ API hardened mode, secure cookie, CSRF origin, rate limit, metrics, explicit trusted proxy และปิด worker/monthly delivery ไว้ก่อน.
+
 แผน UAT/pilot/cutover และ test matrix อยู่ที่ [UAT/Pilot/Cutover Plan](docs/UAT_PILOT_CUTOVER_PLAN.md). ตรวจ target แบบ read-only ได้ด้วย `scripts/target-uat-smoke.sh` และสร้างหลักฐาน aggregate-only สำหรับ gate ได้ด้วย `scripts/target-uat-evidence.sh` โดยไม่เก็บ payload, cookie, token หรือ PII.
 
 เปิด dashboard preview ที่ `http://localhost:3101/tenant-dashboard`, Portal launch bridge ที่ `http://localhost:3101/auth/portal/launch?token=...` และ API ที่ `http://localhost:3100/api/health/live`. Compose target มีฐานข้อมูล development แยกที่ `13307` และ seed สังเคราะห์เป็นค่าเริ่มต้น; ใน local สามารถตั้งค่า Special URL/token แล้วสั่ง master-data sync เพื่อทำ real-data shadow run ได้ โดยข้อมูลจะถูกเขียนเฉพาะ target local database. Authentication จะปฏิเสธโดยค่าเริ่มต้นจนกว่าจะตั้งค่า Portal secret/launch token หรือเปิด development auth สำหรับ local test.
@@ -143,6 +145,8 @@ Target operations tooling:
 
 ```bash
 DATABASE_URL="$ONEDATA_TARGET_DATABASE_URL" npm run target:schema:check
+ONEDATA_STAGING_ENV_FILE=/private/path/onedata-staging.env \
+  npm run target:staging:preflight
 ONEDATA_BACKUP_DIR=/private/backup/onedata \
   ONEDATA_DB_HOST="$ONEDATA_DB_HOST" ONEDATA_DB_PORT="$ONEDATA_DB_PORT" \
   ONEDATA_DB_USER="$ONEDATA_DB_USER" ONEDATA_DB_NAME="$ONEDATA_DB_NAME" \

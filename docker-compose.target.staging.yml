@@ -1,0 +1,30 @@
+name: onedata-target-staging
+
+# Staging overlay for docker-compose.target.production.yml.
+# Images, database URL, secrets and proxy network are supplied by the staging
+# secret store/environment. This file intentionally contains no credentials.
+services:
+  onedata-target-api:
+    environment:
+      NODE_ENV: staging
+      ONEDATA_DEV_AUTH_ENABLED: "false"
+      ONEDATA_ALLOW_PROVISIONAL_LEAVE_RULES: "false"
+      ONEDATA_SESSION_COOKIE_SECURE: "true"
+      ONEDATA_CSRF_REQUIRE_ORIGIN: "true"
+      ONEDATA_RATE_LIMIT_ENABLED: "true"
+      ONEDATA_WORKER_ENABLED: "false"
+      ONEDATA_LEAVE_SNAPSHOT_MONTHLY_ENABLED: "false"
+
+  onedata-target-web:
+    environment:
+      # Next.js production builds should keep production runtime semantics even
+      # when the API uses NODE_ENV=staging for hardened configuration checks.
+      NODE_ENV: production
+
+  onedata-target-worker:
+    environment:
+      NODE_ENV: staging
+      ONEDATA_DEV_AUTH_ENABLED: "false"
+      ONEDATA_ALLOW_PROVISIONAL_LEAVE_RULES: "false"
+      ONEDATA_WORKER_ENABLED: "false"
+      ONEDATA_LEAVE_SNAPSHOT_MONTHLY_ENABLED: "false"
