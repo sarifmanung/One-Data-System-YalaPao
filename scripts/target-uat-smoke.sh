@@ -4,7 +4,7 @@ set -euo pipefail
 
 base_url="${ONEDATA_UAT_BASE_URL:-http://localhost:3100}"
 base_url="${base_url%/}"
-expected_contract="${ONEDATA_UAT_EXPECTED_CONTRACT_VERSION:-1.3}"
+expected_contract="${ONEDATA_UAT_EXPECTED_CONTRACT_VERSION:-1.4}"
 cookie_file="${ONEDATA_UAT_COOKIE_FILE:-}"
 web_url="${ONEDATA_UAT_WEB_URL:-}"
 require_security_headers="${ONEDATA_UAT_REQUIRE_SECURITY_HEADERS:-false}"

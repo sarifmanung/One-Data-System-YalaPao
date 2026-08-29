@@ -15,13 +15,13 @@
 
 - `apps/api`: NestJS foundation, versioned API prefix, health/readiness, request-id, problem-details, Portal HS256 launch-token exchange, hashed local session/session guard และ Special master-data projection service
 - `apps/web`: Next.js App Router dashboard shell, Paper-first leave page/server actions, Portal launch bridge ที่ `/auth/portal/launch`, และการอ่าน current user จาก API ตอน runtime
-- `packages/contracts`: shared TypeScript contract v1.3, capability permissions และ leave snapshot fixture ที่ห้ามส่ง `CONFIRMED`
+- `packages/contracts`: shared TypeScript contract v1.4, capability permissions, leave snapshot reconciliation/schedule summaries และ fixture ที่ห้ามส่ง `CONFIRMED`
 - `docker-compose.target.yml`: API/web แยกจาก compose เดิมบนพอร์ต `3100/3101`
 - worker command ใน API image: database lock, retry due delivery และ optional monthly prepare/deliver; target Compose เปิดผ่าน profile `worker` และปิดงานด้วย `ONEDATA_WORKER_ENABLED=false` เป็นค่าเริ่มต้น
 - production guard foundation: fail-fast environment validation, idle session timeout, secure cookie requirement, mutation origin check, API security headers และ in-memory rate limit; distributed replay/session revocation และ edge/shared rate limiting ยังต้องทำก่อนหลาย replica
 - automated checks: contracts/API/web typecheck, API unit/e2e smoke tests, target production build และ legacy Vite build
 
-สิ่งที่ยังไม่เปิดใช้จริงใน checkpoint นี้คือ staging/production migration baseline approval, backup/restore rehearsal, production real-data reconciliation, permission scope matrix แบบละเอียดครบทุกโมดูล/owner sign-off, reconciliation UI และ production schedule approval. มี initial Prisma migration, production Compose template และ [deployment runbook](docs/DEPLOYMENT_RUNBOOK.md) แล้ว และตรวจ deploy/status กับ MySQL ชั่วคราวแล้ว แต่ยังไม่ถือเป็น production sign-off. Special-Allowances leave adapter และ worker รุ่นแรกมีแล้วในระดับ local integration foundation: prepare complete snapshot, เก็บ immutable batch, ส่งผ่าน service token, idempotency/source hash, delivery history, retry metadata, database lock และ optional monthly orchestration; ค่า worker และ monthly delivery ยังปิดเป็นค่าเริ่มต้นและยังไม่ทำ real-data cutover. Local session exchange, session guard, Portal-to-One Data capability mapping, operation scope matrix รุ่นแรก (`self`/`tenant`/`affiliation`), delegated approver assignment foundation, route permission guard และ master-data projection boundary มีแล้วในระดับ development/integration foundation; local real-data shadow import ผ่านกับ 38 หน่วยงาน/267 บุคลากร/43 users แล้ว พร้อม source-user projection และ mapping reconciliation report แต่ยังไม่มี user-to-employee mapping ที่ยืนยันจาก source และยังไม่มี production acceptance.
+สิ่งที่ยังไม่เปิดใช้จริงใน checkpoint นี้คือ staging/production migration baseline approval, backup/restore rehearsal, production real-data reconciliation, permission scope matrix แบบละเอียดครบทุกโมดูล/owner sign-off และ production schedule approval. มี initial Prisma migration, production Compose template และ [deployment runbook](docs/DEPLOYMENT_RUNBOOK.md) แล้ว และตรวจ deploy/status กับ MySQL ชั่วคราวแล้ว แต่ยังไม่ถือเป็น production sign-off. Special-Allowances leave adapter และ worker รุ่นแรกมีแล้วในระดับ local integration foundation: prepare complete snapshot ที่มี employee rows ครบ scope, เก็บ immutable batch, ส่งผ่าน service token, idempotency/source hash, delivery history, reconciliation summary, retry metadata, database lock, schedule approval gate และ optional monthly orchestration; ค่า worker และ monthly delivery ยังปิดเป็นค่าเริ่มต้นและยังไม่ทำ real-data cutover. Local session exchange, session guard, Portal-to-One Data capability mapping, operation scope matrix รุ่นแรก (`self`/`tenant`/`affiliation`), delegated approver assignment foundation, route permission guard และ master-data projection boundary มีแล้วในระดับ development/integration foundation; local real-data shadow import ผ่านกับ 38 หน่วยงาน/267 บุคลากร/43 users แล้ว พร้อม source-user projection และ mapping reconciliation report แต่ยังไม่มี user-to-employee mapping ที่ยืนยันจาก source และยังไม่มี production acceptance.
 
 ## 1. Architecture Decision
 
@@ -206,7 +206,9 @@ One Data ไม่คำนวณ ฉ.10/11 ซ้ำ แต่มี anti-corru
 - ส่งข้อมูลลาเป็น complete snapshot ราย period/month จาก One Data ไป Special
 - รองรับการส่งซ้ำแบบ idempotent โดยไม่สร้างข้อมูลซ้ำ
 - รายงาน unmapped persons, invalid mappings และ changed/cancelled leave
-- เปรียบเทียบ row count และ checksum เพื่อ reconciliation
+- ส่ง employee rows ครบ scope (คนไม่มีลาใช้ `leave_entries: []`) เพื่อให้ `processedEmployees` ของ Special เทียบกับจำนวนที่เตรียมได้อย่างมีความหมาย
+- เปรียบเทียบ period, snapshot version, employee/leave-entry count และ source hash ฝั่ง One Data; hash ของปลายทางจะถือว่า “ยังไม่ถูกส่งกลับ” จนกว่า Special จะเพิ่ม field ใน contract
+- แสดง reconciliation ผ่าน target API/UI โดยไม่เปิด payload เต็มในหน้าจอ monitor ทั่วไป
 - อ่าน period status, result summary และ report artifacts มาแสดงผ่าน One Data ในระยะถัดไป
 
 contract รุ่นแรกที่ implement แล้ว:
@@ -267,7 +269,7 @@ Period protocol:
 - งานสร้างเอกสารขนาดใหญ่ import/export และ retry integration ทำผ่าน queue เมื่อจำเป็น
 - Transactional outbox ถูกเขียนใน transaction เดียวกับ business change
 - Worker อ่าน outbox และส่งต่อแบบ idempotent
-- Leave snapshot worker รุ่นแรกใช้ database named lock ของ MySQL กันหลาย instance, query เฉพาะ delivery ที่ถึง `nextAttemptAt`, และไม่สร้าง monthly batch ซ้ำเมื่อ period นั้นมี batch แล้ว
+- Leave snapshot worker รุ่นแรกใช้ database named lock ของ MySQL กันหลาย instance, query เฉพาะ delivery ที่ถึง `nextAttemptAt`, และ monthly mode จะส่งเฉพาะ affiliation ที่มี schedule `APPROVED`, contract version ตรง และไม่สร้าง monthly batch ซ้ำเมื่อ period นั้นมี batch แล้ว
 - ยังไม่ติดตั้ง message broker จนกว่าจะมีหลาย consumer ปริมาณงาน หรือ reliability requirement ที่ database queue รองรับไม่ได้
 - Event payload ส่งเฉพาะ ID, scope, version และข้อมูลขั้นต่ำ หลีกเลี่ยง PII
 
@@ -376,7 +378,7 @@ Shared private Docker network
 
 - การจับคู่ Portal user กับ person ให้ครบทุกบัญชี และ mapping organization code จริง
 - Leave Rulebook ที่ฝ่ายบุคคลรับรอง, แบบ Word จริง และ golden samples
-- locked-period adjustment, report read-through และ reconciliation dashboard ของ Special
+- locked-period adjustment, report read-through และ reconciliation/alerting ของ Special
 - การย้ายกลางงวด/หลายสังกัดที่ซับซ้อนและการทดสอบ aggregate ครบ 38 แห่ง
 
 ## 18. Architecture Decision Records to Approve

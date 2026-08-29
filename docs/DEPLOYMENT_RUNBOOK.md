@@ -9,7 +9,7 @@
 - ตั้ง Portal issuer/audience/secret, `CORS_ORIGIN`/`ONEDATA_PUBLIC_WEB_URL`, Special URL/token และ session cookie เป็น HTTPS/secure.
 - ตรวจว่า `ONEDATA_DEV_AUTH_ENABLED=false`, `ONEDATA_PROCESS_ROLE=api` ใน API และ `ONEDATA_PROCESS_ROLE=worker` ใน worker.
 - backup และทดสอบ restore ล่าสุดผ่านเกณฑ์; ตรวจ migration status บน staging ก่อน production.
-- ยืนยันว่า `Special-Allowances` period ที่จะรับ snapshot เป็น `NORMAL/OPEN`, contract version ตรงกับ source และมี owner ของ cutoff/schedule.
+- ยืนยันว่า `Special-Allowances` period ที่จะรับ snapshot เป็น `NORMAL/OPEN`, contract version ตรงกับ source และมี owner ของ cutoff/schedule; หากเปิด monthly worker ต้องมี schedule ของ affiliation สถานะ `APPROVED`.
 
 ## 2. Migration policy
 
@@ -53,13 +53,13 @@ mysqldump --single-transaction --routines --triggers \
 5. ทดสอบ Portal launch, workspace scope, leave read/create และ integration health แบบ synthetic/staging
 6. หาก fail ให้หยุด worker, ปิด write feature flag, rollback web/API image และรักษา database migration/ข้อมูลที่ audit ได้
 
-Worker เปิดใช้งานด้วย `--profile worker` และ `ONEDATA_WORKER_ENABLED=true` เท่านั้น. Monthly mode ต้องเปิดแยกด้วย `ONEDATA_LEAVE_SNAPSHOT_MONTHLY_ENABLED=true`; เริ่มจาก retry/manual mode และเฝ้าดู delivery/audit ก่อน.
+Worker เปิดใช้งานด้วย `--profile worker` และ `ONEDATA_WORKER_ENABLED=true` เท่านั้น. Monthly mode ต้องเปิดแยกด้วย `ONEDATA_LEAVE_SNAPSHOT_MONTHLY_ENABLED=true` และ schedule ที่อนุมัติแล้วต่อ affiliation; เริ่มจาก retry/manual mode และเฝ้าดู delivery/audit/reconciliation ก่อน.
 
 ## 5. Operational checks
 
 - API liveness/readiness, database connection และ container restart count
 - auth 401/403/429 rate, session revoke/idle expiry และ origin rejection
 - People sync run status, unmapped employee count และ leave snapshot batch status
-- delivery `RETRYABLE_FAILURE`/`FAILED`, locked-period responses, source hash/row-count mismatch
+- delivery `RETRYABLE_FAILURE`/`FAILED`, locked-period responses, reconciliation `MISMATCH/BLOCKED`, source hash/row-count mismatch และ schedule ที่หมดอายุ/ถูก pause
 - worker lock contention, run duration, last successful retry/monthly run และ alertเมื่อไม่มี successful run ตาม SLA
 - ห้าม log raw token, password, cookie, เลขบัตร, เบอร์โทรศัพท์ หรือ payload ใบลาครบชุด

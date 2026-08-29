@@ -1,7 +1,9 @@
 import type {
   ApiEnvelope,
   CurrentUser,
+  LeaveExportBatchSummary,
   LeaveRequestSummary,
+  LeaveSnapshotScheduleSummary,
   LeaveTypeSummary,
   PersonListItem,
 } from '@onedata/contracts';
@@ -116,4 +118,26 @@ export function getPeople(
 ): Promise<PersonListItem[] | null> {
   return getFromApi<{ items: PersonListItem[] }>('/api/v1/people', cookieHeader, tenantId)
     .then((data) => data?.items ?? null);
+}
+
+export function getLeaveSnapshotBatches(
+  cookieHeader = '',
+  affiliationId?: string,
+): Promise<LeaveExportBatchSummary[] | null> {
+  return getFromApi<{ items: LeaveExportBatchSummary[] }>(
+    '/api/v1/integrations/special/leave-snapshots',
+    cookieHeader,
+    affiliationId,
+  ).then((data) => data?.items ?? null);
+}
+
+export function getLeaveSnapshotSchedules(
+  cookieHeader = '',
+  affiliationId?: string,
+): Promise<LeaveSnapshotScheduleSummary[] | null> {
+  return getFromApi<{ items: LeaveSnapshotScheduleSummary[] }>(
+    '/api/v1/integrations/special/leave-snapshots/schedules',
+    cookieHeader,
+    affiliationId,
+  ).then((data) => data?.items ?? null);
 }

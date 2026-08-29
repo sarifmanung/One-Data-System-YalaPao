@@ -77,7 +77,15 @@ describe('LeaveSnapshotWorkerService', () => {
 
   it('prepares and delivers one monthly snapshot per active affiliation after cutoff', async () => {
     const prisma = {
-      affiliation: { findMany: jest.fn().mockResolvedValue([affiliation]) },
+      leaveSnapshotSchedule: {
+        findMany: jest.fn().mockResolvedValue([{
+          id: 'schedule-1',
+          affiliationId: affiliation.id,
+          cutoffDays: 3,
+          contractVersion: '1.0',
+          affiliation,
+        }]),
+      },
       leaveExportBatch: { findFirst: jest.fn().mockResolvedValue(null) },
       $transaction: jest.fn().mockImplementation(async (callback: (tx: unknown) => unknown) => (
         callback(lockedTransaction())
@@ -112,5 +120,29 @@ describe('LeaveSnapshotWorkerService', () => {
       expect.anything(),
       'batch-1',
     );
+  });
+
+  it('does not send monthly snapshots without an approved schedule', async () => {
+    const prisma = {
+      leaveSnapshotSchedule: { findMany: jest.fn().mockResolvedValue([]) },
+      $transaction: jest.fn().mockImplementation(async (callback: (tx: unknown) => unknown) => (
+        callback(lockedTransaction())
+      )),
+    };
+    const snapshots = {
+      prepare: jest.fn(),
+      deliver: jest.fn(),
+    };
+
+    const result = await worker(prisma, snapshots, {
+      ONEDATA_WORKER_MODE: 'MONTHLY',
+      ONEDATA_LEAVE_SNAPSHOT_MONTHLY_ENABLED: 'true',
+      ONEDATA_LEAVE_SNAPSHOT_PERIOD: '2026-07',
+      ONEDATA_LEAVE_SNAPSHOT_SOURCE_CUTOFF: '2026-08-03T23:59:59.999Z',
+    }).runOnce();
+
+    expect(result).toMatchObject({ lockAcquired: true, monthlySkipped: 1 });
+    expect(snapshots.prepare).not.toHaveBeenCalled();
+    expect(snapshots.deliver).not.toHaveBeenCalled();
   });
 });

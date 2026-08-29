@@ -134,7 +134,7 @@
 
 - การทดสอบกับบัญชี Portal และข้อมูลบุคลากรจริงยังต้องมี owner อนุมัติและ mapping ที่ตรวจรับ
 - แบบ Word/DOCX ฉบับราชการและตัวอย่าง golden form ยังไม่มี จึงยังไม่ควรประกาศเอกสารจากระบบเป็นแบบทางการ
-- ยังไม่มี reconciliation UI, alerting production และ distributed session/replay/edge rate limit แบบหลาย replica; base permission scope/delegated assignment API มีแล้ว แต่ยังต้องทดสอบครบทุก role/workspace กับ owner sign-off
+- มี reconciliation UI foundation สำหรับ snapshot/schedule แล้ว แต่ยังไม่มี alerting production และ distributed session/replay/edge rate limit แบบหลาย replica; base permission scope/delegated assignment API มีแล้ว แต่ยังต้องทดสอบครบทุก role/workspace กับ owner sign-off
 - ยังไม่ได้ทำ backup/restore rehearsal กับ production-like infrastructure และยังไม่มี pilot จริง
 
 ดังนั้นสถานะปัจจุบันคือ **พร้อมทำ G0 และเตรียม G1**, ยังไม่ใช่พร้อม cutover production

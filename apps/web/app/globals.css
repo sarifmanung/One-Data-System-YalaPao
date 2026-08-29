@@ -1582,6 +1582,177 @@ a {
 .notice-success { background: #e9f9f3; border-color: #a6e5d0; color: #17795f; }
 .notice-error { background: #fff1f0; border-color: #efbeb9; color: #a64d47; }
 
+.snapshot-layout {
+  align-items: start;
+  display: grid;
+  gap: 14px;
+  grid-template-columns: minmax(280px, .75fr) minmax(0, 1.25fr);
+}
+
+.snapshot-schedule-panel,
+.snapshot-prepare-panel,
+.snapshot-list-panel {
+  padding: 0;
+}
+
+.snapshot-schedule-panel,
+.snapshot-prepare-panel {
+  min-height: 0;
+}
+
+.snapshot-form {
+  align-items: end;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 0 20px 20px;
+}
+
+.snapshot-form label {
+  color: var(--ink-soft);
+  display: flex;
+  flex: 1 1 150px;
+  flex-direction: column;
+  font-size: 11px;
+  font-weight: 700;
+  gap: 6px;
+}
+
+.snapshot-form input {
+  background: var(--panel);
+  border: 1px solid var(--line-strong);
+  border-radius: 7px;
+  color: var(--ink);
+  font-size: 12px;
+  padding: 9px 10px;
+}
+
+.snapshot-form input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-soft);
+  outline: none;
+}
+
+.snapshot-inline-actions {
+  align-items: center;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 10px;
+  gap: 10px;
+  justify-content: space-between;
+  margin: 0 20px;
+  padding: 12px 0 16px;
+}
+
+.snapshot-status,
+.snapshot-batch-status {
+  border-radius: 999px;
+  display: inline-flex;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 5px 8px;
+  white-space: nowrap;
+}
+
+.snapshot-status-not_sent,
+.snapshot-status-draft { background: #f1f4f7; color: #68798e; }
+.snapshot-status-pending { background: #fff5df; color: #a87322; }
+.snapshot-status-matched,
+.snapshot-status-approved { background: #e2f8ef; color: #138468; }
+.snapshot-status-mismatch,
+.snapshot-status-blocked { background: #fff0ef; color: #ad5752; }
+.snapshot-status-paused { background: #f2eef7; color: #785b8e; }
+
+.snapshot-batch-prepared { background: #f1f4f7; color: #68798e; }
+.snapshot-batch-delivering,
+.snapshot-batch-retryable_failure { background: #fff5df; color: #a87322; }
+.snapshot-batch-applied,
+.snapshot-batch-duplicate { background: #e2f8ef; color: #138468; }
+.snapshot-batch-failed { background: #fff0ef; color: #ad5752; }
+
+.snapshot-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0 20px 20px;
+}
+
+.snapshot-card {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 15px;
+}
+
+.snapshot-card-header {
+  align-items: flex-start;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.snapshot-card h3 {
+  color: var(--ink-soft);
+  font-size: 15px;
+  margin: 8px 0 3px;
+}
+
+.snapshot-card-meta,
+.snapshot-card-details {
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.snapshot-count-grid {
+  border-bottom: 1px solid var(--line);
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-top: 13px;
+  padding: 12px 0;
+}
+
+.snapshot-count-grid div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.snapshot-count-grid span {
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.snapshot-count-grid strong {
+  color: var(--ink-soft);
+  font-size: 18px;
+}
+
+.snapshot-card-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  padding-top: 10px;
+}
+
+.snapshot-mismatch-list {
+  background: #fff8f7;
+  border-radius: 7px;
+  color: #a64d47;
+  font-size: 10px;
+  line-height: 1.5;
+  margin: 11px 0 0;
+  padding: 9px 10px 9px 26px;
+}
+
+.snapshot-card-actions {
+  display: flex;
+  margin-top: 12px;
+}
+
 @media (max-width: 1180px) {
   .page-content {
     max-width: none;
@@ -1744,7 +1915,8 @@ a {
   }
 
   .form-grid-two,
-  .leave-inline-form {
+  .leave-inline-form,
+  .snapshot-layout {
     grid-template-columns: 1fr;
   }
 
@@ -1755,6 +1927,14 @@ a {
 
   .leave-card-header {
     flex-direction: column;
+  }
+
+  .snapshot-card-header {
+    flex-direction: column;
+  }
+
+  .snapshot-count-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .leave-days {

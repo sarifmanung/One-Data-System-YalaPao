@@ -12,7 +12,7 @@
 - ใบลาใน Laravel/Vue spike ปัจจุบันยังใช้ `DRAFT → CONFIRMED → CANCELLED/VOID` (legacy เท่านั้น; ไม่ใช่ target state machine)
 - Target leave workflow สำหรับ NestJS/Next.js คือ Paper-first `DRAFT → SUBMITTED → PAPER_APPROVED/PAPER_REJECTED` พร้อม `CANCELLED/VOIDED`, revision, audit และ outbox; draft คำนวณวันแบบ provisional ฝั่ง server ด้วย fixed-decimal/holiday/overlap guard และยังรอ HR Rulebook ก่อนใช้งานจริง
 - Target web มีหน้า `/leave` และ server actions สำหรับสร้าง/ส่ง/ยกเลิกใบลา บันทึกผลจากเอกสารกระดาษ และ void ตาม capability; ยังไม่สร้าง Word/DOCX จนกว่าจะมีแบบฟอร์มมาตรฐาน
-- monthly leave snapshot แบบเต็มงวด มี version, SHA-256 source hash, idempotency, complete-reset payload และ delivery history; target API มีคำสั่ง prepare/deliver แบบ manual แล้ว
+- monthly leave snapshot แบบเต็มงวด มี version, SHA-256 source hash, idempotency, employee rows ครบ scope, reconciliation และ delivery history; target API มีคำสั่ง prepare/deliver และหน้า monitor แล้ว
 - Special-Allowances internal API สำหรับอ่าน master data และรับ leave snapshot
 - Docker Compose สำหรับการพัฒนาแบบมี MySQL แยกฐานข้อมูล
 
@@ -97,8 +97,11 @@ Target One Data API สำหรับ snapshot:
 - `POST /api/v1/integrations/special/leave-snapshots/prepare` — สร้างหรือคืน batch เดิมจาก period/cutoff/source hash
 - `POST /api/v1/integrations/special/leave-snapshots/{batchId}/deliver` — ส่ง batch ที่เตรียมไว้และบันทึกผลการส่ง
 - `GET /api/v1/integrations/special/leave-snapshots/{batchId}` — อ่านสถานะ batch/delivery สำหรับผู้ดูแล
+- `GET /api/v1/integrations/special/leave-snapshots` — อ่านประวัติ batch พร้อม reconciliation summary
+- `GET/POST /api/v1/integrations/special/leave-snapshots/schedules` — อ่านหรือบันทึก monthly schedule ฉบับร่าง
+- `POST /api/v1/integrations/special/leave-snapshots/schedules/{id}/approve|pause` — อนุมัติหรือหยุด schedule
 
-การส่งจริงยังเป็นคำสั่ง manual ใน checkpoint นี้; worker foundation มีแล้วแต่ scheduled delivery ยังปิดไว้ และ reconciliation UI เป็นงานถัดไป.
+หน้า monitor อยู่ที่ `/leave/snapshots`; แสดงจำนวนที่เตรียม/รับจริง, period/version acknowledgement และ mismatch โดยไม่แสดง payload เต็ม. การส่งอัตโนมัติยังปิดเป็นค่าเริ่มต้นและต้องเปิดทั้ง worker/monthly flag กับ schedule ที่สถานะ `APPROVED`.
 
 Target worker foundation มีคำสั่งดังนี้:
 
@@ -106,7 +109,7 @@ Target worker foundation มีคำสั่งดังนี้:
 - `npm run worker -w @onedata/api` — รัน loop ตาม `ONEDATA_WORKER_INTERVAL_MS`
 - Docker Compose ใช้ `--profile worker`; worker และ monthly delivery ปิดเป็นค่าเริ่มต้น ต้องเปิด `ONEDATA_WORKER_ENABLED=true` และ `ONEDATA_LEAVE_SNAPSHOT_MONTHLY_ENABLED=true` แยกกัน
 
-worker จะ retry เฉพาะ delivery ที่ถึงเวลา, ใช้ MySQL named lock กันหลาย instance และ monthly mode จะไม่สร้าง batch ซ้ำเมื่อ period/affiliation มี batch อยู่แล้ว. Reconciliation UI และ policy อนุมัติ schedule ยังต้องทำก่อน production.
+worker จะ retry เฉพาะ delivery ที่ถึงเวลา, ใช้ MySQL named lock กันหลาย instance และ monthly mode จะไม่สร้าง batch ซ้ำเมื่อ period/affiliation มี batch อยู่แล้ว. Monthly mode จะเลือกเฉพาะ affiliation ที่มี schedule `APPROVED`, contract version ตรงกับ configuration และถึง cutoff แล้ว; production ยังต้องผ่าน schedule owner/alerting/UAT approval.
 
 Target API จะ fail-fast หาก `NODE_ENV=production` แต่ขาด database/Portal secret/CORS หรือใช้ development auth/insecure cookie. Cookie-authenticated mutation ต้องมี origin ที่อยู่ใน `CORS_ORIGIN`; API มี security headers, idle session timeout และ per-process rate limit เป็นชั้นป้องกันเบื้องต้น. ก่อนเปิดหลาย replica ต้องเพิ่ม distributed replay/session revocation และ rate limiting ที่ reverse proxy/WAF.
 
@@ -139,5 +142,5 @@ npm run build
 - เชื่อม Portal module manifest/launch URL และจับคู่ organization code จริง
 - ทดสอบข้อมูลจริง 38 รพ.สต. และแก้ mapping บัญชี Portal ↔ บุคลากรให้ครบ
 - ตัดสินใจ/รับรองกฎวันลาและแบบ Word จริงก่อนสร้าง document module
-- เพิ่ม scheduled monthly snapshot ที่ผ่านการอนุมัติ, reconciliation UI และ production alerting (worker/retry foundation มีแล้ว แต่ปิด scheduled delivery เป็นค่าเริ่มต้น)
+- เปิด scheduled monthly snapshot หลัง schedule owner, reconciliation/alerting และ UAT approval ผ่าน (worker/schedule/reconciliation foundation มีแล้ว แต่ปิด scheduled delivery เป็นค่าเริ่มต้น)
 - เพิ่ม module อื่นภายหลัง เช่น จองรถ โดยรักษา module boundary และ data ownership เดิม

@@ -29,6 +29,7 @@ const navigationGroups: NavigationGroup[] = [
       { label: 'พนักงาน', href: '/coming-soon?module=employees', icon: 'users' },
       { label: 'วันหยุด', href: '/coming-soon?module=holidays', icon: 'calendar' },
       { label: 'ลา/ไปราชการ', href: '/leave', icon: 'clipboard', match: '/leave' },
+      { label: 'ติดตามการส่งระบบ ฉ.', href: '/leave/snapshots', icon: 'upload', match: '/leave/snapshots' },
       { label: 'เอกสาร', href: '/coming-soon?module=reports', icon: 'file' },
     ],
   },

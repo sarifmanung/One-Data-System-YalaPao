@@ -11,6 +11,7 @@ import {
   LEAVE_REQUEST_VOID,
   LEAVE_POLICY_MANAGE,
   LEAVE_SNAPSHOT_MANAGE,
+  LEAVE_SNAPSHOT_SCHEDULE_MANAGE,
 } from '@onedata/contracts';
 import type { CurrentUser, OneDataPermission } from '@onedata/contracts';
 
@@ -30,6 +31,7 @@ export const ONE_DATA_PERMISSION_GRANTS = [
   'leave.request.void',
   'leave.policy.manage',
   'leave.snapshot.manage',
+  'leave.snapshot.schedule.manage',
 ] as const satisfies readonly OneDataPermission[];
 
 export type OneDataPermissionGrant =
@@ -71,6 +73,7 @@ const PEOPLE_ADMIN_PERMISSIONS: readonly OneDataPermission[] = [
   AUTHORIZATION_DELEGATED_APPROVER_MANAGE,
   LEAVE_POLICY_MANAGE,
   'leave.snapshot.manage',
+  LEAVE_SNAPSHOT_SCHEDULE_MANAGE,
 ];
 
 const ROLE_PERMISSIONS: Readonly<Record<string, readonly OneDataPermission[] | typeof ONE_DATA_ALL_PERMISSION>> = {
@@ -183,6 +186,7 @@ export function scopeForPermission(
     || permission === AUTHORIZATION_DELEGATED_APPROVER_MANAGE
     || permission === LEAVE_POLICY_MANAGE
     || permission === LEAVE_SNAPSHOT_MANAGE
+    || permission === LEAVE_SNAPSHOT_SCHEDULE_MANAGE
   ) {
     return 'affiliation';
   }

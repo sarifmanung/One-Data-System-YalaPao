@@ -1,4 +1,4 @@
-export const API_CONTRACT_VERSION = '1.3' as const;
+export const API_CONTRACT_VERSION = '1.4' as const;
 
 export const DASHBOARD_VIEW = 'dashboard.view' as const;
 export const EMPLOYEE_PROFILE_READ = 'employee.profile.read' as const;
@@ -12,6 +12,7 @@ export const LEAVE_REQUEST_CANCEL = 'leave.request.cancel' as const;
 export const LEAVE_PAPER_DECISION_RECORD = 'leave.paper-decision.record' as const;
 export const LEAVE_REQUEST_VOID = 'leave.request.void' as const;
 export const LEAVE_SNAPSHOT_MANAGE = 'leave.snapshot.manage' as const;
+export const LEAVE_SNAPSHOT_SCHEDULE_MANAGE = 'leave.snapshot.schedule.manage' as const;
 export const LEAVE_POLICY_MANAGE = 'leave.policy.manage' as const;
 
 export const ONE_DATA_PERMISSIONS = [
@@ -27,6 +28,7 @@ export const ONE_DATA_PERMISSIONS = [
   LEAVE_PAPER_DECISION_RECORD,
   LEAVE_REQUEST_VOID,
   LEAVE_SNAPSHOT_MANAGE,
+  LEAVE_SNAPSHOT_SCHEDULE_MANAGE,
   LEAVE_POLICY_MANAGE,
 ] as const;
 
@@ -180,6 +182,46 @@ export interface LeaveExportBatchSummary {
   createdAt: string;
   updatedAt: string;
   deliveries: LeaveExportDeliverySummary[];
+  reconciliation: LeaveSnapshotReconciliationSummary;
+}
+
+export type LeaveSnapshotReconciliationStatus =
+  | 'NOT_SENT'
+  | 'PENDING'
+  | 'MATCHED'
+  | 'MISMATCH'
+  | 'BLOCKED';
+
+export interface LeaveSnapshotReconciliationSummary {
+  status: LeaveSnapshotReconciliationStatus;
+  localEmployees: number;
+  localLeaveEntries: number;
+  upstreamEmployees: number | null;
+  upstreamLeaveEntries: number | null;
+  periodMatches: boolean | null;
+  versionMatches: boolean | null;
+  employeeCountMatches: boolean | null;
+  leaveEntryCountMatches: boolean | null;
+  upstreamStatus: 'applied' | 'duplicate' | null;
+  upstreamPeriodId: string | null;
+  checkedAt: string | null;
+  mismatchReasons: string[];
+}
+
+export type LeaveSnapshotScheduleStatus = 'DRAFT' | 'APPROVED' | 'PAUSED';
+
+export interface LeaveSnapshotScheduleSummary {
+  id: string;
+  affiliationId: string;
+  mode: 'MONTHLY_PREVIOUS_PERIOD';
+  cutoffDays: number;
+  contractVersion: string;
+  status: LeaveSnapshotScheduleStatus;
+  approvedBy: string | null;
+  approvedAt: string | null;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface IdentityMappingSummary {

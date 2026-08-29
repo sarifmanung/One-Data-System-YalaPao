@@ -22,6 +22,8 @@
 - `POST /api/v1/integrations/special/leave-snapshots/prepare` — สร้าง immutable batch จากใบลา `PAPER_APPROVED` ที่เข้าเงื่อนไข period/cutoff หรือคืน batch เดิมเมื่อ source hash ซ้ำ
 - `POST /api/v1/integrations/special/leave-snapshots/{batchId}/deliver` — ส่ง payload ที่เก็บไว้ไป Special และบันทึก delivery attempt/acknowledgement
 - `GET /api/v1/integrations/special/leave-snapshots/{batchId}` — ตรวจ batch, source hash, จำนวนรายการ และประวัติ delivery
+- `GET /api/v1/integrations/special/leave-snapshots` — ตรวจ batch ล่าสุดพร้อม reconciliation summary
+- `GET/POST /api/v1/integrations/special/leave-snapshots/schedules` และ `POST .../schedules/{id}/approve|pause` — จัดการ monthly schedule แบบมี approval gate
 
 สถานะ batch คือ `PREPARED`, `DELIVERING`, `APPLIED`, `DUPLICATE`, `RETRYABLE_FAILURE` และ `FAILED`. Network/HTTP 408/429/5xx จะเก็บ retry metadata และ worker จะเลือกเฉพาะรายการที่ถึง `nextAttemptAt`; configuration หรือ validation failure จะหยุดเป็น `FAILED` เพื่อให้แก้สาเหตุก่อน. Payload ของ batch immutable หากข้อมูลเปลี่ยนต้องสร้าง snapshot version ใหม่. Worker ใช้ MySQL named lock ต่อ database เพื่อให้มีผู้ส่งจริงเพียง process เดียวในแต่ละรอบ.
 
@@ -114,7 +116,9 @@ Special ตรวจ token แบบ constant-time และตอบ `401` ห�
 
 ### `POST /internal/api/v1/periods/{YYYY-MM}/leave-snapshot`
 
-One Data ส่งเฉพาะใบลาสถานะ `PAPER_APPROVED` ที่ยังมีผล และรวมรายการที่มีผลในเดือนนั้น โดย v1.1 ใช้ **complete reset semantics**: Special จะคำนวณ monthly records ของบุคลากรทั้ง period ใหม่ และถือบุคลากรที่ไม่ปรากฏใน payload ว่าไม่มีวันลา (`0`) การส่งแบบ explicit employee rows ว่างทุกคนอาจเพิ่มใน contract รุ่นถัดไปได้หากต้องการตรวจ scope แบบเข้มขึ้น
+One Data ส่งเฉพาะใบลาสถานะ `PAPER_APPROVED` ที่ยังมีผล และรวมรายการที่มีผลในเดือนนั้น โดย v1.1 ใช้ **complete reset semantics**: Special จะคำนวณ monthly records ของบุคลากรทั้ง period ใหม่และถือบุคลากรที่ไม่มีรายการลาเป็นศูนย์. One Data จึงส่ง employee rows ครบ scope โดยคนที่ไม่มีลาใช้ `leave_entries: []` เพื่อให้จำนวนบุคลากรที่เตรียมและที่ Special ประมวลผลเทียบกันได้. หาก target master data กับ Special ไม่ครอบคลุม scope เดียวกัน reconciliation จะเป็น `MISMATCH` และต้องหยุดตรวจสอบก่อนถือว่ารอบนั้นสำเร็จ.
+
+One Data เก็บ reconciliation จาก acknowledgement ของ Special โดยเทียบ period, snapshot version, จำนวน employee rows และจำนวน leave entries. `source_hash` เป็น hash ที่ One Data คำนวณและเก็บใน batch; source รุ่นปัจจุบันยังไม่ส่ง hash กลับ จึงไม่แสดงว่า hash ปลายทางถูกตรวจเทียบแล้วจนกว่าจะเพิ่ม field ใน contract.
 
 ตัวอย่าง:
 
@@ -200,6 +204,6 @@ One Data ส่งเฉพาะใบลาสถานะ `PAPER_APPROVED` �
 ## ข้อจำกัดที่ยังเปิดไว้
 
 - ต้องกำหนด mapping บัญชี Portal ↔ person และ organization code จริงก่อน pilot
-- ต้องเพิ่ม contract สำหรับ locked-period adjustment และ reconciliation UI
+- ต้องเพิ่ม contract สำหรับ locked-period adjustment/correction และขยาย reconciliation ไปถึง read-through result/report กับ production alerting
 - ต้องยืนยัน rulebook วันลาและเอกสาร Word ก่อนเปิด document module
 - การใช้ `Float` ใน schema เดิมของ Special เป็นข้อจำกัด legacy; One Data ไม่คำนวณสูตร ฉ.10/11 ซ้ำ

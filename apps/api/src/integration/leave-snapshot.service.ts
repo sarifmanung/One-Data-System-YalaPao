@@ -13,6 +13,7 @@ import type {
   CurrentUser,
   LeaveExportBatchSummary,
   LeaveExportDeliverySummary,
+  LeaveSnapshotReconciliationSummary,
 } from '@onedata/contracts';
 import { LEAVE_SNAPSHOT_MANAGE } from '@onedata/contracts';
 import { PrismaService } from '../database/prisma.service';
@@ -169,12 +170,37 @@ function asDeliveryStatus(value: string): LeaveExportDeliverySummary['status'] {
   return value as LeaveExportDeliverySummary['status'];
 }
 
+function recordNumber(value: Record<string, unknown> | null, key: string): number | null {
+  const candidate = value?.[key];
+  return typeof candidate === 'number' && Number.isFinite(candidate) ? candidate : null;
+}
+
+function recordString(value: Record<string, unknown> | null, key: string): string | null {
+  const candidate = value?.[key];
+  return typeof candidate === 'string' && candidate.length > 0 ? candidate : null;
+}
+
 @Injectable()
 export class LeaveSnapshotService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly special: SpecialLeaveSnapshotClient,
   ) {}
+
+  async list(
+    user: CurrentUser,
+    context: TenantContext,
+  ): Promise<LeaveExportBatchSummary[]> {
+    this.assertManagePermission(user);
+    const affiliationId = this.requireAffiliationWorkspace(context);
+    const batches = await this.prisma.leaveExportBatch.findMany({
+      where: { affiliationId },
+      include: { deliveries: { orderBy: { attempt: 'desc' } } },
+      orderBy: [{ period: 'desc' }, { snapshotVersion: 'desc' }],
+      take: 100,
+    });
+    return batches.map((batch) => this.toSummary(batch as BatchWithDeliveries));
+  }
 
   async prepare(
     user: CurrentUser,
@@ -186,26 +212,59 @@ export class LeaveSnapshotService {
     const window = periodWindow(input.period);
     const cutoff = parseCutoff(input.sourceCutoff);
     const contractVersion = this.special.contractVersion();
-    const requests = await this.prisma.leaveRequest.findMany({
-      where: {
-        status: 'PAPER_APPROVED',
-        effectiveAt: { lte: cutoff },
-        startsOn: { lte: window.endsOn },
-        endsOn: { gte: window.startsOn },
-        tenant: { affiliationId },
-      },
-      include: {
-        employee: { select: { sourceSystem: true, sourceId: true } },
-        leaveType: { select: { code: true } },
-        paperResults: {
-          where: { result: 'PAPER_APPROVED' },
-          orderBy: { recordedAt: 'desc' },
-          take: 1,
-          select: { recordedAt: true },
+    const [requests, mappedEmployees] = await Promise.all([
+      this.prisma.leaveRequest.findMany({
+        where: {
+          status: 'PAPER_APPROVED',
+          effectiveAt: { lte: cutoff },
+          startsOn: { lte: window.endsOn },
+          endsOn: { gte: window.startsOn },
+          tenant: { affiliationId },
         },
-      },
-      orderBy: [{ employeeId: 'asc' }, { startsOn: 'asc' }, { id: 'asc' }],
-    });
+        include: {
+          employee: { select: { sourceSystem: true, sourceId: true } },
+          leaveType: { select: { code: true } },
+          paperResults: {
+            where: { result: 'PAPER_APPROVED' },
+            orderBy: { recordedAt: 'desc' },
+            take: 1,
+            select: { recordedAt: true },
+          },
+        },
+        orderBy: [{ employeeId: 'asc' }, { startsOn: 'asc' }, { id: 'asc' }],
+      }),
+      this.prisma.employee.findMany({
+        where: {
+          sourceSystem: SPECIAL_ALLOWANCES_SOURCE_SYSTEM,
+          sourceId: { not: null },
+          memberships: {
+            some: {
+              affiliationId,
+              effectiveFrom: { lte: window.endsOn },
+              OR: [{ effectiveTo: null }, { effectiveTo: { gte: window.startsOn } }],
+            },
+          },
+        },
+        select: { sourceId: true },
+        orderBy: { sourceId: 'asc' },
+      }),
+    ]);
+
+    const grouped = new Map<string, SnapshotCore['employees'][number]['leave_entries']>();
+    for (const employee of mappedEmployees) {
+      if (!employee.sourceId) {
+        continue;
+      }
+      if (grouped.has(employee.sourceId)) {
+        throw new BadRequestException(`Duplicate Special employee mapping ${employee.sourceId}.`);
+      }
+      grouped.set(employee.sourceId, []);
+    }
+    if (grouped.size === 0) {
+      throw new BadRequestException(
+        'No verified Special employee mappings exist for the selected affiliation and period.',
+      );
+    }
 
     const employees = requests.map((request) => {
       const specialEmployeeId = request.employee.sourceSystem === SPECIAL_ALLOWANCES_SOURCE_SYSTEM
@@ -214,6 +273,11 @@ export class LeaveSnapshotService {
       if (!specialEmployeeId) {
         throw new BadRequestException(
           `Effective leave ${request.id} has no verified Special employee mapping.`,
+        );
+      }
+      if (!grouped.has(specialEmployeeId)) {
+        throw new BadRequestException(
+          `Effective leave ${request.id} is outside the verified Special employee scope for this period.`,
         );
       }
 
@@ -256,7 +320,6 @@ export class LeaveSnapshotService {
       return { specialEmployeeId, entry };
     });
 
-    const grouped = new Map<string, SnapshotCore['employees'][number]['leave_entries']>();
     for (const item of employees) {
       const entries = grouped.get(item.specialEmployeeId) ?? [];
       entries.push(item.entry);
@@ -417,8 +480,6 @@ export class LeaveSnapshotService {
           where: { id: batchId },
           data: {
             status,
-            processedEmployees: result.processedEmployees,
-            processedLeaveEntries: result.processedLeaveEntries,
             lastError: null,
           },
         });
@@ -544,6 +605,104 @@ export class LeaveSnapshotService {
         response: asRecord(delivery.response),
         createdAt: delivery.createdAt.toISOString(),
       })),
+      reconciliation: this.reconciliation(batch),
+    };
+  }
+
+  private reconciliation(batch: BatchWithDeliveries): LeaveSnapshotReconciliationSummary {
+    const latestDelivery = batch.deliveries[0];
+    const localEmployees = batch.processedEmployees;
+    const localLeaveEntries = batch.processedLeaveEntries;
+    if (!latestDelivery) {
+      return {
+        status: 'NOT_SENT',
+        localEmployees,
+        localLeaveEntries,
+        upstreamEmployees: null,
+        upstreamLeaveEntries: null,
+        periodMatches: null,
+        versionMatches: null,
+        employeeCountMatches: null,
+        leaveEntryCountMatches: null,
+        upstreamStatus: null,
+        upstreamPeriodId: null,
+        checkedAt: null,
+        mismatchReasons: [],
+      };
+    }
+
+    if (batch.status === 'DELIVERING' || batch.status === 'RETRYABLE_FAILURE') {
+      return {
+        status: 'PENDING',
+        localEmployees,
+        localLeaveEntries,
+        upstreamEmployees: null,
+        upstreamLeaveEntries: null,
+        periodMatches: null,
+        versionMatches: null,
+        employeeCountMatches: null,
+        leaveEntryCountMatches: null,
+        upstreamStatus: null,
+        upstreamPeriodId: null,
+        checkedAt: latestDelivery.createdAt.toISOString(),
+        mismatchReasons: [],
+      };
+    }
+
+    if (batch.status === 'FAILED') {
+      return {
+        status: 'BLOCKED',
+        localEmployees,
+        localLeaveEntries,
+        upstreamEmployees: null,
+        upstreamLeaveEntries: null,
+        periodMatches: null,
+        versionMatches: null,
+        employeeCountMatches: null,
+        leaveEntryCountMatches: null,
+        upstreamStatus: null,
+        upstreamPeriodId: null,
+        checkedAt: latestDelivery.createdAt.toISOString(),
+        mismatchReasons: ['Delivery failed and requires operator review before another attempt.'],
+      };
+    }
+
+    const response = asRecord(latestDelivery.response);
+    const upstreamStatus = recordString(response, 'status');
+    const normalizedStatus = upstreamStatus === 'applied' || upstreamStatus === 'duplicate'
+      ? upstreamStatus
+      : null;
+    const upstreamPeriod = recordString(response, 'period');
+    const upstreamVersion = recordNumber(response, 'snapshotVersion');
+    const upstreamEmployees = recordNumber(response, 'processedEmployees');
+    const upstreamLeaveEntries = recordNumber(response, 'processedLeaveEntries');
+    const periodMatches = upstreamPeriod === null ? null : upstreamPeriod === batch.period;
+    const versionMatches = upstreamVersion === null ? null : upstreamVersion === batch.snapshotVersion;
+    const employeeCountMatches = upstreamEmployees === null ? null : upstreamEmployees === localEmployees;
+    const leaveEntryCountMatches = upstreamLeaveEntries === null
+      ? null
+      : upstreamLeaveEntries === localLeaveEntries;
+    const mismatchReasons: string[] = [];
+    if (!normalizedStatus) mismatchReasons.push('Special acknowledgement status is missing or invalid.');
+    if (periodMatches !== true) mismatchReasons.push('Special acknowledgement period does not match the batch.');
+    if (versionMatches !== true) mismatchReasons.push('Special acknowledgement snapshot version does not match the batch.');
+    if (employeeCountMatches !== true) mismatchReasons.push('Processed employee count differs from the prepared snapshot.');
+    if (leaveEntryCountMatches !== true) mismatchReasons.push('Processed leave-entry count differs from the prepared snapshot.');
+
+    return {
+      status: mismatchReasons.length === 0 ? 'MATCHED' : 'MISMATCH',
+      localEmployees,
+      localLeaveEntries,
+      upstreamEmployees,
+      upstreamLeaveEntries,
+      periodMatches,
+      versionMatches,
+      employeeCountMatches,
+      leaveEntryCountMatches,
+      upstreamStatus: normalizedStatus,
+      upstreamPeriodId: recordString(response, 'periodId'),
+      checkedAt: (latestDelivery.sentAt ?? latestDelivery.createdAt).toISOString(),
+      mismatchReasons,
     };
   }
 

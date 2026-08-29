@@ -25,6 +25,14 @@ type AffiliationRow = {
   name: string;
 };
 
+type ApprovedScheduleRow = {
+  id: string;
+  affiliationId: string;
+  cutoffDays: number;
+  contractVersion: string;
+  affiliation: AffiliationRow;
+};
+
 const WORKER_LOCK_NAME = 'onedata:leave-snapshot-worker';
 const DEFAULT_BATCH_SIZE = 10;
 const DEFAULT_INTERVAL_MS = 60_000;
@@ -154,14 +162,26 @@ export class LeaveSnapshotWorkerService {
   private async prepareAndDeliverMonthly(report: LeaveSnapshotWorkerReport): Promise<void> {
     const now = new Date();
     const period = this.periodForRun();
-    const cutoff = this.cutoffForRun(period);
-    if (now < cutoff) {
+
+    const schedules = await this.approvedSchedules();
+    if (schedules.length === 0) {
       report.monthlySkipped += 1;
       return;
     }
 
-    const affiliations = await this.activeAffiliations();
-    for (const affiliation of affiliations) {
+    const configuredContractVersion = this.config.get<string>(
+      'SPECIAL_ALLOWANCES_LEAVE_CONTRACT_VERSION',
+      '1.0',
+    ).trim() || '1.0';
+    for (const schedule of schedules) {
+      const affiliation = schedule.affiliation;
+      if (schedule.contractVersion !== configuredContractVersion) {
+        report.errors.push({
+          affiliationId: affiliation.id,
+          message: 'Approved snapshot schedule contract version does not match the configured Special contract.',
+        });
+        continue;
+      }
       const existing = await this.prisma.leaveExportBatch.findFirst({
         where: { affiliationId: affiliation.id, period },
         select: { id: true, status: true },
@@ -174,9 +194,14 @@ export class LeaveSnapshotWorkerService {
       const user = this.workerUser(affiliation);
       const context = this.affiliationContext(affiliation);
       try {
+        const scheduleCutoff = this.cutoffForRun(period, schedule.cutoffDays);
+        if (now < scheduleCutoff) {
+          report.monthlySkipped += 1;
+          continue;
+        }
         const batch = await this.snapshots.prepare(user, context, {
           period,
-          sourceCutoff: cutoff.toISOString(),
+          sourceCutoff: scheduleCutoff.toISOString(),
         });
         report.monthlyPrepared += 1;
         await this.snapshots.deliver(user, context, batch.id);
@@ -187,15 +212,23 @@ export class LeaveSnapshotWorkerService {
     }
   }
 
-  private async activeAffiliations(): Promise<AffiliationRow[]> {
+  private async approvedSchedules(): Promise<ApprovedScheduleRow[]> {
     const configured = this.config.get<string>('ONEDATA_LEAVE_SNAPSHOT_AFFILIATION_ID')?.trim();
-    return this.prisma.affiliation.findMany({
+    return this.prisma.leaveSnapshotSchedule.findMany({
       where: {
-        status: 'ACTIVE',
-        ...(configured ? { id: configured } : {}),
+        status: 'APPROVED',
+        mode: 'MONTHLY_PREVIOUS_PERIOD',
+        ...(configured ? { affiliationId: configured } : {}),
+        affiliation: { status: 'ACTIVE' },
       },
-      orderBy: { id: 'asc' },
-      select: { id: true, code: true, name: true },
+      orderBy: { affiliationId: 'asc' },
+      select: {
+        id: true,
+        affiliationId: true,
+        cutoffDays: true,
+        contractVersion: true,
+        affiliation: { select: { id: true, code: true, name: true } },
+      },
     });
   }
 
@@ -263,20 +296,20 @@ export class LeaveSnapshotWorkerService {
     return previousMonthPeriod(new Date());
   }
 
-  private cutoffForRun(period: string): Date {
-    const configured = this.config.get<string>('ONEDATA_LEAVE_SNAPSHOT_SOURCE_CUTOFF')?.trim();
-    if (configured) {
-      const cutoff = new Date(configured);
+  private cutoffForRun(period: string, scheduleCutoffDays: number): Date {
+    const configuredCutoff = this.config.get<string>('ONEDATA_LEAVE_SNAPSHOT_SOURCE_CUTOFF')?.trim();
+    if (configuredCutoff) {
+      const cutoff = new Date(configuredCutoff);
       if (Number.isNaN(cutoff.getTime())) {
         throw new Error('ONEDATA_LEAVE_SNAPSHOT_SOURCE_CUTOFF must be a valid ISO timestamp.');
       }
       return cutoff;
     }
 
-    const configuredDays = Number(this.config.get<string>(
-      'ONEDATA_LEAVE_SNAPSHOT_CUTOFF_DAYS',
-      String(DEFAULT_CUTOFF_DAYS),
-    ));
+    const configuredDaysRaw = this.config.get<string>('ONEDATA_LEAVE_SNAPSHOT_CUTOFF_DAYS')?.trim();
+    const configuredDays = configuredDaysRaw === undefined || configuredDaysRaw === ''
+      ? scheduleCutoffDays
+      : Number(configuredDaysRaw);
     const days = Number.isFinite(configuredDays) && configuredDays >= 0
       ? Math.min(Math.floor(configuredDays), 31)
       : DEFAULT_CUTOFF_DAYS;

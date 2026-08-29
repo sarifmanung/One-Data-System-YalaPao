@@ -21,6 +21,7 @@ model Affiliation {
   policyProfiles      LeavePolicyProfile[]
   holidays            Holiday[]
   leaveExportBatches  LeaveExportBatch[]
+  leaveSnapshotSchedules LeaveSnapshotSchedule[]
 
   @@unique([sourceSystem, sourceId])
 }
@@ -339,6 +340,24 @@ model LeaveExportBatch {
   @@unique([affiliationId, period, snapshotVersion])
   @@unique([affiliationId, period, sourceHash])
   @@index([affiliationId, period, status])
+}
+
+model LeaveSnapshotSchedule {
+  id              String      @id @db.VarChar(36)
+  affiliationId   String      @db.VarChar(36)
+  mode            String      @default("MONTHLY_PREVIOUS_PERIOD") @db.VarChar(40)
+  cutoffDays      Int         @default(3)
+  contractVersion String      @db.VarChar(16)
+  status          String      @default("DRAFT") @db.VarChar(32)
+  approvedBy      String?     @db.VarChar(128)
+  approvedAt      DateTime?
+  createdBy       String      @db.VarChar(128)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  affiliation     Affiliation @relation(fields: [affiliationId], references: [id])
+
+  @@unique([affiliationId, mode])
+  @@index([status, affiliationId])
 }
 
 model LeaveExportDelivery {

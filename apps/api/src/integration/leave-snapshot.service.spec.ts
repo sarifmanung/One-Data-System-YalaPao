@@ -101,6 +101,7 @@ describe('LeaveSnapshotService', () => {
     const storedBatch = batch();
     const prisma = {
       leaveRequest: { findMany: jest.fn().mockResolvedValue([approvedLeave()]) },
+      employee: { findMany: jest.fn().mockResolvedValue([{ sourceId: 'special-employee-1' }]) },
       leaveExportBatch: { findFirst: jest.fn().mockResolvedValue(storedBatch) },
       $transaction: jest.fn().mockImplementation(
         async (callback: (transaction: unknown) => unknown) => callback(tx),
@@ -156,6 +157,7 @@ describe('LeaveSnapshotService', () => {
     };
     const prisma = {
       leaveRequest: { findMany: jest.fn().mockResolvedValue([approvedLeave()]) },
+      employee: { findMany: jest.fn().mockResolvedValue([{ sourceId: 'special-employee-1' }]) },
       leaveExportBatch: { findFirst: jest.fn().mockResolvedValue(batch()) },
       $transaction: jest.fn().mockImplementation(
         async (callback: (transaction: unknown) => unknown) => callback(tx),
@@ -183,6 +185,7 @@ describe('LeaveSnapshotService', () => {
           approvedLeave({ employee: { sourceSystem: 'seed', sourceId: 'employee-1' } }),
         ]),
       },
+      employee: { findMany: jest.fn().mockResolvedValue([{ sourceId: 'special-employee-1' }]) },
       $transaction: jest.fn(),
     };
     const client = { contractVersion: jest.fn().mockReturnValue('1.0') };
@@ -248,6 +251,15 @@ describe('LeaveSnapshotService', () => {
     const result = await snapshotService(prisma, client).deliver(user(), context, 'batch-1');
 
     expect(result.status).toBe('APPLIED');
+    expect(result.reconciliation).toMatchObject({
+      status: 'MATCHED',
+      localEmployees: 1,
+      localLeaveEntries: 1,
+      upstreamEmployees: 1,
+      upstreamLeaveEntries: 1,
+      periodMatches: true,
+      versionMatches: true,
+    });
     expect(client.send).toHaveBeenCalledWith(prepared.payload);
     expect(tx.leaveExportDelivery.update).toHaveBeenCalledWith(expect.objectContaining({
       data: expect.objectContaining({ status: 'APPLIED', httpStatus: 200 }),
@@ -285,5 +297,42 @@ describe('LeaveSnapshotService', () => {
     expect(tx.leaveExportBatch.update).toHaveBeenLastCalledWith(expect.objectContaining({
       data: expect.objectContaining({ status: 'RETRYABLE_FAILURE' }),
     }));
+  });
+
+  it('marks a delivered batch as mismatched when the upstream counts differ', async () => {
+    const stored = batch({
+      status: 'APPLIED',
+      deliveries: [{
+        id: 'delivery-1',
+        attempt: 1,
+        status: 'APPLIED',
+        httpStatus: 200,
+        retryable: false,
+        nextAttemptAt: null,
+        sentAt: new Date('2026-08-29T08:01:00.000Z'),
+        lastError: null,
+        response: {
+          status: 'applied',
+          periodId: 'special-period-1',
+          period: '2026-08',
+          snapshotVersion: 1,
+          processedEmployees: 2,
+          processedLeaveEntries: 0,
+        },
+        createdAt: new Date('2026-08-29T08:00:10.000Z'),
+      }],
+    });
+    const prisma = {
+      leaveExportBatch: { findFirst: jest.fn().mockResolvedValue(stored) },
+    };
+
+    const result = await snapshotService(prisma, {}).getBatch(user(), context, 'batch-1');
+
+    expect(result.reconciliation).toMatchObject({
+      status: 'MISMATCH',
+      employeeCountMatches: false,
+      leaveEntryCountMatches: false,
+    });
+    expect(result.reconciliation.mismatchReasons).toHaveLength(2);
   });
 });
