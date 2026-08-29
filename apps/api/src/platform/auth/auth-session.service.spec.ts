@@ -23,6 +23,7 @@ describe('AuthSessionService', () => {
       update: jest.fn(),
       updateMany: jest.fn(),
     };
+    const auditEvent = { create: jest.fn().mockResolvedValue({}) };
     const externalIdentityMapping = {
       findFirst: jest.fn().mockResolvedValue({
         employee: {
@@ -43,7 +44,15 @@ describe('AuthSessionService', () => {
         },
       ]),
     };
-    const prisma = { authSession, externalIdentityMapping, employmentMembership } as never;
+    const prisma = {
+      authSession,
+      auditEvent,
+      externalIdentityMapping,
+      employmentMembership,
+      $transaction: jest.fn().mockImplementation(async (callback: (tx: unknown) => unknown) => (
+        callback({ authSession, auditEvent })
+      )),
+    } as never;
     const config = new ConfigService({
       NODE_ENV: 'development',
       ONEDATA_SESSION_TTL_SECONDS: '3600',
@@ -53,6 +62,7 @@ describe('AuthSessionService', () => {
     return {
       service: new AuthSessionService(prisma, config),
       authSession,
+      auditEvent,
       externalIdentityMapping,
       employmentMembership,
     };
@@ -93,6 +103,9 @@ describe('AuthSessionService', () => {
       'leave.request.create',
       'leave.request.submit',
     ]));
+    expect(fixture.auditEvent.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ action: 'AUTH_LOGIN', resourceType: 'AuthSession' }),
+    }));
   });
 
   it('resolves a cookie session and revokes it without exposing the raw token', async () => {
@@ -129,6 +142,10 @@ describe('AuthSessionService', () => {
     expect(revokeCall.where).toMatchObject({ tokenHash: expect.stringMatching(/^[a-f0-9]{64}$/) });
     expect(revokeCall.where.tokenHash).not.toBe('raw-session-token');
     expect(revokeCall.data.revokedAt).toEqual(expect.any(Date));
+    expect(revokeCall.data.revokedReason).toBe('LOGOUT');
+    expect(fixture.auditEvent.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ action: 'AUTH_LOGOUT' }),
+    }));
   });
 
   it('revokes an idle session before rebuilding its current user', async () => {
@@ -154,9 +171,57 @@ describe('AuthSessionService', () => {
     await expect(fixture.service.userFromRequest(request)).resolves.toBeNull();
     expect(fixture.authSession.updateMany).toHaveBeenCalledWith({
       where: { id: 'idle-session-1', revokedAt: null },
-      data: { revokedAt: expect.any(Date) },
+      data: { revokedAt: expect.any(Date), revokedReason: 'IDLE_TIMEOUT' },
     });
+    expect(fixture.auditEvent.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ action: 'AUTH_SESSION_REVOKED' }),
+    }));
     expect(fixture.externalIdentityMapping.findFirst).not.toHaveBeenCalled();
+  });
+
+  it('rotates an active session atomically without extending its absolute expiry', async () => {
+    const fixture = createFixture();
+    const expiresAt = new Date(Date.now() + 3_600_000);
+    fixture.authSession.findUnique.mockResolvedValue({
+      id: 'session-1',
+      externalSystem: 'yala-pao-public-health-portal',
+      externalSubject: 'portal-user-1',
+      username: 'portal.user',
+      displayName: 'Portal User',
+      roles: ['pcu_staff'],
+      permissions: ['dashboard.view'],
+      expiresAt,
+      lastSeenAt: new Date(Date.now() - 60_000),
+      revokedAt: null,
+    });
+    fixture.authSession.updateMany.mockResolvedValue({ count: 1 });
+    fixture.authSession.create.mockResolvedValue({ id: 'replacement-session' });
+
+    const request = {
+      cookies: { onedata_session: 'raw-session-token' },
+      get: jest.fn().mockReturnValue(undefined),
+    } as unknown as Request;
+    const rotated = await fixture.service.rotateFromRequest(request);
+
+    expect(rotated.token).not.toBe('raw-session-token');
+    expect(rotated.expiresAt).toBe(expiresAt);
+    expect(fixture.authSession.updateMany).toHaveBeenCalledWith({
+      where: {
+        id: 'session-1',
+        tokenHash: expect.stringMatching(/^[a-f0-9]{64}$/),
+        revokedAt: null,
+      },
+      data: { revokedAt: expect.any(Date), revokedReason: 'ROTATED' },
+    });
+    expect(fixture.authSession.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({
+        tokenHash: expect.stringMatching(/^[a-f0-9]{64}$/),
+        expiresAt,
+      }),
+    }));
+    expect(fixture.auditEvent.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ action: 'AUTH_SESSION_ROTATED' }),
+    }));
   });
 
   it('does not create a session for an unmapped Portal account', async () => {

@@ -18,7 +18,7 @@
 - `packages/contracts`: shared TypeScript contract v1.4, capability permissions, leave snapshot reconciliation/schedule summaries และ fixture ที่ห้ามส่ง `CONFIRMED`
 - `docker-compose.target.yml`: API/web แยกจาก compose เดิมบนพอร์ต `3100/3101`
 - worker command ใน API image: database lock, retry due delivery และ optional monthly prepare/deliver; target Compose เปิดผ่าน profile `worker` และปิดงานด้วย `ONEDATA_WORKER_ENABLED=false` เป็นค่าเริ่มต้น
-- production guard foundation: fail-fast environment validation, idle session timeout, secure cookie requirement, mutation origin check, API security headers และ in-memory rate limit; distributed replay/session revocation และ edge/shared rate limiting ยังต้องทำก่อนหลาย replica
+- production guard foundation: fail-fast environment validation, idle session timeout, secure cookie requirement, mutation origin check, explicit trusted-proxy policy, API security headers, database-backed launch-token replay/session revocation, session rotation, maintenance cleanup และ in-memory rate limit; edge/shared rate limiting ยังต้องทำก่อนหลาย replica
 - automated checks: contracts/API/web typecheck, API unit/e2e smoke tests, target production build และ legacy Vite build
 
 สิ่งที่ยังไม่เปิดใช้จริงใน checkpoint นี้คือ staging/production migration baseline approval, backup/restore rehearsal, production real-data reconciliation, permission scope matrix แบบละเอียดครบทุกโมดูล/owner sign-off และ production schedule approval. มี initial Prisma migration, production Compose template และ [deployment runbook](docs/DEPLOYMENT_RUNBOOK.md) แล้ว และตรวจ deploy/status กับ MySQL ชั่วคราวแล้ว แต่ยังไม่ถือเป็น production sign-off. Special-Allowances leave adapter และ worker รุ่นแรกมีแล้วในระดับ local integration foundation: prepare complete snapshot ที่มี employee rows ครบ scope, เก็บ immutable batch, ส่งผ่าน service token, idempotency/source hash, delivery history, reconciliation summary, retry metadata, database lock, schedule approval gate และ optional monthly orchestration; ค่า worker และ monthly delivery ยังปิดเป็นค่าเริ่มต้นและยังไม่ทำ real-data cutover. Local session exchange, session guard, Portal-to-One Data capability mapping, operation scope matrix รุ่นแรก (`self`/`tenant`/`affiliation`), delegated approver assignment foundation, route permission guard และ master-data projection boundary มีแล้วในระดับ development/integration foundation; local real-data shadow import ผ่านกับ 38 หน่วยงาน/267 บุคลากร/43 users แล้ว พร้อม source-user projection และ mapping reconciliation report แต่ยังไม่มี user-to-employee mapping ที่ยืนยันจาก source และยังไม่มี production acceptance.
@@ -154,20 +154,20 @@ Portal เป็นผู้ยืนยันตัวตนและอนุ�
 1. ผู้ใช้ Login ที่ Portal
 2. Portal ตรวจ module access
 3. Portal สร้าง signed launch token อายุสั้นพร้อม `iss`, `aud`, `sub`, `exp`, organization context และ `return_to`
-4. One Data ตรวจ signature, issuer, audience, expiration และ replay
+4. One Data ตรวจ signature, issuer, audience, expiration และ replay โดยบันทึก `jti` แบบ durable/atomic ในฐานข้อมูล
 5. One Data map `portal_user_id`/`sub` กับ local identity และ employee/person
 6. One Data สร้าง local secure session และประเมิน tenant/role/permission ทุก request
 
 ข้อกำหนดด้านความปลอดภัย:
 
 - Launch token ไม่ใช้เป็น long-lived API token
-- มี replay protection หรือ one-time token identifier
+- มี replay protection แบบ durable/atomic ด้วย one-time `jti`; API replica ทุกตัวใช้ store เดียวกัน
 - ใช้ immutable external ID ในการจับคู่บัญชี
 - ไม่จับคู่ด้วยชื่อ เบอร์โทรศัพท์ หรือเลขประจำตัวประชาชนเพียงอย่างเดียว
 - Role จาก Portal ไม่ถูกใช้แทน permission ภายใน One Data โดยอัตโนมัติ ต้องมี explicit mapping
 - One Data ใช้ deny-by-default และตรวจ permission ฝั่ง Server
 - Cookie-authenticated mutation ต้องผ่าน allowed `Origin`/`Referer` ใน production; Next.js server actions ส่ง public web origin ให้ API เพื่อให้ same-origin server-to-server flow ผ่าน policy
-- API ใส่ baseline security headers และจำกัด auth/mutation request rate; in-memory limiter เป็น defense-in-depth ของแต่ละ process ไม่ใช่ตัวแทน distributed gateway/WAF
+- API ใส่ baseline security headers, trusted-proxy allowlist และจำกัด auth/mutation request rate; session/replay cleanup ทำผ่าน restricted worker ส่วน in-memory limiter เป็น defense-in-depth ของแต่ละ process ไม่ใช่ตัวแทน distributed gateway/WAF
 
 ## 8. Leave Workflow for the First Release
 

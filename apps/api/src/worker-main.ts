@@ -1,11 +1,13 @@
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+import { AuthMaintenanceService } from './platform/auth/auth-maintenance.service';
 import { LeaveSnapshotWorkerService } from './worker/leave-snapshot-worker.service';
 
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.createApplicationContext(AppModule, { bufferLogs: true });
   const worker = app.get(LeaveSnapshotWorkerService);
+  const authMaintenance = app.get(AuthMaintenanceService);
   const once = process.argv.includes('--once');
 
   if (!once && !worker.isEnabled()) {
@@ -21,7 +23,9 @@ async function bootstrap(): Promise<void> {
     }
     running = true;
     try {
-      console.log(JSON.stringify(await worker.runOnce()));
+      const snapshot = await worker.runOnce();
+      const auth = await authMaintenance.cleanupExpired();
+      console.log(JSON.stringify({ snapshot, auth }));
       return true;
     } catch (error) {
       console.error(error);

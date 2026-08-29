@@ -7,6 +7,8 @@
 - มี `ONEDATA_TARGET_API_IMAGE`, `ONEDATA_TARGET_WEB_IMAGE` และ `APP_VERSION` ที่ระบุ commit เดียวกัน.
 - มี `ONEDATA_TARGET_DATABASE_URL` สำหรับฐานข้อมูล One Data และยืนยันว่าไม่มี application อื่นใช้ database user นี้.
 - ตั้ง Portal issuer/audience/secret, `CORS_ORIGIN`/`ONEDATA_PUBLIC_WEB_URL`, Special URL/token และ session cookie เป็น HTTPS/secure.
+- ตั้ง `ONEDATA_TRUST_PROXY` เป็นรายการ IP/CIDR ของ reverse proxy ที่ตรวจสอบแล้วเท่านั้น; ห้ามใช้ `true`, `*` หรือจำนวน hop ใน production.
+- กำหนด `ONEDATA_AUTH_RETENTION_SECONDS` ตามนโยบายเก็บหลักฐาน session/replay และเตรียม restricted worker/cron สำหรับ cleanup.
 - ตรวจว่า `ONEDATA_DEV_AUTH_ENABLED=false`, `ONEDATA_PROCESS_ROLE=api` ใน API และ `ONEDATA_PROCESS_ROLE=worker` ใน worker.
 - backup และทดสอบ restore ล่าสุดผ่านเกณฑ์; ตรวจ migration status บน staging ก่อน production.
 - ยืนยันว่า `Special-Allowances` period ที่จะรับ snapshot เป็น `NORMAL/OPEN`, contract version ตรงกับ source และมี owner ของ cutoff/schedule; หากเปิด monthly worker ต้องมี schedule ของ affiliation สถานะ `APPROVED`.
@@ -28,6 +30,8 @@ DATABASE_URL="$ONEDATA_TARGET_DATABASE_URL" npm run target:db:migrate
 3. ตรวจ count/hash ของตารางและ foreign key/index สำคัญ
 4. ใช้ `prisma migrate resolve --applied 20260829210000_initial_target_schema` เฉพาะเมื่อ schema ตรงกับ migration จริงเท่านั้น
 5. รัน `prisma migrate status` และ deploy บน staging ก่อนเปิด application
+
+Migration ล่าสุดเพิ่ม `PortalLaunchReplay` สำหรับ durable/atomic `jti` consumption และ `AuthSession.revokedReason`; ต้อง deploy migration นี้ก่อนเปิด Portal exchange หลาย replica.
 
 Migration เป็น forward-only. หาก release ใหม่มีปัญหา ให้ rollback image/application และทำ corrective migration ที่ review แล้ว; ห้ามลบ migration หรือเดา down migration กับข้อมูลราชการ.
 
@@ -58,8 +62,16 @@ Worker เปิดใช้งานด้วย `--profile worker` และ `
 ## 5. Operational checks
 
 - API liveness/readiness, database connection และ container restart count
-- auth 401/403/429 rate, session revoke/idle expiry และ origin rejection
+- auth 401/403/429 rate, durable replay rejection, session revoke/idle expiry/rotation และ origin rejection
 - People sync run status, unmapped employee count และ leave snapshot batch status
 - delivery `RETRYABLE_FAILURE`/`FAILED`, locked-period responses, reconciliation `MISMATCH/BLOCKED`, source hash/row-count mismatch และ schedule ที่หมดอายุ/ถูก pause
 - worker lock contention, run duration, last successful retry/monthly run และ alertเมื่อไม่มี successful run ตาม SLA
+- auth maintenance run และจำนวน session/replay ที่ cleanup ได้; หาก cleanup ล้มเหลวต้องแจ้งเตือนโดยไม่ log token หรือ session payload
 - ห้าม log raw token, password, cookie, เลขบัตร, เบอร์โทรศัพท์ หรือ payload ใบลาครบชุด
+
+## 6. Auth session operations
+
+- Portal launch `jti` ถูกเก็บใน `PortalLaunchReplay` ด้วย unique key เดียวกันทุก API replica; การตรวจ replay ต้องผ่านฐานข้อมูลเดียวกัน ห้ามเปลี่ยน production provider กลับเป็น in-memory guard.
+- `POST /api/v1/auth/rotate` หมุน opaque session cookie แบบ atomic โดย revoke session เดิมและคง absolute expiry เดิม; ใช้เมื่อมีรอบ session rotation หรือหลัง policy/permission เปลี่ยน.
+- รัน `npm run worker:once -w @onedata/api` จาก restricted worker/cron เพื่อทำ leave worker และลบ authentication material ที่หมดอายุ; หากต้องการ cleanup อย่างเดียวให้ตั้ง worker mode/feature flags ไม่ให้ทำ monthly delivery และตรวจ log report ก่อนเปิด process.
+- การ revoke role/membership จาก Portal ต้องมีขั้นตอน revoke session ของ subject และยืนยันด้วย request ถัดไป; ระบบจะ revoke session เมื่อ mapping/employee ไม่ active แต่การ propagation แบบ push จาก Portal ยังเป็นงาน integration ถัดไป.

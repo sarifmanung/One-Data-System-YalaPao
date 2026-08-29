@@ -1,4 +1,4 @@
-import { ForbiddenException, Injectable } from '@nestjs/common';
+import { ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import type { CookieOptions, Request, Response } from 'express';
@@ -60,20 +60,33 @@ export class AuthSessionService {
     const issuedAt = new Date();
     const expiresAt = new Date(issuedAt.getTime() + this.sessionTtlSeconds() * 1_000);
 
-    await this.prisma.authSession.create({
-      data: {
-        id: randomUUID(),
-        tokenHash: tokenHash(token),
-        externalSystem: PORTAL_EXTERNAL_SYSTEM,
-        externalSubject: fields.externalSubject,
-        username: user.username,
-        displayName: user.displayName,
-        roles: user.roles,
-        permissions: user.permissions,
-        issuedAt,
-        expiresAt,
-        lastSeenAt: issuedAt,
-      },
+    await this.prisma.$transaction(async (tx) => {
+      const session = await tx.authSession.create({
+        data: {
+          id: randomUUID(),
+          tokenHash: tokenHash(token),
+          externalSystem: PORTAL_EXTERNAL_SYSTEM,
+          externalSubject: fields.externalSubject,
+          username: user.username,
+          displayName: user.displayName,
+          roles: user.roles,
+          permissions: user.permissions,
+          issuedAt,
+          expiresAt,
+          lastSeenAt: issuedAt,
+        },
+      });
+
+      await tx.auditEvent.create({
+        data: {
+          id: randomUUID(),
+          action: 'AUTH_LOGIN',
+          actorId: fields.externalSubject,
+          resourceType: 'AuthSession',
+          resourceId: session.id,
+          metadata: { externalSystem: PORTAL_EXTERNAL_SYSTEM },
+        },
+      });
     });
 
     return { token, user, expiresAt };
@@ -97,8 +110,9 @@ export class AuthSessionService {
     if (session.lastSeenAt.getTime() + this.sessionIdleTimeoutSeconds() * 1_000 <= now.getTime()) {
       await this.prisma.authSession.updateMany({
         where: { id: session.id, revokedAt: null },
-        data: { revokedAt: now },
+        data: { revokedAt: now, revokedReason: 'IDLE_TIMEOUT' },
       });
+      await this.recordSessionEvent(session.id, session.externalSubject, 'AUTH_SESSION_REVOKED', 'IDLE_TIMEOUT');
       return null;
     }
 
@@ -121,8 +135,14 @@ export class AuthSessionService {
       if (error instanceof ForbiddenException) {
         await this.prisma.authSession.updateMany({
           where: { id: session.id, revokedAt: null },
-          data: { revokedAt: now },
+          data: { revokedAt: now, revokedReason: 'IDENTITY_NOT_ACTIVE' },
         });
+        await this.recordSessionEvent(
+          session.id,
+          session.externalSubject,
+          'AUTH_SESSION_REVOKED',
+          'IDENTITY_NOT_ACTIVE',
+        );
         return null;
       }
       throw error;
@@ -135,10 +155,105 @@ export class AuthSessionService {
       return;
     }
 
-    await this.prisma.authSession.updateMany({
-      where: { tokenHash: tokenHash(token), revokedAt: null },
-      data: { revokedAt: new Date() },
+    const session = await this.prisma.authSession.findUnique({
+      where: { tokenHash: tokenHash(token) },
+      select: { id: true, externalSubject: true },
     });
+    const result = await this.prisma.authSession.updateMany({
+      where: { tokenHash: tokenHash(token), revokedAt: null },
+      data: { revokedAt: new Date(), revokedReason: 'LOGOUT' },
+    });
+    if (session && result.count > 0) {
+      await this.recordSessionEvent(session.id, session.externalSubject, 'AUTH_LOGOUT', 'LOGOUT');
+    }
+  }
+
+  async revokeAllForExternalSubject(
+    externalSubject: string,
+    reason = 'IDENTITY_REVOKED',
+  ): Promise<number> {
+    const result = await this.prisma.authSession.updateMany({
+      where: {
+        externalSystem: PORTAL_EXTERNAL_SYSTEM,
+        externalSubject,
+        revokedAt: null,
+      },
+      data: { revokedAt: new Date(), revokedReason: reason },
+    });
+    if (result.count > 0) {
+      await this.recordSessionEvent(null, externalSubject, 'AUTH_SESSIONS_REVOKED', reason, result.count);
+    }
+    return result.count;
+  }
+
+  async rotateFromRequest(request: Request): Promise<CreatedAuthSession> {
+    const token = this.tokenFromRequest(request);
+    if (!token) {
+      throw new UnauthorizedException('An active session is required for rotation.');
+    }
+
+    const session = await this.prisma.authSession.findUnique({
+      where: { tokenHash: tokenHash(token) },
+    });
+    const now = new Date();
+    if (!session || session.revokedAt !== null || session.expiresAt <= now) {
+      throw new UnauthorizedException('The session is no longer active.');
+    }
+    if (session.lastSeenAt.getTime() + this.sessionIdleTimeoutSeconds() * 1_000 <= now.getTime()) {
+      await this.prisma.authSession.updateMany({
+        where: { id: session.id, revokedAt: null },
+        data: { revokedAt: now, revokedReason: 'IDLE_TIMEOUT' },
+      });
+      await this.recordSessionEvent(session.id, session.externalSubject, 'AUTH_SESSION_REVOKED', 'IDLE_TIMEOUT');
+      throw new UnauthorizedException('The session has expired due to inactivity.');
+    }
+
+    const user = await this.buildCurrentUser({
+      externalSubject: session.externalSubject,
+      username: session.username,
+      displayName: session.displayName,
+      roles: stringArray(session.roles),
+      permissions: stringArray(session.permissions),
+    });
+    const rotatedToken = randomBytes(32).toString('base64url');
+
+    await this.prisma.$transaction(async (tx) => {
+      const revoked = await tx.authSession.updateMany({
+        where: { id: session.id, tokenHash: tokenHash(token), revokedAt: null },
+        data: { revokedAt: now, revokedReason: 'ROTATED' },
+      });
+      if (revoked.count !== 1) {
+        throw new UnauthorizedException('The session is no longer active.');
+      }
+
+      const replacement = await tx.authSession.create({
+        data: {
+          id: randomUUID(),
+          tokenHash: tokenHash(rotatedToken),
+          externalSystem: session.externalSystem,
+          externalSubject: session.externalSubject,
+          username: session.username,
+          displayName: session.displayName,
+          roles: stringArray(session.roles),
+          permissions: stringArray(session.permissions),
+          issuedAt: now,
+          expiresAt: session.expiresAt,
+          lastSeenAt: now,
+        },
+      });
+      await tx.auditEvent.create({
+        data: {
+          id: randomUUID(),
+          action: 'AUTH_SESSION_ROTATED',
+          actorId: session.externalSubject,
+          resourceType: 'AuthSession',
+          resourceId: replacement.id,
+          metadata: { replacedSessionId: session.id },
+        },
+      });
+    });
+
+    return { token: rotatedToken, user, expiresAt: session.expiresAt };
   }
 
   setSessionCookie(response: Response, session: CreatedAuthSession): void {
@@ -301,5 +416,24 @@ export class AuthSessionService {
       path: '/',
       ...(domain ? { domain } : {}),
     };
+  }
+
+  private async recordSessionEvent(
+    sessionId: string | null,
+    actorId: string,
+    action: string,
+    reason: string,
+    count?: number,
+  ): Promise<void> {
+    await this.prisma.auditEvent.create({
+      data: {
+        id: randomUUID(),
+        action,
+        actorId,
+        resourceType: 'AuthSession',
+        resourceId: sessionId,
+        metadata: { reason, ...(count === undefined ? {} : { count }) },
+      },
+    });
   }
 }

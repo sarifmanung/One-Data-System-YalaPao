@@ -111,7 +111,9 @@ Target worker foundation มีคำสั่งดังนี้:
 
 worker จะ retry เฉพาะ delivery ที่ถึงเวลา, ใช้ MySQL named lock กันหลาย instance และ monthly mode จะไม่สร้าง batch ซ้ำเมื่อ period/affiliation มี batch อยู่แล้ว. Monthly mode จะเลือกเฉพาะ affiliation ที่มี schedule `APPROVED`, contract version ตรงกับ configuration และถึง cutoff แล้ว; production ยังต้องผ่าน schedule owner/alerting/UAT approval.
 
-Target API จะ fail-fast หาก `NODE_ENV=production` แต่ขาด database/Portal secret/CORS หรือใช้ development auth/insecure cookie. Cookie-authenticated mutation ต้องมี origin ที่อยู่ใน `CORS_ORIGIN`; API มี security headers, idle session timeout และ per-process rate limit เป็นชั้นป้องกันเบื้องต้น. ก่อนเปิดหลาย replica ต้องเพิ่ม distributed replay/session revocation และ rate limiting ที่ reverse proxy/WAF.
+Target API จะ fail-fast หาก `NODE_ENV=production` แต่ขาด database/Portal secret/CORS/trusted-proxy allowlist หรือใช้ development auth/insecure cookie. Cookie-authenticated mutation ต้องมี origin ที่อยู่ใน `CORS_ORIGIN`; API มี security headers, idle session timeout, database-backed launch-token replay/session revocation, session rotation และ per-process rate limit เป็นชั้นป้องกันเบื้องต้น. ต้องวาง rate limiting ที่ reverse proxy/WAF/shared gateway ก่อนเปิดหลาย replica.
+
+Auth session มี `POST /api/v1/auth/rotate` สำหรับหมุน opaque cookie session โดยไม่ต่อ absolute expiry; `worker:once`/maintenance worker จะลบ session และ launch replay ที่หมดอายุตาม retention policy. ห้ามนำ token ดิบไปเก็บใน log หรือ audit metadata.
 
 Target API มีคำสั่ง sync สำหรับผู้ดูแลที่มี capability `employee.master-data.sync` (Portal role/position จะถูก map เป็น allowlist ฝั่ง One Data; `PEOPLE_SYNC_ADMIN` หรือ role development ใช้ใน local test ได้):
 

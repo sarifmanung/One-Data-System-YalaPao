@@ -2,12 +2,14 @@ import 'reflect-metadata';
 import cookieParser from 'cookie-parser';
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
 import { ProblemDetailsFilter } from './common/http/problem-details.filter';
+import { parseTrustProxy } from './common/http/trusted-proxy';
 
 async function bootstrap(): Promise<void> {
-  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, { bufferLogs: true });
   const config = app.get(ConfigService);
   const configuredOrigins = config.get<string>('CORS_ORIGIN', '')
     .split(',')
@@ -15,6 +17,7 @@ async function bootstrap(): Promise<void> {
     .filter(Boolean);
 
   app.use(cookieParser());
+  app.set('trust proxy', parseTrustProxy(config.get<string>('ONEDATA_TRUST_PROXY')));
   app.setGlobalPrefix('api');
   app.enableCors({
     origin: configuredOrigins.length > 0 ? configuredOrigins : true,

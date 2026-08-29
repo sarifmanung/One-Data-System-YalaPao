@@ -169,11 +169,21 @@ model AuthSession {
   expiresAt       DateTime
   lastSeenAt      DateTime  @default(now())
   revokedAt       DateTime?
+  revokedReason   String?   @db.VarChar(64)
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
   @@index([externalSystem, externalSubject, revokedAt])
   @@index([expiresAt, revokedAt])
+}
+
+model PortalLaunchReplay {
+  jti         String   @id @db.VarChar(255)
+  expiresAt   DateTime
+  consumedAt  DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  @@index([expiresAt])
 }
 
 model MasterDataSyncRun {

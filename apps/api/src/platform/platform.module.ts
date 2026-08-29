@@ -7,6 +7,7 @@ import {
   SecurityHeadersMiddleware,
 } from '../common/http/security.middleware';
 import { AuthGuard } from './auth/auth.guard';
+import { AuthMaintenanceService } from './auth/auth-maintenance.service';
 import { AuthSessionService } from './auth/auth-session.service';
 import { DelegatedApproverService } from './auth/delegated-approver.service';
 import { DevAuthGuard } from './auth/dev-auth.guard';
@@ -17,6 +18,8 @@ import { MeController } from './controllers/me.controller';
 import { WorkspacesController } from './controllers/workspaces.controller';
 import {
   InMemoryReplayGuard,
+  PORTAL_REPLAY_GUARD,
+  PrismaReplayGuard,
   PortalLaunchTokenService,
 } from './sso/portal-launch-token.service';
 
@@ -25,10 +28,13 @@ import {
   providers: [
     AuditLogService,
     AuthGuard,
+    AuthMaintenanceService,
     AuthSessionService,
     DelegatedApproverService,
     DevAuthGuard,
     InMemoryReplayGuard,
+    PrismaReplayGuard,
+    { provide: PORTAL_REPLAY_GUARD, useExisting: PrismaReplayGuard },
     PermissionGuard,
     PortalLaunchTokenService,
     RequestContextMiddleware,
@@ -39,6 +45,7 @@ import {
   exports: [
     AuditLogService,
     AuthGuard,
+    AuthMaintenanceService,
     AuthSessionService,
     DelegatedApproverService,
     DevAuthGuard,

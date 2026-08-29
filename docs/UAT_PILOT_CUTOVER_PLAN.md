@@ -47,8 +47,8 @@
 | ENV-001 | API liveness/readiness และ web health | API มีชีวิต, database ready และ web ตอบได้ตาม health check |
 | ENV-002 | contract/version | `contractVersion`, effective leave status และ target stack ตรงกับ release ที่อนุมัติ |
 | AUTH-001 | Portal launch token ถูกต้อง | token ที่ยังไม่หมดอายุและ claims ถูกต้องสร้าง session ได้; ไม่แสดง token ใน URL หลัง redirect |
-| AUTH-002 | token invalid/expired/replay | ถูกปฏิเสธ, replay ใช้ซ้ำไม่ได้ และไม่สร้าง session บางส่วน |
-| AUTH-003 | logout/idle expiry | session เดิมใช้ต่อไม่ได้หลัง logout หรือเกิน idle timeout |
+| AUTH-002 | token invalid/expired/replay | ถูกปฏิเสธ, durable `jti` replay ใช้ซ้ำไม่ได้ข้าม API replica และไม่สร้าง session บางส่วน |
+| AUTH-003 | logout/idle expiry/rotation | session เดิมใช้ต่อไม่ได้หลัง logout หรือเกิน idle timeout; rotate ออก token ใหม่โดยไม่ต่อ absolute expiry |
 | AUTH-004 | permission deny | บัญชีที่ไม่มี capability ได้ `403`; development auth ปิดใน staging/production |
 | SCOPE-001 | workspace ที่ได้รับอนุญาต | ผู้ใช้เห็นเฉพาะ tenant/affiliation ที่ membership อนุญาตและสลับ workspace ได้เท่าที่ควร |
 | SCOPE-002 | cross-tenant read/write | เปลี่ยน `x-tenant-id` หรือ resource ID ไปยัง tenant อื่นแล้วถูกปฏิเสธ ไม่เกิด side effect |
@@ -67,7 +67,7 @@
 | SPECIAL-003 | failure/retry/locked period | network/5xx retry ได้ตาม backoff; validation/locked period ไม่ retry วน; ผู้ดูแลเห็นสถานะและแก้ได้ |
 | SPECIAL-004 | reconciliation | จำนวนบุคลากร/ใบลา/วันลาและ period ตรงกับ snapshot ที่ One Data เตรียม และ Special รับจริง |
 | OPS-001 | migration/backup | migration ใช้ `migrate deploy`; backup restore ลงฐานใหม่ได้ และไม่มีการใช้ `db push` ใน production |
-| OPS-002 | security/observability | security headers, origin policy, 401/403/429, request ID และ error log ที่ redacted ตรวจได้โดยไม่เปิด secret/PII |
+| OPS-002 | security/observability | security headers, origin/trusted-proxy policy, durable replay/revocation, 401/403/429, request ID และ error log ที่ redacted ตรวจได้โดยไม่เปิด secret/PII; edge rate limit ต้องมีหลักฐานจาก gateway |
 | OPS-003 | rollback rehearsal | หยุด worker, ปิด write feature, rollback image และกลับไป flow เดิมได้ โดยข้อมูล audit ไม่หาย |
 
 ## 5. วิธี reconcile ข้อมูล
@@ -134,7 +134,7 @@
 
 - การทดสอบกับบัญชี Portal และข้อมูลบุคลากรจริงยังต้องมี owner อนุมัติและ mapping ที่ตรวจรับ
 - แบบ Word/DOCX ฉบับราชการและตัวอย่าง golden form ยังไม่มี จึงยังไม่ควรประกาศเอกสารจากระบบเป็นแบบทางการ
-- มี reconciliation UI foundation สำหรับ snapshot/schedule แล้ว แต่ยังไม่มี alerting production และ distributed session/replay/edge rate limit แบบหลาย replica; base permission scope/delegated assignment API มีแล้ว แต่ยังต้องทดสอบครบทุก role/workspace กับ owner sign-off
+- มี reconciliation UI foundation สำหรับ snapshot/schedule และ durable session/replay foundation แล้ว แต่ยังไม่มี alerting production และ distributed edge rate limit แบบหลาย replica; base permission scope/delegated assignment API มีแล้ว แต่ยังต้องทดสอบครบทุก role/workspace กับ owner sign-off
 - ยังไม่ได้ทำ backup/restore rehearsal กับ production-like infrastructure และยังไม่มี pilot จริง
 
 ดังนั้นสถานะปัจจุบันคือ **พร้อมทำ G0 และเตรียม G1**, ยังไม่ใช่พร้อม cutover production

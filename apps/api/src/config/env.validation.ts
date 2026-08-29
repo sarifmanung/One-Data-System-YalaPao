@@ -36,6 +36,7 @@ export function validateEnvironment(config: Environment): Environment {
   positiveInteger(config, 'PORT', 3100);
   positiveInteger(config, 'ONEDATA_SESSION_TTL_SECONDS', 28_800);
   positiveInteger(config, 'ONEDATA_SESSION_IDLE_TIMEOUT_SECONDS', 1_800);
+  positiveInteger(config, 'ONEDATA_AUTH_RETENTION_SECONDS', 30 * 24 * 60 * 60);
   positiveInteger(config, 'ONEDATA_AUTH_RATE_LIMIT_PER_MINUTE', 20);
   positiveInteger(config, 'ONEDATA_MUTATION_RATE_LIMIT_PER_MINUTE', 120);
   const provisionalRulesAllowed = optionalBoolean(config, 'ONEDATA_ALLOW_PROVISIONAL_LEAVE_RULES');
@@ -89,6 +90,13 @@ export function validateEnvironment(config: Environment): Environment {
   }
   if (value(config, 'ONEDATA_DEV_AUTH_ENABLED') === 'true') {
     throw new Error('ONEDATA_DEV_AUTH_ENABLED must be false in production.');
+  }
+  const trustedProxy = value(config, 'ONEDATA_TRUST_PROXY');
+  if (!trustedProxy) {
+    throw new Error('ONEDATA_TRUST_PROXY must be configured in production.');
+  }
+  if (trustedProxy === 'true' || trustedProxy === '*' || /^\d+$/.test(trustedProxy)) {
+    throw new Error('ONEDATA_TRUST_PROXY must use explicit proxy IPs or CIDR ranges in production.');
   }
   if (value(config, 'ONEDATA_SESSION_COOKIE_SECURE') !== 'true') {
     throw new Error('ONEDATA_SESSION_COOKIE_SECURE must be true in production.');

@@ -1,6 +1,9 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createHmac, timingSafeEqual } from 'node:crypto';
+import { PrismaService } from '../../database/prisma.service';
+
+export const PORTAL_REPLAY_GUARD = 'PORTAL_REPLAY_GUARD';
 
 export interface PortalLaunchClaims {
   iss: string;
@@ -36,7 +39,7 @@ function asFiniteNumber(value: unknown): number | null {
 export class InMemoryReplayGuard {
   private readonly seen = new Map<string, number>();
 
-  consume(jti: string, exp: number): boolean {
+  async consume(jti: string, exp: number): Promise<boolean> {
     const now = Math.floor(Date.now() / 1_000);
     for (const [key, expiry] of this.seen) {
       if (expiry <= now) {
@@ -53,14 +56,58 @@ export class InMemoryReplayGuard {
   }
 }
 
+export interface ReplayGuard {
+  consume(jti: string, exp: number): Promise<boolean>;
+}
+
+/**
+ * The production provider. A unique database key makes jti consumption
+ * atomic across API replicas; the in-memory guard remains useful only for
+ * isolated unit tests that do not connect to a database.
+ */
+@Injectable()
+export class PrismaReplayGuard implements ReplayGuard {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async consume(jti: string, exp: number): Promise<boolean> {
+    const now = new Date();
+    await this.prisma.portalLaunchReplay.deleteMany({
+      where: { expiresAt: { lte: now } },
+    });
+
+    try {
+      await this.prisma.portalLaunchReplay.create({
+        data: {
+          jti,
+          expiresAt: new Date(exp * 1_000),
+          consumedAt: now,
+        },
+      });
+      return true;
+    } catch (error) {
+      if (isUniqueConstraintError(error)) {
+        return false;
+      }
+      throw error;
+    }
+  }
+}
+
+function isUniqueConstraintError(error: unknown): boolean {
+  return typeof error === 'object'
+    && error !== null
+    && 'code' in error
+    && (error as { code?: unknown }).code === 'P2002';
+}
+
 @Injectable()
 export class PortalLaunchTokenService {
   constructor(
     private readonly config: ConfigService,
-    private readonly replayGuard: InMemoryReplayGuard,
+    @Inject(PORTAL_REPLAY_GUARD) private readonly replayGuard: ReplayGuard,
   ) {}
 
-  verify(token: string): PortalLaunchClaims {
+  async verify(token: string): Promise<PortalLaunchClaims> {
     const parts = token.split('.');
     if (parts.length !== 3 || parts.some((part) => part.length === 0)) {
       throw new UnauthorizedException('Invalid portal launch token.');
@@ -115,7 +162,7 @@ export class PortalLaunchTokenService {
       throw new UnauthorizedException('Invalid or expired portal launch token.');
     }
 
-    if (!this.replayGuard.consume(payload.jti, expiresAt)) {
+    if (!(await this.replayGuard.consume(payload.jti, expiresAt))) {
       throw new UnauthorizedException('Portal launch token has already been used.');
     }
 

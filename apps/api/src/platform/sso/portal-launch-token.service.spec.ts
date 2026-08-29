@@ -2,6 +2,7 @@ import { ConfigService } from '@nestjs/config';
 import { createHmac } from 'node:crypto';
 import {
   InMemoryReplayGuard,
+  PrismaReplayGuard,
   PortalLaunchTokenService,
 } from './portal-launch-token.service';
 
@@ -31,7 +32,7 @@ describe('PortalLaunchTokenService', () => {
     return new PortalLaunchTokenService(config, new InMemoryReplayGuard());
   }
 
-  it('verifies the Portal HS256 contract and consumes jti once', () => {
+  it('verifies the Portal HS256 contract and consumes jti once', async () => {
     const service = createService();
     const token = tokenFor({
       iss: 'yala-pao-health-portal',
@@ -43,14 +44,14 @@ describe('PortalLaunchTokenService', () => {
       name: 'Test User',
     }, secret);
 
-    expect(service.verify(token)).toMatchObject({
+    await expect(service.verify(token)).resolves.toMatchObject({
       sub: 'portal-user-1',
       jti: 'launch-1',
     });
-    expect(() => service.verify(token)).toThrow('already been used');
+    await expect(service.verify(token)).rejects.toThrow('already been used');
   });
 
-  it('rejects a token with the wrong audience', () => {
+  it('rejects a token with the wrong audience', async () => {
     const service = createService();
     const token = tokenFor({
       iss: 'yala-pao-health-portal',
@@ -61,6 +62,28 @@ describe('PortalLaunchTokenService', () => {
       exp: now + 120,
     }, secret);
 
-    expect(() => service.verify(token)).toThrow('Invalid or expired');
+    await expect(service.verify(token)).rejects.toThrow('Invalid or expired');
+  });
+});
+
+describe('PrismaReplayGuard', () => {
+  it('uses the database unique key as an atomic cross-replica replay gate', async () => {
+    const prisma = {
+      portalLaunchReplay: {
+        deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
+        create: jest.fn().mockResolvedValue({}),
+      },
+    };
+    const guard = new PrismaReplayGuard(prisma as never);
+
+    await expect(guard.consume('launch-1', Math.floor(Date.now() / 1_000) + 120))
+      .resolves.toBe(true);
+    expect(prisma.portalLaunchReplay.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ jti: 'launch-1' }),
+    }));
+
+    prisma.portalLaunchReplay.create.mockRejectedValue({ code: 'P2002' });
+    await expect(guard.consume('launch-1', Math.floor(Date.now() / 1_000) + 120))
+      .resolves.toBe(false);
   });
 });

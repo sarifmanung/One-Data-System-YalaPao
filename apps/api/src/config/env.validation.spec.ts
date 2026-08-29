@@ -18,6 +18,7 @@ describe('validateEnvironment', () => {
       PORTAL_TOKEN_ISSUER: 'portal',
       PORTAL_TOKEN_AUDIENCE: 'one_data',
       CORS_ORIGIN: 'https://onedata.example.org',
+      ONEDATA_TRUST_PROXY: '10.0.0.0/8,127.0.0.1',
       ONEDATA_DEV_AUTH_ENABLED: 'false',
       ONEDATA_SESSION_COOKIE_SECURE: 'false',
       ONEDATA_SESSION_COOKIE_SAME_SITE: 'lax',
@@ -48,6 +49,7 @@ describe('validateEnvironment', () => {
       PORTAL_TOKEN_ISSUER: 'portal',
       PORTAL_TOKEN_AUDIENCE: 'one_data',
       CORS_ORIGIN: 'https://onedata.example.org',
+      ONEDATA_TRUST_PROXY: '10.0.0.0/8,127.0.0.1',
       ONEDATA_DEV_AUTH_ENABLED: 'false',
       ONEDATA_SESSION_COOKIE_SECURE: 'true',
       ONEDATA_SESSION_COOKIE_SAME_SITE: 'lax',
@@ -61,5 +63,23 @@ describe('validateEnvironment', () => {
       DATABASE_URL: 'mysql://user:password@db/one_data',
       ONEDATA_WORKER_ENABLED: 'false',
     })).toMatchObject({ ONEDATA_PROCESS_ROLE: 'worker' });
+  });
+
+  it('requires an explicit trusted proxy list in production', () => {
+    const base = {
+      NODE_ENV: 'production',
+      DATABASE_URL: 'mysql://user:password@db/one_data',
+      PORTAL_SHARED_SECRET: 'a'.repeat(32),
+      PORTAL_TOKEN_ISSUER: 'portal',
+      PORTAL_TOKEN_AUDIENCE: 'one_data',
+      CORS_ORIGIN: 'https://onedata.example.org',
+      ONEDATA_DEV_AUTH_ENABLED: 'false',
+      ONEDATA_SESSION_COOKIE_SECURE: 'true',
+      ONEDATA_SESSION_COOKIE_SAME_SITE: 'lax',
+    };
+
+    expect(() => validateEnvironment(base)).toThrow('ONEDATA_TRUST_PROXY must be configured');
+    expect(() => validateEnvironment({ ...base, ONEDATA_TRUST_PROXY: 'true' }))
+      .toThrow('explicit proxy IPs or CIDR ranges');
   });
 });
